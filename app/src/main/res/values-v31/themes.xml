@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      Android 12+ draws a system splash screen that cannot be switched off. It uses concept C: the mint ground
+      and the Peekaboo blob (splash_icon.xml, 288 dp canvas with the art inside the 192 dp circle).
+
+      The platform centres the splash icon in the window and that position is fixed, so the landing page draws
+      the same drawable at the same size in the same place (see LandingScreen). Nothing here holds the splash
+      open: there is no animation duration, so it lasts the system minimum and no longer.
+    -->
+    <style name="Theme.GAL" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/brand_background</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowSplashScreenBackground">@color/splash_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
+    </style>
+</resources>

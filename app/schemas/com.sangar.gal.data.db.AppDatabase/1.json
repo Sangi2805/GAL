@@ -1,0 +1,49 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "3d3d15ca45d3e4ae554d4ad989b04017",
+    "entities": [
+      {
+        "tableName": "screen_sessions",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`start_epoch_millis` INTEGER NOT NULL, `end_epoch_millis` INTEGER NOT NULL, `screen_on_millis` INTEGER NOT NULL, `unlock_count` INTEGER NOT NULL, PRIMARY KEY(`start_epoch_millis`))",
+        "fields": [
+          {
+            "fieldPath": "startEpochMillis",
+            "columnName": "start_epoch_millis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endEpochMillis",
+            "columnName": "end_epoch_millis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "screenOnMillis",
+            "columnName": "screen_on_millis",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "unlockCount",
+            "columnName": "unlock_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "start_epoch_millis"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3d3d15ca45d3e4ae554d4ad989b04017')"
+    ]
+  }
+}

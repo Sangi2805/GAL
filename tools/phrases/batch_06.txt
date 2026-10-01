@@ -1,0 +1,101 @@
+# Batch 06: trends, streaks and records
+1 dg | Your screen time has been going down. The phone is writing a moody poem about it.
+1 dg | You have been scrolling less lately. Do not tell the algorithm, it will take it personally.
+1 dg | Recent numbers are looking better. Let us keep the story going.
+1 dg | Lately you have been beating the phone. Today is a rematch.
+1 dg | Less screen time recently. Somewhere a book is cautiously optimistic.
+1 dg | You have been on a good run lately. This card is just here to cheer, and to nag slightly.
+1 dg | Your recent days have been lighter on the screen. Very stylish of you.
+1 d | Your weekly average is below your monthly one. That is the good direction.
+1 d | Screen time trending down. The phone would like to speak to the manager.
+1 d | Your average is sliding down. Please enjoy this rare compliment from a pop-up.
+1 g | Good streak going. Three days of not letting the phone run the show.
+1 g | Your last few days were below average. That is the one time below average is great.
+1 g | Streak intact so far. The feed is plotting.
+1 g | A few good days in a row. Protect the streak like it is a small, fragile houseplant.
+1 sfldg | You have been doing well lately. This can be a short visit.
+1 sfnldg | Good trend, good choices. A quick lock of the screen would really complete the look.
+1 sfaldg | You have proven you can put this down. Do it again, it is easier the second time.
+1 sfwldg | Your recent track record says you can leave. Trust your track record.
+1 sfarldg | This card is proud of you and also slightly suspicious of this session.
+1 sfnwrdg | Keep the good habits cozy. Do not let one scroll session evict them.
+1 sflrdg | Momentum is on your side. Do not waste it on a comment section.
+1 sfawdg | Recent you has been doing great. Current you, let us not ruin it.
+1 sfnlrdg | Nice work lately. The feed misses you, which is exactly how it should be.
+1 sfalwdg | A few good days are a pattern. A few more would be a personality.
+1 sfnrdg | You have been winning against the phone. Winners know when to leave the table.
+1 sfawldg | Do not tell anyone, but you are getting good at this.
+1 sfnlwdg | This is a checkpoint, not a finish line. Save your progress, lock the phone.
+1 sflrwdg | Screen time has been low and life has continued. Suspicious, right?
+1 sfanldg | You have been scrolling less and nothing bad has happened. Science.
+1 sfwlrdg | The phone has been getting less of you lately. It is coping badly. Stay strong.
+1 sfanwdg | Good days are contagious. Give this one a chance to catch it.
+1 sfalrdg | Remember how nice the last few days felt? More of that, please.
+1 sfnwldg | You are on a roll. The roll does not involve a feed.
+1 sfarwdg | The trend line is on your side. Do not argue with the trend line.
+2 dg | You have been cutting down lately, and this session is trying to undo all of it.
+2 dg | Good week, better habits, and then this. The plot thickens.
+2 dg | You were doing better lately. The phone noticed and it would like you back. Do not go back.
+2 dg | Recent screen time is down. This session is auditioning to be the exception.
+2 d | Your weekly average dropped. The phone is now trying to win you back with videos.
+2 d | Trend down, session up. Pick a direction.
+2 g | Three good days and a very suspicious fourth one. This one.
+2 g | The streak is looking at you. The streak is nervous.
+2 g | You have a streak going. This session is the villain in that story.
+2 u | Your weekly average is climbing. This session is climbing with it.
+2 u | Screen time is trending up this week. The phone is loving the attention.
+2 u | Up and to the right is great for stocks. Less great for screen time.
+2 u | The weekly numbers are rising. You are basically the phone's best customer.
+2 x | Today is now your biggest screen day ever recorded. Surprise.
+2 x | You just set a personal record for screen time. The medal is imaginary.
+2 x | New record. The previous record would like a word.
+2 x | Congratulations, this is officially your most scrolled day yet. Please do not try to beat it.
+2 sldgux | Whatever the numbers say lately, this session is adding to the wrong column.
+2 lmdgux | The chart is watching. It is writing everything down.
+2 sldgux | Trends are just days stacked on top of each other. This day is getting tall.
+2 lmdgux | Your screen time graph has a shape. Right now you are drawing a mountain.
+2 sfldgux | The numbers do not lie, but they do gossip. They are gossiping about today.
+2 lmdgux | This session is going straight into the weekly report. The report has opinions.
+2 sldgux | Every minute counts. Literally. This app is counting them.
+2 lmdgux | You are writing this week's screen time story right now. Maybe give it a twist.
+2 sldgux | Stats do not care about excuses. They just add up.
+2 lmrdgux | The screen time chart would like a quieter day, please.
+2 sfldgux | The graph is a mirror you can scroll. Maybe give it less to show.
+2 lmdgux | Your future weekly summary is taking notes in real time.
+2 slrdgux | Somewhere in your stats, a little bar is getting taller as we speak.
+2 lmux | Today is heading for the history books. Your screen time history books.
+2 sfldgux | Numbers are going somewhere today. Help them go down.
+2 lmrdgux | The data is in, and the data is disappointed.
+3 u | Your screen time has been going up all week, and today is going for gold.
+3 u | Weekly average: rising. Your plans for this week: falling.
+3 u | The trend is up and the phone is thrilled about it.
+3 u | Your screen time chart looks like a ski slope in reverse.
+3 u | This week you have given the phone more of your time than last week. It is bragging.
+3 x | New all-time high for screen time. Somewhere an investor is delighted.
+3 x | This is the most time you have ever spent on this phone in a day. Framed and hung.
+3 x | You broke your own screen time record. It was not a record worth breaking.
+3 x | Today beats every other day on record. For screen time. Nothing else, sadly.
+3 u | The chart is climbing, and you are pushing it up the hill yourself.
+3 lmrnux | Your weekly screen time is starting to look like a mortgage.
+3 ux | The graph has one direction today, and you are driving.
+3 lmrnux | The stats app would like a quiet word.
+3 x | Your screen time is breaking records nobody asked you to break.
+3 lmrnaux | At this rate the weekly report will need a second page.
+3 u | You are not using the phone less. You are using it more, with style.
+3 u | The numbers are up and the day is short.
+3 ux | The chart used to be a hill. It is now a cliff.
+3 u | Your screen time is growing faster than anything you have planted.
+3 lmrwux | The phone thanks you for your continued investment in its stock price.
+3 ux | Somewhere, your screen time graph is running out of room at the top.
+3 u | Congratulations on your growth. Unfortunately it is the screen time kind.
+3 lmrawux | The weekly report will not be kind. It has been taking notes.
+3 u | The trend line is heading up, and you are the one holding the rope.
+3 u | The data says more. The data always says more lately.
+3 lmrnaux | Your screen time is having a great year. Shame about everything else.
+3 lmrux | The numbers are so high they could use oxygen.
+3 flmrnux | The weekly stats are drafting a strongly worded letter.
+3 lmrwaux | This week's screen time is not a number, it is a sequel.
+3 u | The graph has stopped climbing and started teleporting.
+3 x | You are setting records in the one event with no medals.
+3 u | Up, up and away. Your screen time, not you.
+2 sfldgux | Your stats are keeping score, and right now the phone is up by a lot.

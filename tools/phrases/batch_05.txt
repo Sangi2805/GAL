@@ -1,0 +1,101 @@
+# Batch 05: first nags, repeat nags, and the relationship between you and this card
+1 r | Me again. Your friendly neighborhood reminder.
+1 r | I am back. You are still here. We are both very consistent.
+1 r | Remember me? I came by a little while ago. You said "fine".
+1 r | This is a return visit. The card, not you. You never left.
+1 r | Another card, same message, slightly raised eyebrow.
+1 r | Look who is still scrolling. And look who is still reminding.
+1 r | Encore. Nobody asked for an encore.
+1 r | The last card said the same thing. It was right then, too.
+1 f | First card of the session. Think of it as a polite knock.
+1 f | Opening reminder. The rest of the session is up to you.
+1 f | Here is your first gentle nudge. The next one will be gentler if there is not one.
+1 fr | Knock knock. It is the screen timer. It is always the screen timer.
+1 frnldg | You can dismiss this card. You can also dismiss the phone. Double points.
+1 frnlwdg | This card is small, polite and correct. A rare combination online.
+1 frnaldg | Tap "Fine" if you must. Tap the lock button if you are feeling heroic.
+1 frnlwg | The card is only here because you asked it to be. Past you says hello.
+1 frnlwdg | Remember when you installed this to scroll less? Good times.
+1 frnldg | Consider this card the bookmark. Come back to the feed later. Much later.
+1 frnawdg | A card has appeared. Wild scrollers are said to flee when this happens.
+1 frnslg | This is not a pop-up ad. It is a pop-up fact.
+1 frnlwdg | Snooze is an option. So is actually stopping. Just throwing that out there.
+1 frnaldg | Every time this card shows up, a houseplant gets a little hope.
+1 rnldg | You and this card keep bumping into each other. Awkward.
+1 rnlwg | The card is back, which means the scrolling never left.
+1 rnld | Back by popular demand. Not yours, admittedly.
+1 frnlwdg | The feed can be paused. You just have to be the one to do it.
+1 frnaldg | The card will go away in eight seconds. Could you?
+1 frnlwg | Consider this intermission. Refreshments are in the kitchen.
+1 frnldg | You are not in trouble. You are just being noticed.
+1 frnalwdg | This card is a little speed bump. Feel free to actually slow down.
+1 frnlwdg | Your thumb has been nominated for a break. Please accept the award.
+1 rnlwdg | Still here, still reminding, still weirdly fond of you.
+1 frnaldg | The easiest win of the day is right here: lock, pocket, walk away.
+1 frnlwdg | A pop-up that wants nothing from you except fewer pop-ups. Refreshing.
+2 f | First warning. Enjoy it, it is the nice one.
+2 f | Card one. You still have time to make this the only one.
+2 f | The opening act has started. Nobody wants to see the full show.
+2 f | First reminder, and already you are reaching for "Fine".
+2 f | This is the gentle first card. The rest of the deck is less gentle.
+2 f | First nudge. Please do not make me reach for the elbow.
+2 r | Back again. Did you think I was bluffing?
+2 r | Another card. At this point we should get matching jackets.
+2 r | Round two. The phone won round one on a technicality.
+2 r | You have dismissed this before. Dismissing it again does not make it less true.
+2 r | Hello again. You look exactly as scrolled as last time.
+2 sfdgx | You are about to tap "Fine" without reading this. Busted.
+2 sfadgu | This card has more self-control than the feed. Take notes.
+2 sfanwdgx | If you tap "Fine" and keep going, the card will simply be right later.
+2 sfadgux | The card is not the problem here. The card is the messenger.
+2 sfanwdgu | This card costs you eight seconds. The feed costs you the evening.
+2 sfadgux | You installed this app because you knew. I know you knew.
+2 sfnwdgux | It says "Fine" on the button, but it could just as easily say "sure, sure".
+2 sfadgu | Somewhere in this phone, an app is pleased with itself. Not this one.
+2 sfanwdgx | The card is not asking for much. Just the rest of your day back.
+2 sfadgux | If the feed had a card like this, it would never shut up about how you are doing great.
+2 sfanwdgu | You are allowed to agree with this card. Nobody will tell the feed.
+2 sfadgux | This is the part of the program where you do the right thing.
+2 sfnwdgux | The card is fine. You are fine. The screen time is the one that is not.
+2 sfadgu | You can prove this card wrong in one tap. Go on.
+2 sfanwdgx | Here is a novel idea: listen to the card you installed.
+2 sfadgux | Tap "Snooze" if you want. The truth does not snooze.
+2 sfnwdgu | This card is not dramatic. It just has good timing.
+2 sfanwdgx | Nobody is watching you scroll. Except the algorithm. And this card.
+2 sfadgux | Remember why you installed this? The card does.
+2 sfnwdgu | The card is only annoying because it is right.
+2 sfanwdgx | You would take this advice from a friend. The card is basically a friend with a timer.
+2 sfadgux | One card now, or five cards later. Your call.
+3 f | First warning. You will pretend you did not see it. I will pretend to be surprised.
+3 f | Card number one. The first of many, if the last few sessions are anything to go by.
+3 f | This is the first card, so you still get to make it the last. Doubt it.
+3 f | Opening warning. The phone has already started its victory speech.
+3 f | First card. Brace yourself for the sequel.
+3 f | Warning one. The feed is betting you ignore it. The feed is usually right.
+3 fanwux | This card has appeared. The feed has not flinched. Neither have you. Concerning.
+3 fanwlux | You will tap "Fine" and carry on. The card knows. The card has seen this before.
+3 fanwlmux | The card gets eight seconds. The feed gets whatever is left of your day.
+3 fanwux | This is not a notification. It is a verdict.
+3 fanwlmx | The card is not here to be liked. It is here to be right, repeatedly.
+3 fanwux | You cannot mute this one. You can only prove it wrong. Good luck.
+3 fanwlux | The feed has a thousand engineers. This card has one sentence. The sentence is winning the argument.
+3 fanwmux | You can dismiss the card, but you cannot dismiss the numbers.
+3 fanwlux | The card is the only thing on this screen that actually wants you to leave.
+3 fanwmx | Somewhere, the card's lawyer is preparing the evidence.
+3 fanwlux | You are going to say "just a bit longer". The card has heard that one.
+3 fanwmux | The card has no ads, no likes, and no patience left.
+3 fanwlx | You set this reminder yourself. Past you is extremely disappointed in present you.
+3 fanwmux | If ignoring cards were a sport, you would be sponsored.
+3 fanwlux | The card is short. Your excuse is going to be long.
+3 fanwmx | You are about to tap "Fine" like it is a reflex. It is a reflex.
+3 fanwlux | The card is a mirror with a timer. Look into it.
+3 fanwmux | There is no achievement for ignoring this card. We checked.
+3 r | Again. Same card, same message, same you.
+3 r | Back again. At this point the card could pay rent here.
+3 r | You dismissed the last one. And the one before. Here we are.
+3 r | The card keeps coming back because you keep staying.
+3 r | Another one. You are collecting these like it is a hobby.
+3 fanwlmux | The phone is winning, the card is losing its voice, and you are still here.
+3 fanwlux | You set this timer to protect you from exactly this. How is that going?
+3 fanwmux | The card is tired of being right about you.
+3 fanwlmx | This reminder will outlast your excuses. It has more stamina.

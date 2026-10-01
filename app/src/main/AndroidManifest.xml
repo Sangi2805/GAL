@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  GAL has no network access: no INTERNET permission, and the build fails if any dependency adds one (see
+  verify*NoInternet in app/build.gradle.kts). The same check refuses QUERY_ALL_PACKAGES: Sidekick finds apps
+  through the launcher <queries> entry below instead.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- WorkManager declares this for network constraints. We use none, and the app has no network access. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
+
+    <!-- Screen Time Roasts. -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Lets us show the one-time "don't optimise this app" system dialog directly. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
+    <!-- Voice Sidekick. Runtime permission, asked for only when the Voice Sidekick switch goes on. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <!-- Both: the roast card and Sidekick are drawn over other apps, from one foreground service. -->
+    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+
+    <!-- Package visibility, without QUERY_ALL_PACKAGES. -->
+    <queries>
+        <!-- Every app with a launcher icon: Sidekick's app index, the exclusion picker and per-app stats. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+        <!-- The home screen app has no launcher entry but shows up in per-app stats. -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.HOME" />
+        </intent>
+        <!-- Resolving the default quiet apps: camera, maps, clock. -->
+        <intent>
+            <action android:name="android.media.action.STILL_IMAGE_CAMERA" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="geo" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.SHOW_ALARMS" />
+        </intent>
+        <!-- Sidekick's ears and mouth: the speech recogniser and the text-to-speech engine. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
+    <application
+        android:name=".GalApp"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.GAL">
+
+        <activity
+            android:name=".ui.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          One foreground service for both features. specialUse for Screen Time Roasts (sticky, may start from
+          the background), microphone for Voice Sidekick (never restarted by the system; see GalService).
+        -->
+        <service
+            android:name=".service.GalService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse|microphone">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Measures continuous screen-on time so the app can show an optional, dismissible reminder card. It never blocks or restricts other apps." />
+        </service>
+
+        <receiver
+            android:name=".service.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+
+</manifest>

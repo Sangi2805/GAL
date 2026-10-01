@@ -1,0 +1,311 @@
+# Batch 12: short lines, under six words. What a friend mutters while walking past.
+# Every line here must be short; build_phrases.py fails the build otherwise.
+# Same tagging rule as always: wording that depends on a fact carries only the codes that make it true
+# ("again" is r only, "this late" is n only). j (work_hours) lines stand alone and get no "general",
+# so they can only ever appear on a weekday between 9 and 5.
+
+# ---------- Tier 1: mild ----------
+1 sfaw | Hey. Look up.
+1 sfdg | Quick break, maybe?
+1 slfa | Blink. Breathe. Look around.
+1 sfw | Phone down for a sec?
+1 sfwg | The room misses you.
+1 lr | Still scrolling, huh?
+1 sfa | Hi. Remember the world?
+1 sfd | Just checking in.
+1 sfw | Psst. Real life called.
+1 slfg | Tiny pause? Go on.
+1 sfn | Screen off, maybe?
+1 sfaw | Stretch those thumbs elsewhere.
+1 slfw | Anything good? Probably not.
+1 r | Round two, is it?
+1 r | Back again, friend?
+1 r | Me again. Hi.
+1 r | Hello again. Still here.
+1 r | Us again. Cosy.
+1 a | Coffee first, feed later.
+1 a | Good morning. Look up.
+1 a | Morning. The feed can wait.
+1 a | Breakfast before browsing?
+1 a | Early scroll? Bold start.
+1 n | Bedtime-ish, no?
+1 n | Late one, huh?
+1 n | The pillow's right there.
+1 n | Night night, phone.
+1 n | Sleep sounds nice, right?
+1 w | Weekend! Go do something.
+1 w | It's the weekend. Outside?
+1 w | Weekends are for wandering.
+1 f | First nudge. Gentle one.
+1 sflw | Just a small nudge.
+1 u | Busier week than usual.
+1 u | Creeping up lately, hmm?
+1 u | More screen this week.
+1 d | Less screen lately. Nice.
+1 d | Trending down. Love that.
+1 d | Better week so far.
+1 x | Personal best. Wrong sport.
+1 x | New high score. Uh-oh.
+1 x | Today's a record. Hmm.
+1 g | Good streak. Keep it.
+1 g | Three good days. Wow.
+1 g | You were doing great.
+1 lm | Long haul today, huh?
+1 m | Hours now. Break?
+1 lm | That's a lot. Pause?
+1 lm | Been a while, hasn't it?
+1 lm | Time flies. Literally.
+1 slfw | Look around. Anything?
+1 sfaw | Eyes up, champ.
+1 sfd | Go get some water.
+1 sfwg | Walk around a bit?
+1 slfr | The feed will keep.
+1 sfw | Nothing's on fire. Promise.
+1 slfa | Notifications can wait.
+1 sfwd | Touch some grass, gently.
+1 sfad | Window. Look through it.
+1 slfwg | Take five. Seriously.
+1 sfn | Maybe that's enough?
+1 slfw | Friendly reminder: life exists.
+1 sfdg | You got this. Phone down.
+1 sfaw | Up. Out. Go.
+1 slfr | Plot twist: stop scrolling.
+1 sflw | A tiny time-out?
+1 sfwg | The kettle wants company.
+1 sfaw | Hi. Go outside, maybe.
+1 sfdg | Just a gentle poke.
+1 slfr | Same feed, different minute.
+1 lmr | Still at it, huh?
+1 sfn | Is this important? Honestly?
+1 sfw | Wiggle your toes. Now.
+1 sfaw | Pet a dog. Any dog.
+1 sfwg | Call a friend instead?
+1 slfr | The algorithm says hi.
+1 sflw | Scroll less, live more.
+1 sfad | Doing okay? Look up.
+1 sfwg | Plants need watering, probably.
+1 sfdg | Nice. Now put it down.
+1 slfwn | Mind the time.
+1 sfdg | You're better than this.
+1 slfr | Is it worth it, though?
+1 slfw | Enough for now, maybe.
+1 sfd | One less scroll. Deal?
+1 slfwg | Gentle hint: look up.
+1 sfaw | Real world, same place.
+1 slfr | Here's your sign.
+1 slfw | Hey you. Yes, you.
+1 sfdg | Short break? Just saying.
+1 mr | Still here. Me too.
+1 m | A long one. Hmm.
+1 j | Working hard, or hardly?
+1 j | Is this the spreadsheet?
+1 j | Break over yet?
+1 j | Back to work, maybe?
+1 j | Boss nearby? Just asking.
+1 j | Emails won't answer themselves.
+1 j | Is this a meeting?
+1 j | Workday. Remember work?
+
+# ---------- Tier 2: pointed ----------
+2 lmr | Wow. Get a life, maybe.
+2 slmfr | Are you for real?
+2 lmr | Still? Really?
+2 lmrux | Impressive. Not the good kind.
+2 r | Seriously? This again?
+2 r | Again? Come on.
+2 r | You again. Wow.
+2 r | Card number two. Or ten.
+2 r | We keep meeting like this.
+2 r | Déjà vu, isn't it?
+2 r | Fine, huh? Sure.
+2 r | Ignored me again. Classic.
+2 lmr | Still here. Of course.
+2 lm | That's a long scroll.
+2 l | An hour? Really?
+2 m | Two hours. Wow.
+2 m | Marathon mode. Unwelcome.
+2 mr | Is this a hostage situation?
+2 slfw | Put. It. Down.
+2 slfrw | Nope. Phone down.
+2 slmfrw | Get a life. Kindly.
+2 slfw | Go touch grass.
+2 slmfw | Anything better to do?
+2 slfrw | Bored yet? You should be.
+2 slfaw | Thumb workout complete. Stop.
+2 slfr | The feed doesn't love you.
+2 slfw | Nothing new. Promise.
+2 slmfrw | Riveting stuff, clearly.
+2 slmfr | Oh, look. Scrolling.
+2 sfaw | Outside exists. Look.
+2 slfw | Big plans today? No?
+2 sfw | Put the rectangle down.
+2 slfrw | Your thumbs need a hobby.
+2 slfr | Scroll, scroll, scroll. Why?
+2 slmfr | This isn't a job.
+2 slmfrw | Such dedication. To nothing.
+2 slfrw | Hobby: staring. Nice.
+2 slmfw | Productive day, huh?
+2 a | Morning scroll? Already?
+2 a | Up early for this?
+2 a | Straight to the feed. Classy.
+2 a | Brush teeth first, maybe?
+2 a | Morning wasted? Nearly.
+2 n | Go to bed.
+2 n | It's late. Why?
+2 n | Midnight scrolling? Bold.
+2 n | Bed. Now. Please.
+2 n | Tomorrow-you says thanks. Not.
+2 n | Night owl act? Unconvincing.
+2 w | Weekend, wasted on this?
+2 w | Days off, spent here?
+2 w | Weekend plans: this, apparently.
+2 w | Two days off. This?
+2 f | First warning. Friendly-ish.
+2 sfl | Consider yourself nudged.
+2 u | Up again this week.
+2 u | Your weekly numbers? Yikes.
+2 u | Trending up. Not good.
+2 u | Worse than last week.
+2 d | Improving. Don't ruin it.
+2 d | Down this week. Stay down.
+2 d | Nice trend. Blowing it?
+2 x | New record. Congrats? No.
+2 x | Worst day yet. Oof.
+2 x | Record broken. Wrong record.
+2 g | Good streak. Nearly gone.
+2 g | Three good days. Undone?
+2 g | The streak's watching. Nervously.
+2 slmfr | Wow. Just wow.
+2 slfw | Is this the plan?
+2 slmfr | Look up. I dare you.
+2 slfw | Hello? Anyone home?
+2 slmfr | Any reason for this?
+2 slfrw | Tap Fine. Mean it.
+2 lmr | Enough now, yeah?
+2 slfw | Close the app. Go.
+2 slmfr | Not your best look.
+2 slmfrw | Groundbreaking scrolling, truly.
+2 slmfr | Wow. The commitment.
+2 slfrw | Other hobbies exist, allegedly.
+2 lmr | Surely you've seen everything.
+2 slfw | Just stop. Nicely.
+2 lmr | Raised by Wi-Fi?
+2 slfrw | Earn that Fine button.
+2 slmfr | The feed never ends.
+2 slmfrw | Swipe left on this.
+2 slmfr | Try blinking sometime.
+2 slfw | Cool. Now do something.
+2 lm | Longer than a movie. Yikes.
+2 slmfr | Gripping. Truly gripping.
+2 lmr | Committed. To the couch.
+2 slmfru | Not great, is it?
+2 j | No job?
+2 j | Aren't you at work?
+2 j | Paid to scroll? Nice gig.
+2 j | Your boss would love this.
+2 j | Working from phone, huh?
+2 j | Clocked in? Doesn't look it.
+2 j | Deadline? What deadline?
+2 j | Is this billable?
+
+# ---------- Tier 3: brutal ----------
+3 lmr | Get a life. Seriously.
+3 slmfr | Are you even blinking?
+3 lmr | Still? Wow. No.
+3 r | Again. Unreal.
+3 r | How many cards now?
+3 r | You ignore me professionally.
+3 r | Fine? Nothing is fine.
+3 r | Snooze harder, champ.
+3 r | Groundhog Day, starring you.
+3 r | Tap Fine. Scroll. Repeat.
+3 r | Every card. Every time.
+3 lm | A lot. Like, a lot.
+3 m | Hours. Actual hours.
+3 m | You live here now.
+3 lmr | The phone owns you. Congrats.
+3 m | Rent's due, phone tenant.
+3 m | Marathon? Nobody cheers.
+3 m | Is the couch fused?
+3 lmr | Send help. Or snacks.
+3 lmr | The phone is winning.
+3 lmr | Embarrassing, frankly.
+3 slmfr | No. Just no.
+3 slmfrw | What are you doing?
+3 lmr | Unhinged commitment.
+3 slmfrw | Put it down. Now.
+3 lmrw | Get up. Go outside.
+3 slmfrw | Wow. Riveting. Not.
+3 lmr | Impressive. In the worst way.
+3 lmru | Your screen time is showing.
+3 a | Fascinating waste of daylight.
+3 lmr | Log off. Seriously.
+3 lmr | Nobody's this interesting.
+3 slmfr | Zero thoughts. Just scrolling.
+3 lmrw | Life called. You declined.
+3 lmr | Mission: waste day. Complete.
+3 lmrx | This is peak nothing.
+3 slmfr | Training for scrolling Olympics?
+3 lmr | Your thumbs deserve better.
+3 lmr | Even the phone's tired.
+3 a | Morning ruined already? Nice.
+3 a | Sunrise? Missed it. Scrolling.
+3 a | Feed before feet? Wow.
+3 a | Breakfast of champions: memes.
+3 a | Up and already losing.
+3 n | Bed. Immediately.
+3 n | It's late. Enough.
+3 n | Nothing good happens now.
+3 n | Night shift for the algorithm?
+3 n | Tomorrow's already ruined. Congrats.
+3 n | Sleep is free. Take it.
+3 w | Whole weekend. On this.
+3 w | Weekend? Wasted. Congrats.
+3 w | Days off, thrown away.
+3 w | Saturday? Sunday? Screen day.
+3 f | First warning. Last chance.
+3 sf | Starting early, aren't we?
+3 u | Up again. Of course.
+3 u | Worse every week. Wow.
+3 u | Your graph is climbing. Stop.
+3 u | This week's even worse.
+3 d | Improving? Barely.
+3 d | Down a bit. Big deal.
+3 d | Better week. Still loads.
+3 x | New record. Nobody's proud.
+3 x | Worst day on file.
+3 x | All-time high. Awful.
+3 x | Record day. Tragic.
+3 g | Streak over? Nearly.
+3 g | Good days, gone. Nice.
+3 g | The streak's toast. Almost.
+3 slmfr | Enough.
+3 lmr | Unreal. Put it down.
+3 slmfr | Look up. Now.
+3 lmr | Do you even go outside?
+3 slmfr | Wow. Get off.
+3 lmr | Is anyone driving this?
+3 slmfr | Seriously, what is this?
+3 lmr | Honestly? Get a hobby.
+3 r | The feed won. Again.
+3 slmfrw | Painful to watch.
+3 lmr | Phone: 1. You: 0.
+3 lmr | Growing roots much?
+3 slmfr | Thumbs of steel. Sure.
+3 lmr | Scroll champion. Nobody asked.
+3 lmrx | History being made. Badly.
+3 slmfr | Stop. Just stop.
+3 lmr | Your chair has feelings.
+3 lmr | What happened to hobbies?
+3 lmr | Absolutely nothing achieved.
+3 slmfr | Truly a waste.
+3 slfw | Really? Right now?
+3 lmrw | Outside is free, you know.
+3 j | No job? Figures.
+3 j | Payday called. It's worried.
+3 j | Work? Never heard of it?
+3 j | Work hours. Scroll hours.
+3 j | The office misses you. Nope.
+3 j | Great work ethic. For memes.
+3 j | Clocked in, checked out.
+3 j | Nine to five? Scroll-to-five.

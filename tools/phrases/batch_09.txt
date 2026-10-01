@@ -1,0 +1,101 @@
+# Batch 09: session lengths in detail, and the phone as a character (tiers 2 and 3)
+2 s | Only a short session so far. Stop now and it counts as a quick check.
+2 s | You are not deep in yet. This is the easiest exit you will get all day.
+2 s | Short session, which means the exit is still close. Take it.
+2 s | You have only just arrived, and the feed has already rolled out the red carpet.
+2 s | Barely started. The feed is warming up. Do not let it.
+2 l | Well past a quick look now. The feed has had its fun.
+2 l | This session has gone past "quick check" and into "small commitment".
+2 l | Long enough to have watched a whole episode of something good. Instead you watched a lot of pieces of nothing.
+2 l | You have been here a while. The phone is starting to think you live here.
+2 l | This stopped being a quick scroll a while ago.
+2 m | Two hours in. You have outlasted most films and all of your good intentions.
+2 m | Hours in. At this point the phone knows your thumb's life story.
+2 m | This is a marathon session. There is no medal at the end, only a low battery.
+2 m | You have been scrolling long enough to need a scroll break from your scroll break.
+2 m | Over two hours. Somewhere, a movie is jealous of the attention you gave this.
+2 m | Hours of scrolling, and not one of those videos said thank you.
+2 lm | You have been at this long enough that the feed is showing you its B-sides.
+2 lm | A long session like this deserves a proper ending. Try "lock screen".
+2 lm | The feed has been on for so long it could apply for a pension.
+2 lm | This session has had a beginning and a middle. Let us try the end.
+2 lmr | The phone has had your undivided attention for a while now. Divide it.
+2 lmrnux | The screen has been on so long it is starting to feel like a lamp.
+2 lmrnux | You and the phone have been in the same position for ages. One of you should move.
+2 lmrnwux | The phone would like a break. It is too polite to ask.
+2 lmrawnux | Even the most patient phone gets warm under this much attention.
+2 lmranwux | The charger is watching you with professional interest.
+2 sflmranwdgux | The phone does not get tired. That is not the same as it being a good idea.
+2 sflmranwdgux | Your phone has no idea what a day off is. You are not your phone.
+2 sflmranwdgux | The phone is a brilliant tool and a clingy roommate.
+2 sflmranwdgux | Phones do not have hobbies, which is why they are so keen on yours.
+2 sflmranwdgux | The screen is bright, cheerful and completely uninterested in your plans.
+2 sflmranwdgux | The phone will never tell you when enough is enough. That is this card's job.
+2 sflmranwdgux | Your phone would happily do this all day. That is exactly the problem.
+2 sflmranwdgux | The phone has a battery. You have a day. Only one of those recharges overnight.
+2 sflmranwdgux | Phones do not get bored, so they cannot tell you when this got boring. It got boring.
+2 sflmranwdgux | The phone is the friend who always says "one more round". Go home.
+2 sflmranwdgux | Your phone has never once suggested you go outside. Rude, really.
+2 sflmranwdgux | That glass rectangle has been the center of attention for a while. Share the spotlight.
+2 sflmranwdgux | The phone is not keeping you company. It is keeping you.
+2 sflmranwdgux | Every phone comes with a lock button, but nobody reads the manual.
+2 a | It is morning and your first meeting is apparently with the feed.
+2 a | The coffee is ready. The feed is not a coffee.
+2 a | Using a fresh morning to watch stale content. Interesting trade.
+2 a | Morning scrolling: the snooze button's sneaky cousin.
+2 n | Late night scrolling makes tomorrow start with a debt.
+2 n | This hour of the night belongs to your pillow, not to strangers' videos.
+2 n | It is late. Everything you are about to watch will still be there when the sun is up.
+2 f | First warning of this session. The second one has less patience.
+2 f | Here is your first nudge. Consider it a free sample of common sense.
+2 r | Hello again. This card is starting to feel like a regular.
+3 s | Short session, but you are scrolling like it is a long one.
+3 s | Only just started, and the feed already has you on the hook.
+3 l | A long session, and nothing you have seen will matter by tomorrow.
+3 l | A long session. The only thing that got longer was the list of things you did not do.
+3 l | You have given this feed the attention most books can only dream of.
+3 l | This session has gone on long enough to earn a sequel nobody wants.
+3 m | Hours. Plural. The feed has not earned a single one of them.
+3 m | Two hours in. You could have cooked something, eaten it, and washed up. Instead, this.
+3 m | This session is so long the first video you watched is now vintage.
+3 m | You have been here long enough to watch trends start and end.
+3 m | Hours on the feed, and you could not name three things you saw.
+3 m | This is not a session. This is a shift. Unpaid, with terrible management.
+3 lm | You have been here so long, the feed is running out of ways to keep you.
+3 lm | The phone has had more of your time today than anything you care about.
+3 f | First card. You will say "fine" and it will not be. Classic opening.
+3 f | This is only the first warning, and you already look settled in for the long haul.
+3 f | The first card always gets ignored. Be the exception. You will not, but be it.
+3 f | First warning. The phone is betting against you. The phone has good odds.
+3 f | Card number one. You have seen enough of these to know how the story ends.
+3 f | The session just earned its first card. Please do not go for the full collection.
+3 f | First nag. You can stop now and look wise, or carry on and look familiar.
+3 f | Warning number one. You still get to pick the ending. Pick a good one.
+3 a | Morning, and you are already making the feed richer and your day shorter.
+3 a | The day has not even warmed up and you are already losing to the phone.
+3 a | You are giving the morning to the feed. The morning will not ask twice.
+3 a | Before breakfast, before plans, before anything: the feed. Bold priorities.
+3 n | It is late and you are trading tomorrow for videos you will not remember.
+3 n | The night is ending and the feed is not. One of them should.
+3 n | Your pillow is right there. The feed is not even comfortable.
+3 r | Back again. The card is starting to feel like it lives here too.
+3 r | Another card. You are in a long-term relationship with the Fine button.
+3 lmfranwux | The phone has become a place you go instead of the places you meant to go.
+3 lmfranwux | You gave the feed another hour and it gave you absolutely nothing back.
+3 lmfranwux | The phone is not helping you relax. It is helping you not notice the time.
+3 lmfranwux | Everything about this session is designed to feel shorter than it is. It is not short.
+3 lmfranwux | The phone is not tired. You are just very, very used to it.
+3 lmfranwux | If this session were a restaurant bill, you would ask for the manager.
+3 lmfranwux | The algorithm got promoted today. You made it happen.
+3 lmfranwux | The screen has been on so long it is practically a light fixture.
+3 lmfranwux | This phone has been held more today than most umbrellas are in a year.
+3 lmfranwux | The phone is not a fireplace. You do not have to stare into it.
+3 lmfranwux | Your screen time today is a number you will not want to say out loud.
+3 lmfranwux | The phone does not care how the day turns out. You are supposed to.
+3 lmfranwux | The feed is winning so hard it is getting bored of winning.
+3 lmfranwux | Somewhere under this screen is a person with plans. Remember them?
+3 lmfranwux | The phone has taken the day. At least take back the rest of it.
+3 lmfranwux | You are the phone's favorite person. That is not a compliment.
+3 lmfranwux | The phone has seen enough of this feed for one day. So have you.
+3 lmfranwux | You have spent so long on the feed that the feed feels like home. It is not home.
+3 fanw | The first card is the cheapest exit you will get. Take it or pay later.

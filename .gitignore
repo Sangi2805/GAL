@@ -1,0 +1,19 @@
+*.iml
+.gradle/
+.kotlin/
+/local.properties
+/.idea/
+.DS_Store
+/build/
+/app/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+# Release signing: local only, back these up instead
+/keystore/
+/keystore.properties
+*.jks
+*.keystore
+google-services.json

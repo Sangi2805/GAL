@@ -1,0 +1,101 @@
+# Batch 03: late night, and staying up with the feed
+1 n | It is getting late. The feed will be exactly this chaotic tomorrow.
+1 n | Late night scrolling: all the fun of daytime scrolling, minus the daytime.
+1 n | Your pillow has been waiting patiently. Unlike the algorithm.
+1 n | The internet does not have a bedtime. You, however, have a morning.
+1 n | Night owl mode detected. Owls do not even have thumbs.
+1 n | Past a reasonable hour, and still reasonably scrolling.
+1 n | The moon is out. The screen is out-shining it. Rude.
+1 n | Late o'clock. Nothing online gets better after this point.
+1 lmrnux | Your phone deserves a little rest. So does the charger.
+1 lmrnw | The feed will refill itself while you are gone. It is very good at that.
+1 lmrnux | One more video is a lie we all tell. Here is your gentle reality check.
+1 mrnux | Still going? The scroll bar is starting to feel like a treadmill.
+1 lmrnux | Plot twist: the next video is not the one that finally satisfies you.
+1 lmrnw | This is a great spot to stop. So was the last one, to be fair.
+1 lmrnu | The phone is warm and cozy. That is its trick.
+1 lmrnx | Your thumb has been busier than an air traffic controller.
+1 lmrnux | Even your battery is dropping hints.
+1 mrnx | You and this phone have been together a while now. Maybe see other things.
+1 lmrnwu | The comment section will still be arguing without you.
+1 mrnux | Long stretch, huh? The couch is basically part of the plan now.
+1 lmrnux | Today's screen time is shaping up to be a personal best. Not the good kind of best.
+1 x | Heads up: today is on track to be your biggest screen day on record.
+1 x | New record incoming. No trophy, just this card.
+1 x | You have never been this dedicated to your phone in a single day. Congratulations?
+1 u | Your screen time has been creeping up this week. Just a friendly heads up.
+1 u | This week's average is climbing. The phone is thrilled.
+1 r | Hello again. I did say I would be back.
+1 r | Back again, as promised. You also kept your promise, to the feed.
+1 r | We have to stop meeting like this.
+1 r | Second card. The first one says hi.
+1 m | A couple of hours in. Maybe stretch your curiosity somewhere else.
+1 m | Two hours and counting. The feed has probably run out of surprises.
+1 lmrw | Nothing on here is going to expire if you look away.
+1 lmrnux | The feed is refreshing. You, less so.
+2 n | Scrolling this late is how tomorrow starts losing before it begins.
+2 n | It is late enough that everything online is either a rerun or a bad idea.
+2 n | Tomorrow-you is going to have words about this.
+2 n | The only thing awake at this hour is you, the phone, and a lot of questionable content.
+2 n | Midnight snack for the brain: stale memes and recycled drama.
+2 n | Night scrolling is just daytime regret with the lights off.
+2 n | Your alarm is going to go off in a few hours, and it will not be understanding about this.
+2 n | The late show ended ages ago. You are still watching the reruns of other people's lives.
+2 lmrnux | You are deep enough in the feed that the ads have started repeating.
+2 mrnux | This is the longest relationship you have had with an app all week.
+2 lmrnux | At this rate the phone will need a nap before you do.
+2 lmrnw | The feed is not a to-do list. You do not have to finish it.
+2 mrnux | You have been here long enough to watch the battery icon change color.
+2 lmrnux | Swiping this much counts as cardio for exactly one finger.
+2 lmrnwx | The algorithm has started recommending things it recommended an hour ago.
+2 mrnux | Somewhere a charger is getting nervous.
+2 lmrnux | You are not relaxing, you are buffering.
+2 x | Today just became your longest screen day yet. Celebrate by putting it down.
+2 x | Record day. The phone would like to thank you in its acceptance speech.
+2 x | You have officially outscrolled every previous version of yourself.
+2 u | Your weekly average is up again. The phone is not a hobby, it is a habit.
+2 u | Your screen time is trending up. This session is not helping the chart.
+2 u | This week's numbers are climbing. At least something is going up in the world.
+2 r | Back again. The phone did not win the argument last time, but it is winning now.
+2 r | Another reminder. You ignored the last one beautifully.
+2 r | You have seen this card before. That is kind of the point.
+2 r | Round two. Or three. I have stopped counting. You have not stopped scrolling.
+2 m | Two hours. An entire film, a snack and a walk would have fit in there.
+2 m | This session is old enough to have its own opinions.
+2 lmrw | The thing you are looking for is not on the next screen either.
+2 lmrnux | Every video ends with another video. That is not a story, that is a trap.
+3 n | It is the middle of the night and you are arguing with the feed. The feed is winning.
+3 n | Nothing good has ever been posted at this hour. Nothing.
+3 n | Scrolling this late is a loan against tomorrow, with terrible interest.
+3 n | Your bed is right there, and you picked the glowing rectangle.
+3 n | The night shift at the content factory thanks you for your attendance.
+3 n | Tomorrow will remember this. Tomorrow holds grudges.
+3 n | At this hour the feed is just leftovers. You are eating leftovers in the dark.
+3 lmrnux | The ads are now personally addressing you by your habits.
+3 mrnux | This session has lasted longer than some friendships.
+3 lmrnux | You have seen more strangers' lives tonight than your own.
+3 mrnux | The phone is overheating from the effort of entertaining you.
+3 lmrnwx | You have scrolled so far the algorithm is making things up now.
+3 mrnux | If you had been knitting instead, you would have a scarf. A long one.
+3 lmrnux | The phone is on its third wind. You never had a first one.
+3 mrnx | Your screen time today could be measured in geological eras.
+3 lmrnux | The feed is a buffet, and you are eating the napkins.
+3 x | New all-time record for screen time today. The phone is framing it.
+3 x | Congratulations, today officially beats every other day for screen time. Nobody is clapping.
+3 x | Your worst screen day ever, happening live. Do not stay for the encore.
+3 u | Your screen time has been climbing all week, and today you brought a ladder.
+3 u | Your weekly average is up and still climbing. The phone has you on a growth plan.
+3 u | Up again this week. At this rate the phone will need its own calendar.
+3 r | Again. The card keeps coming back because you do.
+3 r | You dismissed the last one like it owed you money. It did not.
+3 r | Another card. The phone is ahead on every scoreboard that matters.
+3 r | You keep tapping "Fine". It is not fine.
+3 m | Two hours plus. The feed could not have made that many good things.
+3 m | You have been here for hours. The feed has not once asked how you are.
+3 m | Hours in. At this point you are not using the phone, you are maintaining it.
+3 lmrw | Everything you were supposed to do today just moved to tomorrow.
+3 lmrnux | The screen is the brightest thing in the room, and it is not close.
+3 mrnux | The battery has given up more times than you have.
+3 lmrnux | You could have finished something real in this time. Anything. A crossword.
+2 lmrnwu | You came here for a minute. The minute has had children.
+2 lmrnux | The phone is not tired of you yet. That should be a warning, not a compliment.

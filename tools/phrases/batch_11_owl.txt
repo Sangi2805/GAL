@@ -1,0 +1,62 @@
+# Batch 11: owl_mode. Shown once in the app when the user confirms a threshold over an hour.
+# Tier follows the threshold: 1 is over 1 h, 2 is over 3 h, 3 is over 5 h. Wording may rely on that range.
+1 o | What are you, an owl? Going to stare for hours?
+1 o | Over an hour before the first nudge. Generous. Suspiciously generous.
+1 o | An hour and then some. The feed thanks you for your hospitality.
+1 o | Bold setting. I will be over here, quietly counting.
+1 o | So the plan is a long, uninterrupted stare. Noted.
+1 o | Owl mode engaged. Wide eyes, long evenings, very little blinking.
+1 o | That is a roomy threshold. Plenty of space for "just one more".
+1 o | Fine. I will wait. I am extremely good at waiting.
+1 o | A long leash. Try not to use all of it.
+1 o | Setting saved. Owls everywhere nod in quiet approval.
+1 o | You have given the phone a head start. It did not need one.
+1 o | I will stay silent for a while. Enjoy it, it will not last.
+1 o | A threshold as long as a film. Popcorn optional.
+1 o | Plenty of time before I speak up. Maybe spend some of it elsewhere.
+1 o | You want me to hold my tongue that long? I will try.
+1 o | Long threshold accepted. My patience is now officially on trial.
+1 o | More than an hour before a single card. Very trusting of you.
+1 o | That setting says "marathon". Of reading, I hope.
+1 o | Owl hours selected. Hoot responsibly.
+1 o | You can always lower it later. Just saying, gently.
+2 o | Three hours or more before a nudge? Owls take more breaks than that.
+2 o | That is not a threshold, that is a shift pattern.
+2 o | You have booked a very long appointment with your screen.
+2 o | Owl mode, advanced. You are basically nocturnal now.
+2 o | By the time I say anything, the afternoon will have moved on without you.
+2 o | I will be quiet for hours. The algorithm will not.
+2 o | Hours of silence from me. The feed has already cleared its schedule for you.
+2 o | A threshold this long is less a reminder and more a retirement plan.
+2 o | You set it so I barely exist. I felt that.
+2 o | Over three hours. Even owls stop to judge things now and then.
+2 o | This setting gives the phone most of a day's head start.
+2 o | I will check in eventually. Roughly when your plans give up waiting.
+2 o | That is enough time for a double feature. Of the same short videos.
+2 o | Setting accepted, with a small, disappointed hoot.
+2 o | You have asked me to wait longer than most people wait for anything.
+2 o | A long, long leash. The phone is delighted.
+2 o | At this threshold the first card will feel like an ambush.
+2 o | Owl mode confirmed. The branch is comfortable, apparently.
+2 o | Hours before a nudge. Bring snacks. Real ones.
+2 o | I can wait that long. The question is whether you should.
+3 o | Five hours or more? That is most of a work day, with the screen as your manager.
+3 o | Over five hours before I speak? At that point I am a footnote.
+3 o | You have set me to "decorative". Bold.
+3 o | This threshold rivals a full night in bed. Owls everywhere are impressed.
+3 o | By the time this card shows up, the day will be mostly gone.
+3 o | You did not set a reminder, you built a monument.
+3 o | I will say something in many hours. Assuming anyone is still listening.
+3 o | A threshold this long is a polite way of asking me to leave.
+3 o | Owl mode, final form. Unblinking. Unstoppable. Unwise.
+3 o | That is enough time to fly across an ocean. You will spend it scrolling instead.
+3 o | Hours and hours of silence from me. The feed could not have asked for more.
+3 o | You have handed the phone the whole day. It did not even have to ask.
+3 o | At this setting I am less a nag and more an archaeologist.
+3 o | The first card will arrive like a letter from the past.
+3 o | Setting saved. I will be in the corner, gathering dust.
+3 o | Even the most committed owl would call this excessive.
+3 o | Over five hours. I hope the screen at least says thank you.
+3 o | You set the bar so high I will need binoculars to find it.
+3 o | This is not owl mode. This is lighthouse mode.
+3 o | Noted. I will nag you sometime next era.

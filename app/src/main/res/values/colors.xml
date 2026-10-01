@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Brand colours (mint, rim, ink, tangerine) live in brand_colors.xml, copied from concept C. -->
+<resources>
+    <color name="cream">#FFFBF3E4</color>
+    <color name="tangerine">#FFF28C28</color>
+</resources>

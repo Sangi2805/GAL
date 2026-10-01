@@ -1,0 +1,101 @@
+# Batch 10: gentle first-tier variety, plus the last gaps in tiers 2 and 3
+1 s | A short session so far. You can still call this a quick look.
+1 s | Just a quick visit? Perfect. Quick visits are the best kind.
+1 s | You have not been here long. Leaving now would be very elegant.
+1 s | Barely any screen time this session. Keep it barely.
+1 s | Short session, easy exit. The door is right there.
+1 l | You have been here a little while. The feed can manage without you now.
+1 l | This session is getting comfortable. Comfortable is how they get you.
+1 l | A good while on the phone. Maybe give the rest of the room a turn.
+1 l | You have been scrolling long enough to deserve a proper intermission.
+1 m | A long one today. Nothing wrong with a rest from resting.
+1 m | You have been at this for hours. The phone will not mind a nap.
+1 u | Your screen time has crept up lately. Nothing dramatic. Just a nudge.
+1 u | The weekly average ticked up. Consider today a chance to tick it back.
+1 x | Today is shaping up to be a big phone day. You can still change the ending.
+1 x | This is your busiest screen day so far. The good news is days end.
+1 f | First card of the session. Nothing to worry about. Mostly.
+1 f | Here is the first little reminder. It is friendly and it means well.
+1 f | First nudge. You can pretend it was your idea to stop.
+1 r | Hello again. Just popping back in to say what I said before.
+1 r | Back for another visit. The kettle is on, figuratively.
+1 r | We meet again. The card is starting to recognize you.
+1 d | Your average is heading the right way. This card is quietly impressed.
+1 d | Screen time trending down. Let us not make this the session that turns it around.
+1 g | You have had a few lighter days on the phone. That is worth protecting.
+1 g | Streak alert: the last few days have been good ones. Carry on.
+1 sflranwdg | Quick idea: put the phone on the charger and let it have a little lie down.
+1 sflranwdg | The phone can hold your place. It has a very good memory.
+1 sflranwdg | This card has no comments section, so you can just nod and leave.
+1 sflranwdg | Pop the phone in a pocket and see what the world has been doing.
+1 sflranwdg | The scroll will keep. Most things will.
+1 sflranwdg | The rest of the room would like a word. It is a very polite room.
+1 sflranwdg | Your hands deserve something with texture. A mug. A book. A dog.
+1 sflranwdg | Try the old-fashioned kind of browsing. It involves shelves.
+1 sflranwdg | Everything you need to know right now can be learned by looking up.
+1 sflranwdg | Consider putting a little distance between you and the feed. About arm's length and then some.
+1 sflranwdg | Your favorite person is probably not in this feed. Go find them.
+1 sflranwdg | Small breaks make big days. This is a small break, delivered.
+1 sflranwdg | Stand up, look around, come back later if you still want to. Maybe you will not.
+1 sflranwdg | The phone is fine. The feed is fine. You will be even more fine over there.
+1 sflranwdg | Drop the phone on the sofa and go do a thing. Any thing.
+1 sflranwdg | The feed is not going to write you a postcard while you are away.
+1 sflranwdg | Your phone has been a great companion. Now it needs its space.
+1 sflranwdg | You are in control here. The phone just wants you to forget that.
+1 sflranwdg | There is a playlist, a puzzle or a person nearby with your name on it.
+1 sflranwdg | Gentle suggestion: fewer swipes, more sips of tea.
+1 sflranwdg | Let the feed buffer without you for a bit.
+1 sflranwdg | Nobody has ever been upset that they looked up at the right moment.
+1 sflranwdg | A quiet minute without the phone is basically a mini holiday.
+1 sflranwdg | You could leave the feed on a high note. This is a high note.
+1 sflranwdg | The screen is not going to fade away if you look away. It is loyal like that.
+1 sflranwdg | Take this card as a tiny permission slip to go do something else.
+1 sflranwdg | Your day has an off-screen version. It is getting good reviews.
+1 sflranwdg | There is no wrong way to take a break, except not taking one.
+1 sflranwdg | The internet will look exactly the same when you get back. Promise.
+2 sflmranwdgux | The screen has no idea what time it is for you. You do. Act on it.
+2 sflmranwdgux | Scrolling is a very comfortable way to go nowhere.
+2 sflmranwdgux | The feed gives you something to look at, never something to do.
+2 sflmranwdgux | You have seen a lot of things on here. Name one. Exactly.
+2 sflmranwdgux | The phone is a shortcut to everything and a destination for nothing.
+2 sflmranwdgux | Being entertained and being busy are not the same as being here.
+2 sflmranwdgux | The feed is a great place to visit. You keep trying to move in.
+2 sflmranwdgux | Nothing on this screen will be improved by you watching it longer.
+2 sflmranwdgux | Your to-do list is shorter than the feed. Pick the finishable one.
+2 sflmranwdgux | You did not come here for this. You came for a second, and stayed for the trap.
+2 sflmranwdgux | The next video is not better. It is just next.
+2 sflmranwdgux | Scrolling feels like doing something. That is the trick.
+2 sflmranwdgux | Put down the phone and pick up literally anything with a real ending.
+2 sflmranwdgux | Your thumb is doing all the work and none of the living.
+2 sflmranwdgux | The feed is loud, bright and endless. The good stuff is usually quiet.
+2 sflmranwdgux | There is a version of today where you stop right now. That version is doing great.
+2 sflmranwdgux | The screen is fresh out of surprises. It is just rearranging the old ones.
+2 sflmranwdgux | The phone makes time disappear. That is not a feature you asked for.
+2 sflmranwdgux | You have been watching other people do things. Your turn.
+2 sflmranwdgux | Every app is a door. You keep walking through the same one.
+2 sflmranwdgux | Scrolling is a great way to feel busy without ever being anywhere.
+2 sflmranwdgux | The feed is good at starting things. It has never finished one.
+2 sflmranwdgux | Nothing about this moment needs to be recorded, shared or refreshed.
+3 lmfranwux | You have been scrolling so long the feed has started recycling its own jokes.
+3 lmfranwux | The screen has become a comfortable habit, and comfortable habits do not ask permission.
+3 lmfranwux | Somewhere, your plans for today have given up waiting and gone home.
+3 lmfranwux | The algorithm is a stranger who knows exactly how to keep you standing at the door.
+3 lmfranwux | You are not unwinding. You are just being wound differently.
+3 lmfranwux | The phone has had its fill of you. The day would like the leftovers.
+3 lmfranwux | This session is a monument to "just a second".
+3 lmfranwux | The feed is not going to give you a good reason to leave. Here is one: this card.
+3 lmfranwux | If this were a video game, you would have been asked "are you still there?" ages ago.
+3 lmfranwux | The screen time report is going to read like a confession.
+3 lmfranwux | You could have learned to juggle by now. Badly, but still.
+3 lmfranwux | Hours pass differently in here. Mostly, they pass without you.
+3 lmfranwux | You have been scrolling long enough for the phone to form opinions about you.
+3 lmfranwux | The feed does not have a pause button, but your hands do.
+3 lmfranwux | There is a whole life running in the background while you watch the foreground.
+3 lmfranwux | This is the part of the story where the hero puts the phone down. Allegedly.
+3 lmfranwux | The algorithm has a very good memory. Make today something it forgets.
+3 lmfranwux | Time flies when you are scrolling. It just does not land anywhere good.
+3 lmfranwux | The phone is enjoying this far more than you are.
+3 lmfranwux | You are spending real hours on imaginary urgency.
+3 lmfranwux | The screen time total is growing and you are not getting anything for it.
+3 lmfranwux | The feed will not remember you tomorrow, but the clock will.
+3 lmfranwux | You have scrolled past a hundred things you will never think about again. Including this card, probably.

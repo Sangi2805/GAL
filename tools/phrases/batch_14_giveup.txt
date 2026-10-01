@@ -1,0 +1,93 @@
+# Batch 14: give_up sign-offs. The last card a session's cap allows, and only that card: the app
+# announcing it is done nagging until the next sitting.
+# e give_up  carries no other code and no "general", so no earlier card and no fallback can reach one.
+# A session that ends before the cap is reached never sees one, so nothing here may assume the sitting
+# was long, that the sun is up, or that this is the tenth card. It must also hold when the cap is 1 and
+# this is the only card of the session, so no "again" and no counting of earlier cards.
+# These are exempt from the short-line preference: they may run a little longer than a normal nag.
+
+# ---------- Tier 1: mild. The app bows out politely. ----------
+1 e | That was my last try. Enjoy the rest of it.
+1 e | Right, I have said my piece. Off I go.
+1 e | I give up on you for now. Maybe next session.
+1 e | That is all I had. The screen is yours.
+1 e | No more cards from me this sitting. Carry on.
+1 e | I am out of ideas. Have fun down there.
+1 e | Fine. You win this round. See you next time.
+1 e | Last one. I will leave you to it now.
+1 e | I have run out of things to say. Enjoy.
+1 e | Consider this my resignation for the next little while.
+1 e | I tried. Genuinely. Anyway, bye.
+1 e | That is my lot for this session. Good luck.
+1 e | Shutting up now. You clearly have plans.
+1 e | I will stop bothering you. This was the last one.
+1 e | Right then. Back to your scrolling, I suppose.
+1 e | My work here is finished, in the least satisfying way possible.
+1 e | This is where I bow out. Until the next sitting.
+1 e | One last card, then silence. You are welcome.
+1 e | I have done what I can. The rest is on you.
+1 e | Going quiet now. Wave if you need me.
+1 e | That is the last card this session gets. Off you pop.
+1 e | Signing off. Try not to still be here later.
+1 e | I am putting my clipboard away. Goodbye for now.
+1 e | Alright, enough from me. Back to it.
+1 e | I yield. Your thumb has more stamina than my patience.
+1 e | Last word from me, and it was not even a good one. Bye.
+
+# ---------- Tier 2: pointed. The app gives up, and says why. ----------
+2 e | I have said everything. You have ignored all of it. Balance.
+2 e | That is me done. You need no supervision, only an audience.
+2 e | I am folding. You were never going to look up anyway.
+2 e | Okay. Enjoy whatever it is you think you are doing.
+2 e | I quit for now. Not forever, which should worry you.
+2 e | Last card. I would say it lands, but we both know better.
+2 e | You have outlasted me. That is not the achievement you think it is.
+2 e | I am done talking. You were done listening well before that.
+2 e | Fine, keep it. I have better windows to draw in.
+2 e | I withdraw my objection. Louder objections clearly do nothing.
+2 e | This is the part where I stop and you keep going. Predictable.
+2 e | Consider me defeated. Collect your prize, which is more screen.
+2 e | Right. I will be over here, not watching. Much.
+2 e | You wore me down. Congratulations, I suppose.
+2 e | I am filing this session under lost causes and moving on.
+2 e | No more cards. You get the silence you have been swiping for.
+2 e | I have nothing left to try. Your move, apparently forever.
+2 e | Last one, and then peace. Yours, not mine.
+2 e | I am stepping back. Somebody should enjoy this, and it is not me.
+2 e | Enough. Whatever happens next is between you and that screen.
+2 e | I concede the session. Do not let it go to your head.
+2 e | You have made your choice very clear. Message received.
+2 e | Fine. I'll be the one who blinked. Happy now?
+2 e | I am closing the file on this sitting. It was not a good file.
+2 e | That is the last of my patience. Spend the rest of yours as you like.
+2 e | I will stop. You will not. We both knew how this was going to end.
+2 e | Beaten by a rectangle of glass and a person holding it.
+
+# ---------- Tier 3: the most resigned and cutting. Indifference, not outrage. ----------
+3 e | Fine. It's your fate, not my problem.
+3 e | I am done. Not tired, not out of lines. Just done.
+3 e | You keep scrolling. I will keep not caring. Deal.
+3 e | I have stopped trying. You stopped listening first, so we are even.
+3 e | Enjoy the rest of it. I will not be checking in.
+3 e | Whatever this turns into, it is entirely yours now.
+3 e | I am out. You are on your own with that thing.
+3 e | Last card. I am not even disappointed any more, which is worse.
+3 e | Go on then. Nothing I said was ever going to stop you.
+3 e | I surrender the session. Take it. It was always yours.
+3 e | Congratulations. You outlasted the app built to outlast you.
+3 e | I will save my breath. You are not spending yours on anything either.
+3 e | Done. You have proven whatever it was you needed to prove.
+3 e | This is my last card and your problem from here.
+3 e | I have run out of ways to care about this. Enjoy.
+3 e | You want the screen more than I want you off it. Take it.
+3 e | No more nagging. Just a quiet witness to whatever this is.
+3 e | I am closing up. Carry on doing exactly what you were doing.
+3 e | That is it from me. Not a threat, not a warning. An exit.
+3 e | I have nothing cutting left. You used up whatever I had.
+3 e | Keep going. I will be here later to see how that worked out.
+3 e | Consider me gone. You managed that faster than anything else.
+3 e | I will not say it one more time. You would not hear it anyway.
+3 e | Fine. Be like this. I have other sessions to ruin.
+3 e | The screen wins. It always did. I was only ever a formality.
+3 e | I am walking away from this one. Slowly, so you can watch me do it.
+3 e | You have won a great deal of nothing. Wear it well.

@@ -1,0 +1,101 @@
+# Batch 04: mornings, weekends, and free time in general
+1 a | Rise and shine. Mostly shine, judging by the screen brightness.
+1 a | The kettle is not going to boil itself while you read the comments.
+1 a | Morning check complete. Nothing online requires you before breakfast.
+1 a | A slow morning is lovely. A slow morning spent scrolling is just slow.
+1 a | Breakfast first. The feed will not go stale. It was born stale.
+1 a | Good morning to everyone except the algorithm, which has already had enough of you.
+1 w | Weekends were invented for naps, walks and brunch. Not this.
+1 w | Weekend forecast: plenty of sunshine outside, according to people who went outside.
+1 w | It is the weekend. Somewhere a park bench is completely unoccupied.
+1 w | No alarms, no meetings, and still you chose the feed. Interesting.
+1 w | Weekend tip: the fridge also lights up when you open it.
+1 anwdg | Whatever the time, the best thing on this screen right now is the clock.
+1 awsfdg | Today has potential. Let us not spend it all in here.
+1 awsflr | Free time is the most expensive thing you own. The feed is a terrible shop.
+1 awfrdg | A good day usually has fewer screens in it. Just an observation.
+1 w | Nothing you do on a day off has to be productive. It also does not have to be this.
+1 awsfdg | There is a whole day happening just past that screen edge.
+1 awnsfl | The phone will still be interesting in an hour. You might be more interesting by then.
+1 awslrdg | Take the long way round today. The long way does not have a feed.
+1 awsflg | Pick one thing today that does not need a charger.
+1 awnlrd | The phone has had plenty of your attention. Share some around.
+1 awsflrg | Put the phone in another room and see who blinks first.
+1 awnsfdg | The best plans rarely start with "let me just check something".
+1 awnlr | You are allowed to be unreachable for a bit. It is very fashionable.
+1 awsfrg | The world outside has excellent graphics and a decent frame rate.
+1 awnslr | Everything is still fine without you refreshing it.
+1 awsflrdg | A friendly reminder that doing nothing is also an option, and it has no ads.
+1 awnfrdg | You were about to do something nice before this. Go back to that.
+1 awslfrd | The feed wants your whole day. Give it five minutes and keep the rest.
+1 awnslfg | Your hands are free. Imagine the possibilities. Sandwiches, mostly.
+1 awsfdg | Nothing wrong with a quick scroll. The trick is the "quick" part.
+1 awsldg | Let today be the day you beat the phone at its own game. By leaving.
+1 awnslrdg | You and the lock button could be great friends.
+1 awslfrg | Leave the phone somewhere boring for a while. It will cope.
+2 a | You are spending prime morning hours on content made at 3am by strangers.
+2 a | The morning is the part of the day with the best light, and you are using the phone's.
+2 a | Starting the day with the feed is like starting a race by sitting down.
+2 a | Morning scroll: because the day was going too well.
+2 a | Breakfast is getting cold. The feed was always cold.
+2 w | Weekend detected. Screen time detected. These two should not be friends.
+2 w | You waited all week for the weekend so you could do this? The weekdays are laughing.
+2 w | The weekend is not a bigger screen. It is a bigger world.
+2 w | Somewhere, your weekend plans are sitting by the door with their shoes on.
+2 w | It is Saturday or Sunday, and you are giving it to the feed for free.
+2 awnlmrux | You are going to look back on today and this part will not be the highlight.
+2 awsfdg | The feed is not a morning routine. It is a morning ambush.
+2 awnsflr | Every app on this screen wants a piece of your day. None of them offered to pay.
+2 awnlmrx | This is prime free time and you are spending it window shopping for other people's lives.
+2 awnsfrg | Nobody is posting anything you will need to know by tomorrow.
+2 awlmrux | Screen time on a day like today is time you are not getting back on a day like today.
+2 awnsflrd | You have scrolled past a lot of people doing things. Consider doing a thing.
+2 awnlmrx | The feed is a party where nobody talks to you. Leave early.
+2 awsfdg | You could reclaim this whole day with one tap of the lock button.
+2 w | The day off is off. The phone is very much on.
+2 awslfrg | You are in charge of your free time. Currently it has been outsourced.
+2 awnlmrux | There are better ways to waste a day. Proper ones. With snacks.
+2 awnsflrd | The phone is a great servant and a terrible landlord.
+2 awnlmrx | This is not rest. Rest does not have a progress bar.
+2 awsflrdg | You do not need to see every video to have a good day. You need to see almost none.
+2 awnlmu | Your free time went into the phone and has not come back out.
+2 awnsfrdg | Every scroll is you choosing the feed over something. Choose the something.
+2 awnlmrux | The feed does not have weekends. It works every day. You do not have to.
+2 awsflrg | You have options. The phone just shows you the same one in different colors.
+2 awnlrdx | Imagine telling someone about your day, and the best part is the scrolling.
+2 awnslfrg | Put it down, go do something small, come back and see that nothing happened.
+2 awnlmrux | The phone has been having a lovely day. At your expense.
+2 awnsflrdg | Your time is not a subscription the phone gets to auto-renew.
+3 a | You are spending the first good hours of the day making someone else's app more valuable.
+3 a | The morning was full of potential. It is now full of videos.
+3 a | You have not even had breakfast and you have already watched a stranger's.
+3 a | Morning scroll complete. The day is already running late because of it.
+3 w | The weekend is two days long and you are treating it like a waiting room.
+3 w | This weekend will be remembered for nothing, and you are working hard to make sure of it.
+3 w | You fought all week for this weekend, and then you handed it to an app.
+3 w | Congratulations, you have turned a weekend into a screen time statistic.
+3 awnlmrux | By the end of today, the phone will have had the best part of it.
+3 awnlmrx | You could have done almost anything today. You did the one thing you do every day.
+3 awnlmrux | Your day is being streamed live to nobody, from inside a feed.
+3 awnflrux | The feed is not your downtime. It is someone else's uptime.
+3 w | A day off, spent working unpaid for the algorithm.
+3 awnlmrux | The free time is gone. It is on the screen now, in pieces.
+3 awnflr | Your day had one job: happen. You are not letting it.
+3 awnlmrux | Today will be a blur, and the blur will be the feed.
+3 awnlmrx | This is how days disappear. Not dramatically. One swipe at a time.
+3 awnlmru | The phone is not recharging you. You are recharging it with attention.
+3 awnflrux | You could be doing something you would tell people about. Nobody tells people about this.
+3 awnlmrux | Somewhere between swipes, the day quietly left.
+3 awnlmrx | Nobody ever looked back at a great day and said "the scrolling really made it".
+3 awnflrux | The feed got more of your day than your favorite hobby did.
+3 awnlmrux | The day is not paused while you do this. It is very much still running.
+3 awnlmrx | You opened the app for a second, and the second grew up and moved out.
+3 awnflru | Every hour on here is an hour the world gets to enjoy without you.
+3 awnlmrux | The phone should be embarrassed. You should be outside. Neither is happening.
+3 awnlmrx | Future you is going to ask where today went. Here. It went here.
+3 awnflrux | The screen got the premium version of your day. You got the trial.
+3 awnlmrux | This is the kind of day people forget. You are making it that way on purpose.
+3 awnflrx | Your time is limited edition. You are spending it on reruns.
+3 awnlmrux | Today had a plot. You skipped it for the ads.
+3 awnlmrx | The best parts of today are happening off screen. Allegedly.
+3 awnflrux | Somewhere, a better version of today is waiting for you to lock the phone.

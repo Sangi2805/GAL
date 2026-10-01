@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- targetSdk 36 is a project requirement; platform 37 is only what the SDK has installed. -->
+    <issue id="OldTargetApi" severity="ignore" />
+    <!-- AGP, Kotlin and Gradle deliberately match what the installed Android Studio ships with. -->
+    <issue id="NewerVersionAvailable" severity="ignore" />
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="GradleDependency" severity="ignore" />
+</lint>
