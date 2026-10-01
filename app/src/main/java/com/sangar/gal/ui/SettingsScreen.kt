@@ -74,7 +74,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
                 }
             }
             labelled.forEach { (pkg, label) ->
-                ExclusionRow(pkg, label) {
+                RemovableAppRow(pkg, label) {
                     scope.launch { container.settings.setExclusions(current.exclusions - pkg) }
                 }
             }
@@ -143,6 +143,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
 
     if (showPicker) {
         AppPickerDialog(
+            title = "Stay quiet in…",
             excluded = current.exclusions,
             onPick = { pkg ->
                 scope.launch { container.settings.setExclusions(current.exclusions + pkg) }
@@ -175,8 +176,9 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
     }
 }
 
+/** An app with its icon, label and a remove button. */
 @Composable
-private fun ExclusionRow(packageName: String, label: String, onRemove: () -> Unit) {
+internal fun RemovableAppRow(packageName: String, label: String, onRemove: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         AppIcon(packageName)
         Spacer(Modifier.width(12.dp))
@@ -208,8 +210,9 @@ private fun AppIcon(packageName: String) {
     }
 }
 
+/** Every launchable app except [excluded], with a search box. */
 @Composable
-private fun AppPickerDialog(excluded: Set<String>, onPick: (String) -> Unit, onDismiss: () -> Unit) {
+internal fun AppPickerDialog(title: String, excluded: Set<String>, onPick: (String) -> Unit, onDismiss: () -> Unit) {
     val context = LocalContext.current
     var query by remember { mutableStateOf("") }
     val apps by produceState(initialValue = emptyList<InstalledApp>()) {
@@ -221,7 +224,7 @@ private fun AppPickerDialog(excluded: Set<String>, onPick: (String) -> Unit, onD
     }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Stay quiet in…") },
+        title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(

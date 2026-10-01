@@ -334,7 +334,7 @@ class SidekickOverlay(
     private suspend fun planOpen(entry: AppResolver.AppEntry, s: Settings, forceRoast: Boolean): OpenPlan {
         val pkg = entry.packageName
         val enabled = s.roastsActive && s.appRoastsEnabled
-        val social = enabled && !forceRoast && habits.isSocial(pkg)
+        val social = enabled && !forceRoast && habits.isSocial(pkg, s.extraSocialApps)
         val usage = if (social) habits.usage(pkg) else null
         val decision = if (forceRoast) AppHabits.Decision(roast = true, tier = 2, reason = "forced from adb") else AppHabits.decide(
             packageName = pkg,

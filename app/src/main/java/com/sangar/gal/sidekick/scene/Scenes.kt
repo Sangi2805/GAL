@@ -183,6 +183,9 @@ class RoastOpenScene(
     private var crateX = 0f
     private var spotX = 0f
     private var talkStarted = -1f
+
+    /** Longer lines stay up a little longer, within the scene's time limit. */
+    private val bubbleSeconds = bubbleSecondsFor(line)
     private var nextSwing = 0f
     private var swings = 0
     private var poppedAt = -1f
@@ -203,7 +206,7 @@ class RoastOpenScene(
             Step.ENTER -> if (a.onGround && time > 0.1f) {
                 step = Step.WALK
                 a.pose.mood = mood
-                world.bubble.say(line, BUBBLE_SECONDS)
+                world.bubble.say(line, bubbleSeconds)
                 talkStarted = time
             }
             Step.WALK -> {
@@ -216,7 +219,7 @@ class RoastOpenScene(
                 // Look at us while the line is up.
                 a.pose.gazeX = 0f
                 a.pose.gazeY = 0f
-                if (time - talkStarted >= BUBBLE_SECONDS - 0.25f && crate.state == AppCrate.State.RESTING) {
+                if (time - talkStarted >= bubbleSeconds - 0.25f && crate.state == AppCrate.State.RESTING) {
                     a.facing = if (crateX > a.x) 1 else -1
                     a.drawHammer()
                     a.pose.gazeX = a.facing * 0.9f
@@ -249,7 +252,11 @@ class RoastOpenScene(
 
     companion object {
         const val BUBBLE_SECONDS = 1.35f
+        const val LONG_BUBBLE_SECONDS = 1.75f
         const val SWING_GAP_SECONDS = 0.33f
+
+        /** 1.35 s for a short line, growing to 1.75 s for the longest (about 90 characters). */
+        fun bubbleSecondsFor(line: String): Float = (0.95f + line.length * 0.01f).coerceIn(BUBBLE_SECONDS, LONG_BUBBLE_SECONDS)
         const val POP_SECONDS = 0.32f
         const val LINGER_SECONDS = 0.2f
         val WORDS = listOf("BONK", "WHACK", "CRACK!")

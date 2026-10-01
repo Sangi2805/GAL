@@ -49,6 +49,8 @@ data class Settings(
     val roastMinMinutes: Int = AppRoastLimits.DEFAULT_MINUTES,
     /** ...or a seven day average over this many minutes a day. */
     val roastMinAverage: Int = AppRoastLimits.DEFAULT_AVERAGE,
+    /** Apps the user counts as social for app roasts, on top of the ones Android or GAL already know. */
+    val extraSocialApps: Set<String> = emptySet(),
     /** Short original sound effects in scenes. Off by default. */
     val sceneSounds: Boolean = false,
     /** A tap of vibration on landings and hits. */
@@ -84,6 +86,7 @@ class SettingsRepository(context: Context) {
         val ROAST_MIN_OPENS = intPreferencesKey("roast_min_opens")
         val ROAST_MIN_MINUTES = intPreferencesKey("roast_min_minutes")
         val ROAST_MIN_AVERAGE = intPreferencesKey("roast_min_average")
+        val EXTRA_SOCIAL_APPS = stringSetPreferencesKey("extra_social_apps")
         val SCENE_SOUNDS = booleanPreferencesKey("scene_sounds")
         val SCENE_HAPTICS = booleanPreferencesKey("scene_haptics")
     }
@@ -113,6 +116,7 @@ class SettingsRepository(context: Context) {
             roastMinOpens = AppRoastLimits.clampOpens(p[Keys.ROAST_MIN_OPENS] ?: AppRoastLimits.DEFAULT_OPENS),
             roastMinMinutes = AppRoastLimits.clampMinutes(p[Keys.ROAST_MIN_MINUTES] ?: AppRoastLimits.DEFAULT_MINUTES),
             roastMinAverage = AppRoastLimits.clampAverage(p[Keys.ROAST_MIN_AVERAGE] ?: AppRoastLimits.DEFAULT_AVERAGE),
+            extraSocialApps = p[Keys.EXTRA_SOCIAL_APPS] ?: emptySet(),
             sceneSounds = p[Keys.SCENE_SOUNDS] ?: false,
             sceneHaptics = p[Keys.SCENE_HAPTICS] ?: true,
         )
@@ -176,6 +180,8 @@ class SettingsRepository(context: Context) {
     suspend fun setRoastMinMinutes(value: Int) = store.edit { it[Keys.ROAST_MIN_MINUTES] = AppRoastLimits.clampMinutes(value) }
 
     suspend fun setRoastMinAverage(value: Int) = store.edit { it[Keys.ROAST_MIN_AVERAGE] = AppRoastLimits.clampAverage(value) }
+
+    suspend fun setExtraSocialApps(packages: Set<String>) = store.edit { it[Keys.EXTRA_SOCIAL_APPS] = packages }
 
     suspend fun setSceneSounds(on: Boolean) = store.edit { it[Keys.SCENE_SOUNDS] = on }
 

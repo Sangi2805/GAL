@@ -178,6 +178,24 @@ class StageTest {
     }
 
     @Test
+    fun theLongestRoastLineStillFinishesInAboutThreeAndAHalfSeconds() {
+        // 90 characters, the longest the phrase builder allows with a ten letter app name.
+        val line = "You have been on Tenletters long enough to have a favourite chair there. Truly, honestly."
+        assertEquals(RoastOpenScene.LONG_BUBBLE_SECONDS, RoastOpenScene.bubbleSecondsFor(line))
+        assertEquals(RoastOpenScene.BUBBLE_SECONDS, RoastOpenScene.bubbleSecondsFor("Married to this app?"))
+        for (entry in listOf(Entry(1000f, 900f, true), Entry(80f, 1500f, true), Entry.OFFSCREEN_RIGHT)) {
+            val w = world()
+            w.start(RoastOpenScene(entry, line, Mood.HORRIFIED))
+            val events = run(w)
+            assertEquals(listOf(1, 2, 3), events.mapNotNull { (it.second as? StageEvent.HammerHit)?.hit })
+            val launchAt = events.first { it.second == StageEvent.LaunchApp }.first
+            val overAt = events.first { it.second == StageEvent.SceneOver }.first
+            assertTrue("launched at $launchAt", launchAt <= 3.3f)
+            assertTrue("stage gone at $overAt", overAt <= 3.6f)
+        }
+    }
+
+    @Test
     fun theRoastLineIsUpWhileTheBlobWalksIn() {
         val w = world()
         w.start(RoastOpenScene(Entry(1000f, 900f, true), "Married to this app?", Mood.SMUG))

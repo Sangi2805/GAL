@@ -14,7 +14,12 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,7 +38,9 @@ import com.sangar.gal.sidekick.scene.NormalOpenScene
 import com.sangar.gal.sidekick.scene.RoastOpenScene
 import com.sangar.gal.sidekick.scene.SceneDirector
 import com.sangar.gal.sidekick.scene.SceneSounds
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 
 /** Settings for Voice Sidekick's scenes: Quick open, app roasts and their limits, sounds, vibration, a preview. */
@@ -42,6 +49,7 @@ fun SceneSettingsCard(current: Settings) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val repo = context.container.settings
+    var showPicker by remember { mutableStateOf(false) }
 
     SectionCard {
         Text("Sidekick scenes", style = MaterialTheme.typography.titleMedium)
@@ -110,6 +118,22 @@ fun SceneSettingsCard(current: Settings) {
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Text("Also count these as social", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            Text(
+                "Social apps are found by the category they declare and a list GAL knows. Add any it misses.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            val extras = current.extraSocialApps
+            val labelled by produceState(initialValue = extras.map { it to it }, extras) {
+                value = withContext(Dispatchers.IO) {
+                    extras.map { it to AppInfo.label(context, it) }.sortedBy { it.second.lowercase() }
+                }
+            }
+            labelled.forEach { (pkg, label) ->
+                RemovableAppRow(pkg, label) { scope.launch { repo.setExtraSocialApps(extras - pkg) } }
+            }
+            OutlinedButton(onClick = { showPicker = true }) { Text("Add app") }
         }
         HorizontalDivider()
 
@@ -141,6 +165,18 @@ fun SceneSettingsCard(current: Settings) {
             "Uses GAL's own icon and opens nothing.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+
+    if (showPicker) {
+        AppPickerDialog(
+            title = "Count as social",
+            excluded = current.extraSocialApps,
+            onPick = { pkg ->
+                scope.launch { repo.setExtraSocialApps(current.extraSocialApps + pkg) }
+                showPicker = false
+            },
+            onDismiss = { showPicker = false },
         )
     }
 }

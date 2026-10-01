@@ -25,9 +25,11 @@ class AppHabitsReader(private val context: Context) {
 
     /**
      * Social by the app's own declared category, or by a short list of well-known social apps that do not
-     * declare one. Messaging apps are never counted: being roasted for answering your mum is not the joke.
+     * declare one. Messaging apps are not counted: being roasted for answering your mum is not the joke. Apps
+     * the user added in Settings ([extra]) always count, whatever they are.
      */
-    fun isSocial(packageName: String): Boolean {
+    fun isSocial(packageName: String, extra: Set<String> = emptySet()): Boolean {
+        if (packageName in extra) return true
         if (packageName in MESSAGING) return false
         if (packageName in KNOWN_SOCIAL) return true
         val info: ApplicationInfo = runCatching {
