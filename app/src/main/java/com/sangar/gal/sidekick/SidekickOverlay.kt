@@ -317,7 +317,8 @@ class SidekickOverlay(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                NagLog.e(C, "planning the open failed; opening it plainly", e)
+                // The class name only: a message could name the app, and this line reaches release logs.
+                NagLog.e(C, "planning the open failed (${e.javaClass.simpleName}); opening it plainly")
                 OpenPlan(roast = false, tier = 0, roastLine = null, icon = null, counts = false)
             }
             if (released) return@launch

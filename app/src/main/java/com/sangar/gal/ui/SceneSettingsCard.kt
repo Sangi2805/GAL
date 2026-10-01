@@ -114,7 +114,7 @@ fun SceneSettingsCard(current: Settings) {
                 onRaise = { scope.launch { repo.setRoastMinAverage(current.roastMinAverage + AppRoastLimits.AVERAGE_STEP) } },
             )
             Text(
-                "Messaging apps are never roasted, and neither are the apps on your \"Stay quiet\" list.",
+                "Messaging apps are left out unless you add them below. Apps on your \"Stay quiet\" list are never roasted.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -145,7 +145,7 @@ fun SceneSettingsCard(current: Settings) {
         )
         SwitchRow(
             title = "Vibration",
-            body = "A tap of vibration on landings and hammer hits.",
+            body = "A tap of vibration on landings and hammer hits, when the phone's touch vibration is on.",
             checked = current.sceneHaptics,
             onChange = { on -> scope.launch { repo.setSceneHaptics(on) } },
         )

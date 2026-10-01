@@ -1,6 +1,6 @@
 # GAL game layer plan
 
-Status: approved by Sangar on 1 October 2026 (crate approach for v1, launcher mode later). Phase 0 is next.
+Status: approved by Sangar on 1 October 2026 (crate approach for v1, launcher mode later). Phases 0 to 3 are built and pass the unit tests; what is left needs a real phone and Android Studio. See [Build status](#build-status) and `docs/OVERNIGHT_REPORT.md`.
 
 ## Goal
 
@@ -64,7 +64,7 @@ The painting code moves out of SidekickView into a shared BlobPainter, so the sm
 
 **NotFound (about 1.5 s).** The blob shrugs, a bubble says "Never heard of it", and the stage leaves.
 
-Roast lines go in a new phrase batch (tools/phrases/batch_15_app_roast.txt) with an {app} placeholder and the same pattern and duplicate checks as the other packs. We will need about 150 lines across three tiers.
+Roast lines go in a new phrase batch (tools/phrases/app_15_roasts.txt, read after every other batch so no phrase id moves) with an {app} placeholder and the same pattern and duplicate checks as the other packs: 150 lines, 50 per tier.
 
 ## When it roasts
 
@@ -73,7 +73,7 @@ An app gets RoastOpen only if all of these are true:
 1. It is social. Either the category is CATEGORY_SOCIAL or it is on the fallback list.
 2. It is heavy use. Opened at least 8 times today, or more than 45 minutes today, or a 7-day daily average above 60 minutes. All three numbers can be changed in Settings.
 3. It is not on cooldown. Each app gets at most one roast every 2 hours and at most 5 roasts a day in total.
-4. Quiet rules allow it (not in a call, not in quiet hours).
+4. Quiet rules allow it: not in a call, and the app is not on the "Stay quiet in these apps" list. (GAL has no quiet hours.)
 
 Otherwise the app gets NormalOpen. If Screen Time Roasts is turned off, we never roast and everything gets NormalOpen.
 
@@ -116,3 +116,16 @@ Otherwise the app gets NormalOpen. If Screen Time Roasts is turned off, we never
 | OEM pop-up restrictions (Xiaomi) | Detect it and show the setting in setup |
 | Category missing on some apps | Fallback package list, plus a "treat as social" toggle per app in Settings |
 | Play review of overlay plus mic service | Same as today. A sideload or limited distribution release first. |
+
+## Build status
+
+Built overnight after the plan was approved. Each line says what is done and what still needs a real phone.
+
+| Phase | Commit | Done | Still to check on a phone |
+| --- | --- | --- | --- |
+| 0. Finish the merge | af7ce29 | Session card rules (12 per session, gap = threshold, give-up in both packs), daily card gone, gap guard saved, README. | Release keystore backup and release APK; the real-phone pass in item 6. |
+| 1. Stage and movement | a20d76d | StageOverlay, StageView, World, BlobActor, MovementTuning, BlobPainter shared with the floating blob, debug playground. | The movement feel, and frame time under 8 ms. |
+| 2. Scenes | 84fed5f, 31b0b33 | AppCrate, Props, SceneDirector, NormalOpen, RoastOpen, NotFound, AppHabits, 150 app roast lines, voice opens go through the stage, "count as social" list. | All three scenes end to end, tap to skip, the app opening first time, no lost touches after. |
+| 3. Polish and settings | 84fed5f | Original sound effects (off by default), vibration toggle, Quick open, "Remove animations" respected, Xiaomi hint, a scene preview in Settings. | Sounds and vibration feel, the Xiaomi switch on a Xiaomi phone. |
+| 4. Launcher mode | not started | | |
+
