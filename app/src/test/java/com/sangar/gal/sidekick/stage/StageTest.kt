@@ -164,7 +164,7 @@ class StageTest {
         val w = world()
         w.start(RoastOpenScene(Entry(1000f, 900f, true), "Are you married to this app?", Mood.DISAPPOINTED))
         val events = run(w)
-        val hits = events.mapNotNull { (it.second as? StageEvent.HammerHit)?.hit }
+        val hits = events.mapNotNull { (it.second as? StageEvent.TrunkHit)?.hit }
         assertEquals(listOf(1, 2, 3), hits)
         val names = events.map { it.second }
         assertTrue(StageEvent.CrateThud in names)
@@ -173,7 +173,7 @@ class StageTest {
         val launchAt = events.first { it.second == StageEvent.LaunchApp }.first
         assertTrue("launched at $launchAt", launchAt <= 3.5f)
         // The launch comes after the third blow, never before.
-        val thirdAt = events.first { (it.second as? StageEvent.HammerHit)?.hit == 3 }.first
+        val thirdAt = events.first { (it.second as? StageEvent.TrunkHit)?.hit == 3 }.first
         assertTrue(launchAt > thirdAt)
     }
 
@@ -187,7 +187,7 @@ class StageTest {
             val w = world()
             w.start(RoastOpenScene(entry, line, Mood.HORRIFIED))
             val events = run(w)
-            assertEquals(listOf(1, 2, 3), events.mapNotNull { (it.second as? StageEvent.HammerHit)?.hit })
+            assertEquals(listOf(1, 2, 3), events.mapNotNull { (it.second as? StageEvent.TrunkHit)?.hit })
             val launchAt = events.first { it.second == StageEvent.LaunchApp }.first
             val overAt = events.first { it.second == StageEvent.SceneOver }.first
             assertTrue("launched at $launchAt", launchAt <= 3.3f)

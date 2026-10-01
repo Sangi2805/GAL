@@ -1,5 +1,5 @@
 # Batch 15: app roasts. Said by Sidekick in a speech bubble (and out loud) when you ask it to open a social app
-# you use a lot, just before it smashes the crate open with a hammer. Never on an overlay card.
+# you use a lot, just before she smacks the crate open with her trunk. Never on an overlay card.
 # p app_roast  carries no other code and no "general", so no card and no fallback can reach one.
 # Every line has {app} where the app's name goes. The tier follows how far past the limits the usage is.
 # Keep them short enough for a bubble (the builder checks with a ten letter app name).
@@ -65,7 +65,7 @@
 2 p | Your relationship with {app} is getting a bit intense.
 2 p | You visit {app} more than you visit anyone.
 2 p | {app} is not a personality, you know.
-2 p | Opening {app}. My hammer is ready.
+2 p | Opening {app}. My trunk is warmed up.
 2 p | Let me break this open for you, gently. It is {app}.
 2 p | You must have {app} memorised by now.
 2 p | {app} has seen more of you than daylight has.
@@ -105,10 +105,10 @@
 2 p | You and {app} are going steady, I see.
 2 p | Smash first, scroll later. Welcome to {app}.
 2 p | Let me smash this open so you can stare at {app}.
-2 p | The hammer is for the crate. The guilt is for you. Enjoy {app}.
+2 p | The trunk is for the crate. The guilt is for you. Enjoy {app}.
 2 p | {app} gets more of your time than your houseplants do.
 
-# ---------- Tier 3: brutal. The hammer was not for the crate. ----------
+# ---------- Tier 3: brutal. The trunk was not for the crate. ----------
 3 p | Are you married to {app}? You never leave the house.
 3 p | I have run out of polite ways to say {app}.
 3 p | You do not use {app}. You live in it.
@@ -118,7 +118,7 @@
 3 p | {app} should list you as a resident.
 3 p | You opened {app}. I am filing a complaint.
 3 p | If staring at {app} were a sport, you would have a sponsor.
-3 p | Let me hammer this open, since {app} is apparently oxygen now.
+3 p | Let me smack this open, since {app} is apparently oxygen now.
 3 p | You and {app}, till battery do you part.
 3 p | {app}. I will not be taking questions.
 3 p | You have spent so long on {app} it should charge a membership.
@@ -140,7 +140,7 @@
 3 p | You will open {app}, close it, and open it a minute later. I have seen this film.
 3 p | {app} must be running out of things to show you.
 3 p | Your future called. You sent it to voicemail and opened {app}.
-3 p | {app}? Even the hammer is tired of you.
+3 p | {app}? Even my trunk is tired of you.
 3 p | This crate is all that stands between you and {app}. Not for long.
 3 p | I will open {app}. Just know that I know.
 3 p | You and {app} have been together longer than some marriages.
@@ -158,4 +158,4 @@
 3 p | Here, have {app}. I give up trying to stop you.
 3 p | You open {app} the way other people blink.
 3 p | {app} is eating your time and you keep feeding it.
-3 p | The crate gets the hammer, you get {app}, your evening gets nothing.
+3 p | The crate gets the trunk, you get {app}, your evening gets nothing.

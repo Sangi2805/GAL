@@ -7,4 +7,8 @@
     <color name="mascot_rim">#14663C</color>
     <color name="ink">#0E2B1B</color>
     <color name="roast_tangerine">#F28C28</color>
+    <!-- Sidekick the elephant (tools/mascot/generate_elephant.py, sidekick/BlobPainter.kt). -->
+    <color name="elephant_pink">#F8B2D1</color>
+    <color name="elephant_rim">#9C3D6E</color>
+    <color name="elephant_bow">#FF5C8A</color>
 </resources>

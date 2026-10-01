@@ -41,7 +41,7 @@ data class Settings(
     val phrasePack: PhrasePack = PhrasePack.SPICY,
     /** Voice Sidekick: play a short scene when opening an app. Off means "Quick open": just open it. */
     val scenesEnabled: Boolean = true,
-    /** Roast and hammer open a social app used a lot (needs Screen Time Roasts for the usage numbers). */
+    /** Roast and trunk-smack open a social app used a lot (needs Screen Time Roasts for the usage numbers). */
     val appRoastsEnabled: Boolean = true,
     /** Heavy use, any one of: opened this many times today... */
     val roastMinOpens: Int = AppRoastLimits.DEFAULT_OPENS,

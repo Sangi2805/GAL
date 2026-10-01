@@ -31,7 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.sangar.gal.R
 
 /**
- * The landing page draws the splash icon itself (res/drawable/splash_icon.xml, concept C) at the size Android 12+
+ * The landing page draws the splash icon itself (res/drawable/splash_icon.xml, the elephant) at the size Android 12+
  * draws it: 288 dp, with the art inside the middle 192 dp circle. Same drawable, same size, same place, so the
  * splash and this screen read as one.
  */
@@ -86,7 +86,7 @@ private fun LandingContent(footer: @Composable () -> Unit) {
         // that is what the platform centres against.
         // The splash art sits inside the middle 192 dp of its 288 dp canvas, so the bottom 48 dp of the drawable
         // is empty. The logo's box is that much shorter (the image overhangs it evenly, 24 dp top and bottom),
-        // which pulls the text up under the blob without moving the blob off the splash's pixels.
+        // which pulls the text up under the elephant without moving her off the splash's pixels.
         val aboveLogo = maxHeight / 2 - LandingLogoSize / 2 + LogoTrim / 2
         Column(
             modifier = Modifier

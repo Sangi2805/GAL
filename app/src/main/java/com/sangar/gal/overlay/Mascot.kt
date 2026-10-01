@@ -6,7 +6,7 @@ import com.sangar.gal.sidekick.Mood
 
 /**
  * GetALife's four roast faces in escalation order, now worn by Sidekick. The card drawables come from
- * tools/mascot/generate_blob_faces.py; [mood] is the same face on the live blob when Voice Sidekick is on.
+ * tools/mascot/generate_elephant.py; [mood] is the same face on the live elephant when Voice Sidekick is on.
  */
 enum class Mascot(@param:DrawableRes val drawable: Int, val description: String, val mood: Mood) {
     SMUG(R.drawable.mascot_smug, "smug", Mood.SMUG),

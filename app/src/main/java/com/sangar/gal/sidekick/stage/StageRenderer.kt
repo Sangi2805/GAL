@@ -22,7 +22,7 @@ import kotlin.math.sin
 
 /**
  * Draws a [World] onto the stage: a soft shade along the bottom so the action reads over any app, the crate
- * with the real app icon, particles, the blob, its hammer, the speech bubble and the hit words. Everything is
+ * with the real app icon, particles, the elephant and her trunk, the speech bubble and the hit words. Everything is
  * allocated up front; a frame allocates nothing except a new text layout when the bubble's line changes.
  */
 class StageRenderer(
@@ -71,9 +71,6 @@ class StageRenderer(
     private val dustPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = DUST }
     private val chipPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = WOOD }
     private val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = STAR }
-    private val handlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = WOOD_DARK }
-    private val headPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = STEEL }
-    private val headFacePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = STEEL_LIGHT }
     private val bubblePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFFFFFFF.toInt() }
     private val bubbleEdgePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = INK
@@ -308,7 +305,7 @@ class StageRenderer(
         canvas.drawPath(path, starPaint)
     }
 
-    // ---- Blob and hammer --------------------------------------------------
+    // ---- The elephant -----------------------------------------------------
 
     private fun drawBlob(canvas: Canvas, world: World, fade: Float) {
         val a = world.actor
@@ -316,33 +313,18 @@ class StageRenderer(
         val bh = body * a.scaleY
         val cx = a.x
         val cy = a.y - a.hopLift - bh / 2f
-        if (a.hammerOut) drawHammer(canvas, a, cx, cy, bw, fade)
+        a.pose.facing = a.facing
+        a.pose.trunkAngle = when {
+            a.trunkUp -> a.trunkAngle
+            // Rising in a jump: trunk thrown up, so it is the trunk that boops the crate from below.
+            !a.onGround && a.vy < 0f -> 150f
+            !a.onGround -> 60f
+            // Running: the trunk swings with the hops.
+            else -> BlobActor.TRUNK_REST + 12f * kotlin.math.sin(world.time * 9f)
+        }
+        a.pose.earFlap = if (a.onGround) 0f else 1f
         painter.alpha = (255 * fade * a.alpha).roundToInt()
         painter.draw(canvas, cx, cy, bw, bh, body, a.pose)
-    }
-
-    private fun drawHammer(canvas: Canvas, a: BlobActor, cx: Float, cy: Float, bw: Float, fade: Float) {
-        val alpha = (255 * fade).roundToInt()
-        handlePaint.alpha = alpha
-        headPaint.alpha = alpha
-        headFacePaint.alpha = alpha
-        val pivotX = cx + a.facing * bw * 0.42f
-        val pivotY = cy + body * 0.08f
-        val length = body * 0.85f
-        canvas.save()
-        canvas.rotate(a.hammerAngle * a.facing, pivotX, pivotY)
-        // Handle.
-        rect.set(pivotX - body * 0.045f, pivotY - length, pivotX + body * 0.045f, pivotY + body * 0.06f)
-        canvas.drawRoundRect(rect, body * 0.04f, body * 0.04f, handlePaint)
-        // Head, with its striking face on the facing side.
-        val headW = body * 0.5f
-        val headH = body * 0.3f
-        rect.set(pivotX - headW / 2f, pivotY - length - headH / 2f, pivotX + headW / 2f, pivotY - length + headH / 2f)
-        canvas.drawRoundRect(rect, body * 0.06f, body * 0.06f, headPaint)
-        val faceX = if (a.facing > 0) rect.right - headW * 0.18f else rect.left
-        rect.set(faceX, rect.top, faceX + headW * 0.18f, rect.bottom)
-        canvas.drawRoundRect(rect, body * 0.04f, body * 0.04f, headFacePaint)
-        canvas.restore()
     }
 
     // ---- Words ------------------------------------------------------------
@@ -459,7 +441,5 @@ class StageRenderer(
         val INK = 0xFF0E2B1B.toInt()
         val DUST = 0xFFD9D2C5.toInt()
         val STAR = 0xFFFFD166.toInt()
-        val STEEL = 0xFF4A4F57.toInt()
-        val STEEL_LIGHT = 0xFF8B939E.toInt()
     }
 }

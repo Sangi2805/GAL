@@ -46,7 +46,7 @@ class SceneSounds(context: Context) : SceneDirector.Sounds {
             StageEvent.CrateThud -> play(thud, 0.8f)
             StageEvent.HeadBump -> play(bump, 0.8f)
             // Each blow a little higher, so the third one sounds like the one that does it.
-            is StageEvent.HammerHit -> play(hit, 0.9f, rate = 1f + 0.09f * (event.hit - 1).coerceIn(0, 3))
+            is StageEvent.TrunkHit -> play(hit, 0.9f, rate = 1f + 0.09f * (event.hit - 1).coerceIn(0, 3))
             StageEvent.CrateBroken -> play(crack, 0.9f)
             StageEvent.LaunchApp -> play(pop, 0.7f)
             StageEvent.SceneOver -> Unit

@@ -7,7 +7,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-/** Concept C colours: Sidekick's mint, its rim and ink, with GetALife's tangerine kept for roasts. */
+/** App colours: the mint ground the pink elephant sits on, the rim and ink, with GetALife's tangerine kept for roasts. */
 val Mint = Color(0xFF5CE79B)
 val MintDark = Color(0xFF1FA463)
 val Rim = Color(0xFF14663C)

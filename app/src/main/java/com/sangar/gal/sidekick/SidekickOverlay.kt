@@ -70,7 +70,7 @@ object SidekickStatus {
  * from Sidekick.
  *
  * "Open X" plays a scene on the stage ([SceneDirector]): a plain open, or for a social app used a lot a roast
- * and a hammer ([AppHabits]). The line is spoken while the scene plays, and the app opens from inside the
+ * and three trunk smacks ([AppHabits]). The line is spoken while the scene plays, and the app opens from inside the
  * scene while the stage is still on screen. Quick open, the phone's "Remove animations" setting or a stage
  * that cannot be shown all fall back to the old way: say it, then open.
  */

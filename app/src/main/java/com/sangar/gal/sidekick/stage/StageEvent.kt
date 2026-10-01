@@ -16,8 +16,8 @@ sealed interface StageEvent {
     /** The blob's head hit the crate from below. */
     data object HeadBump : StageEvent
 
-    /** A hammer blow landed; [hit] counts from 1. */
-    data class HammerHit(val hit: Int) : StageEvent
+    /** A trunk smack landed; [hit] counts from 1. */
+    data class TrunkHit(val hit: Int) : StageEvent
 
     /** The crate burst and the app's icon popped out. */
     data object CrateBroken : StageEvent

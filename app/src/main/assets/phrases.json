@@ -48447,7 +48447,7 @@
  },
  {
   "id": 4256,
-  "text": "Opening {app}. My hammer is ready.",
+  "text": "Opening {app}. My trunk is warmed up.",
   "tier": 2,
   "length": "medium",
   "pack": "spicy",
@@ -48847,7 +48847,7 @@
  },
  {
   "id": 4296,
-  "text": "The hammer is for the crate. The guilt is for you. Enjoy {app}.",
+  "text": "The trunk is for the crate. The guilt is for you. Enjoy {app}.",
   "tier": 2,
   "length": "long",
   "pack": "spicy",
@@ -48957,7 +48957,7 @@
  },
  {
   "id": 4307,
-  "text": "Let me hammer this open, since {app} is apparently oxygen now.",
+  "text": "Let me smack this open, since {app} is apparently oxygen now.",
   "tier": 3,
   "length": "medium",
   "pack": "spicy",
@@ -49177,7 +49177,7 @@
  },
  {
   "id": 4329,
-  "text": "{app}? Even the hammer is tired of you.",
+  "text": "{app}? Even my trunk is tired of you.",
   "tier": 3,
   "length": "medium",
   "pack": "spicy",
@@ -49357,7 +49357,7 @@
  },
  {
   "id": 4347,
-  "text": "The crate gets the hammer, you get {app}, your evening gets nothing.",
+  "text": "The crate gets the trunk, you get {app}, your evening gets nothing.",
   "tier": 3,
   "length": "medium",
   "pack": "spicy",

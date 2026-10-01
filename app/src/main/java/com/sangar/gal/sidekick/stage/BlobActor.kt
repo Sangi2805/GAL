@@ -45,10 +45,10 @@ class BlobActor(var tuning: MovementTuning) {
     /** 0..1, for fading in and out. */
     var alpha = 1f
 
-    /** Hammer state, see [swingHammer]. */
-    var hammerOut = false
+    /** Trunk state for the smack, see [swingTrunk]. Angle in degrees from hanging down, towards [facing]. */
+    var trunkUp = false
         private set
-    var hammerAngle = HAMMER_REST
+    var trunkAngle = TRUNK_REST
         private set
     private var swingTime = -1f
     private var swingStruck = false
@@ -83,23 +83,23 @@ class BlobActor(var tuning: MovementTuning) {
         squashVelocity += amount * 12f
     }
 
-    fun drawHammer() {
-        hammerOut = true
-        hammerAngle = HAMMER_RAISED
+    fun raiseTrunk() {
+        trunkUp = true
+        trunkAngle = TRUNK_RAISED
     }
 
-    fun putHammerAway() {
-        hammerOut = false
-        hammerAngle = HAMMER_REST
+    fun lowerTrunk() {
+        trunkUp = false
+        trunkAngle = TRUNK_REST
         swingTime = -1f
     }
 
     /**
-     * Swings the hammer down. [onStrike] runs once, at the moment the head meets its target, which is when
+     * Swings the trunk down onto the target. [onStrike] runs once, at the moment the head meets its target, which is when
      * the scene breaks a bit more of the crate.
      */
-    fun swingHammer(onStrike: () -> Unit) {
-        if (!hammerOut) drawHammer()
+    fun swingTrunk(onStrike: () -> Unit) {
+        if (!trunkUp) raiseTrunk()
         swingTime = 0f
         swingStruck = false
         pendingStrike = onStrike
@@ -202,26 +202,26 @@ class BlobActor(var tuning: MovementTuning) {
             runPhase = 0f
         }
 
-        stepHammer(dt)
+        stepTrunk(dt)
     }
 
-    private fun stepHammer(dt: Float) {
+    private fun stepTrunk(dt: Float) {
         if (swingTime < 0f) return
         swingTime += dt
         val down = SWING_DOWN_SECONDS
-        hammerAngle = when {
+        trunkAngle = when {
             swingTime < down -> {
                 val p = swingTime / down
-                HAMMER_RAISED + (HAMMER_STRIKE - HAMMER_RAISED) * p * p
+                TRUNK_RAISED + (TRUNK_STRIKE - TRUNK_RAISED) * p * p
             }
-            swingTime < down + SWING_HOLD_SECONDS -> HAMMER_STRIKE
+            swingTime < down + SWING_HOLD_SECONDS -> TRUNK_STRIKE
             swingTime < down + SWING_HOLD_SECONDS + SWING_UP_SECONDS -> {
                 val p = (swingTime - down - SWING_HOLD_SECONDS) / SWING_UP_SECONDS
-                HAMMER_STRIKE + (HAMMER_RAISED - HAMMER_STRIKE) * p
+                TRUNK_STRIKE + (TRUNK_RAISED - TRUNK_STRIKE) * p
             }
             else -> {
                 swingTime = -1f
-                HAMMER_RAISED
+                TRUNK_RAISED
             }
         }
         if (!swingStruck && swingTime >= down) {
@@ -243,10 +243,10 @@ class BlobActor(var tuning: MovementTuning) {
     companion object {
         const val RUN_THRESHOLD = 30f
 
-        /** Hammer angles in degrees, 0 pointing straight up, positive tipping forward. */
-        const val HAMMER_REST = 0f
-        const val HAMMER_RAISED = -40f
-        const val HAMMER_STRIKE = 95f
+        /** Trunk angles in degrees: 0 hangs straight down, 90 points forward, 180 straight up. */
+        const val TRUNK_REST = 50f
+        const val TRUNK_RAISED = 165f
+        const val TRUNK_STRIKE = 80f
         const val SWING_DOWN_SECONDS = 0.11f
         const val SWING_HOLD_SECONDS = 0.06f
         const val SWING_UP_SECONDS = 0.14f

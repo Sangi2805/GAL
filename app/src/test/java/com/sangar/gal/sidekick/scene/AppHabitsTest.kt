@@ -6,7 +6,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** When opening an app earns a roast and a hammer, and when it is a plain open. */
+/** When opening an app earns a roast and a trunk smack, and when it is a plain open. */
 class AppHabitsTest {
 
     private val rules = RoastRules()

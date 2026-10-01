@@ -17,3 +17,4 @@
 *.jks
 *.keystore
 google-services.json
+__pycache__/

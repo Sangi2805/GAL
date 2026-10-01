@@ -71,7 +71,7 @@ fun SceneSettingsCard(current: Settings) {
         SwitchRow(
             title = "Roast my most used social apps",
             body = "Ask for a social app you use a lot and Sidekick says something cheeky first, then smashes it " +
-                "open with a hammer. At most once every 2 hours for each app, and 5 times a day.",
+                "open with her trunk. At most once every 2 hours for each app, and 5 times a day.",
             checked = current.appRoastsEnabled,
             onChange = { on -> scope.launch { repo.setAppRoastsEnabled(on) } },
         )
@@ -139,13 +139,13 @@ fun SceneSettingsCard(current: Settings) {
 
         SwitchRow(
             title = "Sound effects",
-            body = "Short sounds for jumps, bumps and hammer hits. Silent and vibrate mode keep them quiet.",
+            body = "Short sounds for jumps, bumps and trunk smacks. Silent and vibrate mode keep them quiet.",
             checked = current.sceneSounds,
             onChange = { on -> scope.launch { repo.setSceneSounds(on) } },
         )
         SwitchRow(
             title = "Vibration",
-            body = "A tap of vibration on landings and hammer hits, when the phone's touch vibration is on.",
+            body = "A tap of vibration on landings and trunk smacks, when the phone's touch vibration is on.",
             checked = current.sceneHaptics,
             onChange = { on -> scope.launch { repo.setSceneHaptics(on) } },
         )

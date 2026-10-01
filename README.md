@@ -1,9 +1,9 @@
 # GAL (GetALife)
 
 One offline Android app that combines **GetALife** (screen-time roast cards) and **Pocket Sidekick** (a
-floating character you tap and talk to). The Sidekick blob is the only character: it delivers the roast
-cards, wearing GetALife's four faces (smug, bored, disappointed, horrified), and it opens apps by voice.
-The old monkey mascot is gone.
+floating character you tap and talk to). Sidekick, a pink elephant, is the only character: she delivers the roast
+cards, wearing GetALife's four faces (smug, bored, disappointed, horrified), and she opens apps by voice with
+her trunk. The old monkey mascot and the green blob are gone.
 
 The original `GetALife` and `AI Assistant` folders are untouched; this project reuses their code.
 
@@ -28,12 +28,12 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
   both phrase packs (Spicy, You may cry), give-up sign-offs, stats, exclusions and quiet rules (locked, in a
   call, excluded app). `../GetALife/README.md` still explains the phrase engine, stats and quiet rules, but
   its card cap, its 10 minute gap and its daily limit card do not apply to GAL. The card label reads
-  "Sidekick · 12 min on screen" and shows the blob's face for the tier.
-- **Voice Sidekick** is Pocket Sidekick: tap the blob, say "open Maps", and it opens it, with a short scene
+  "Sidekick · 12 min on screen" and shows the elephant's face for the tier.
+- **Voice Sidekick** is Pocket Sidekick: tap the elephant, say "open Maps", and it opens it, with a short scene
   on top (below). Drag it anywhere and it snaps to an edge. Speech recognition asks for on-device recognition
   (`EXTRA_PREFER_OFFLINE`). If the phone has no offline pack for the language, Sidekick says so instead of
   going online.
-- **Both on:** while a roast card is up, the floating blob wears the same face (and the sweat drop for
+- **Both on:** while a roast card is up, the floating elephant wears the same face (and the sweat drop for
   horrified), then goes back to normal when the card goes.
 
 ## Session cards
@@ -54,19 +54,19 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
 
 ## Sidekick scenes
 
-When Voice Sidekick opens an app, the blob plays a short scene on a see-through stage over whatever is on
+When Voice Sidekick opens an app, the elephant plays a short scene on a see-through stage over whatever is on
 screen. The stage window exists only while a scene plays (Android 12+ lets a full-screen overlay swallow
 every touch, so it must not linger), and a tap anywhere skips the scene and opens the app at once.
 
 | Scene | When | What happens | Length |
 | --- | --- | --- | --- |
-| NormalOpen | any app | A crate with the app's real icon floats down on a parachute, the blob runs under it, jumps and head-bumps it, the icon pops out and the app opens. | about 1.7 s |
-| RoastOpen | a social app you use a lot | The crate thuds down, the blob turns to you with a roast line in a bubble (and out loud), pulls out a hammer and smashes the crate in three blows. | about 3 to 3.5 s |
-| NotFound | no app matched | The blob drops in, looks left and right, says it has never heard of it, and leaves. | about 2 s |
+| NormalOpen | any app | A crate with the app's real icon floats down on a parachute and lands, the elephant trots up and boops it once with her trunk, the icon pops out and the app opens. | about 1.8 s |
+| RoastOpen | a social app you use a lot | The crate thuds down, the elephant turns to you with a roast line in a bubble (and out loud), winds her trunk up and smacks the crate open in three blows. | about 3 to 3.5 s |
+| NotFound | no app matched | The elephant drops in, looks left and right, says it has never heard of it, and leaves. | about 2 s |
 
 - The app opens from inside the scene while the stage is still up. That is what lets Android 15 start it
   from the background, and the stage leaves a moment later.
-- The blob moves like a platformer hero (acceleration, braking, variable jump height, heavier fall, squash
+- The elephant moves like a platformer hero (acceleration, braking, variable jump height, heavier fall, squash
   and stretch), all tuned in `sidekick/stage/MovementTuning.kt`. The character, the crate and every sound are
   our own.
 - **App roasts.** A roast needs all of: Screen Time Roasts set up (for the usage numbers), a social app
@@ -74,7 +74,7 @@ every touch, so it must not linger), and a tap anywhere skips the scene and open
   them), heavy use (opened 8 times today, or over 45 minutes today, or over 60 minutes a day on average this
   week; all three adjustable), no roast for that app in the last 2 hours, fewer than 5 roasts today, not in a
   call, and the app not on the "Stay quiet" list. The 150 lines (50 per tier, `tools/phrases/app_15_roasts.txt`) have
-  `{app}` where the name goes. The tier, and the blob's face, follow how far past the limits the usage is.
+  `{app}` where the name goes. The tier, and the elephant's face, follow how far past the limits the usage is.
 - **Quick open** in Settings skips the scenes: Sidekick says its line and opens the app, as before. The phone's
   "Remove animations" setting does the same. A roast line is still spoken with scenes off.
 - **Sound effects** (off by default) are made by `tools/sounds/make_sounds.py` from sine waves and noise, and
@@ -110,13 +110,16 @@ speech recogniser and TTS services.
 
 ## Branding
 
-Concept C (Peekaboo) from `../Combined App Branding`: adaptive launcher icon with a monochrome layer
-(`mipmap-anydpi/ic_launcher*.xml`, `drawable/ic_launcher_*.xml`), the Android 12+ splash
-(`drawable/splash_icon.xml` on `@color/splash_background`), and `values/brand_colors.xml`. The landing page
-draws the same splash drawable at the same size and position, so the splash hands over without a jump.
+Sidekick is a pink elephant with a bow and a bendy trunk, our own design (no hammer, no circus hat, nothing
+borrowed). `tools/mascot/generate_elephant.py` writes every picture of her from one list of shapes: the
+adaptive launcher icon with its monochrome layer (`drawable/ic_launcher_*.xml`, mint `#BDF2D5` background),
+the Android 12+ splash (`drawable/splash_icon.xml` on `@color/splash_background`), the four roast card faces
+(`drawable/mascot_*.xml`) and the notification icon. Previews land in `tools/mascot/preview/`. The landing
+page draws the same splash drawable at the same size and position, so the splash hands over without a jump.
 
-The four roast faces on the blob are generated by `tools/mascot/generate_blob_faces.py` (it also writes
-`blob_faces_preview.svg`). The live blob draws the same faces in code (`SidekickView.Mood`).
+The live elephant (floating Sidekick and the stage) is drawn in code by `sidekick/BlobPainter.kt` with the same
+colours and proportions. Her trunk angle is part of each frame's pose, which is how it sways, lifts while
+listening and smacks crates in the scenes.
 
 ## Build
 
@@ -156,7 +159,7 @@ adb shell am broadcast -n com.sangar.gal/.DebugCommandReceiver -a com.sangar.gal
 adb shell am broadcast -n com.sangar.gal/.DebugCommandReceiver -a com.sangar.gal.debug.TEST_CARD --ei tier 3
 ```
 
-The stage, without speaking. `PLAYGROUND` lets you drive the blob with your fingers to tune the movement
+The stage, without speaking. `PLAYGROUND` lets you drive the elephant with your fingers to tune the movement
 (hold the left or right third to run, tap the middle to jump, the top strip closes). `DEMO_SCENE` plays a
 scene with GAL's own icon (`normal`, `roast` or `notfound`). `HEAR` runs a command through Voice Sidekick as
 if it heard it, with the real app and launch; `--ez roast true` forces the roast scene and is not counted.
@@ -185,7 +188,7 @@ app/src/main/java/com/sangar/gal/
 ├── service/GalNotifications.kt   ongoing + "tap to bring Sidekick back"
 ├── service/GalServiceStarter.kt  foreground/background starts, BootReceiver, SidekickWatchdog
 ├── sidekick/                 SidekickOverlay, SidekickView (+ roast moods), BlobPainter, VoiceEngine, AppResolver
-├── sidekick/stage/           stage window, frame loop, world, blob physics, crate, props, renderer
+├── sidekick/stage/           stage window, frame loop, world, elephant physics, crate, props, renderer
 ├── sidekick/scene/           SceneDirector, the scenes, AppHabits (when to roast), SceneSounds
 ├── overlay/ phrases/ data/   GetALife, plus session card rules, app roast lines and scene settings
 └── ui/                       Landing, SetupScreen (two switches), Home, Stats, Settings (+ scenes card)

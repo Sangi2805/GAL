@@ -7,7 +7,7 @@ import kotlin.math.sin
  * The wooden crate with the app's icon on it. The app comes to the blob, because Android does not tell other
  * apps where the launcher draws its icons. Plain Kotlin; the renderer draws the wood and the real icon.
  *
- * Two ways in: [dropToGround] (it falls and lands with a thud, for the hammer) and [floatDown] (it comes down
+ * Two ways in: [dropToGround] (it falls and lands with a thud, for the trunk smacks) and [floatDown] (it comes down
  * on a little parachute and hangs in the air, for a head-bump from below). Either way it ends [broken], with
  * the icon popping out of it.
  */
@@ -134,8 +134,8 @@ class AppCrate(
         burst(world)
     }
 
-    /** A hammer blow. The third one bursts it. Returns the hit number, from 1. */
-    fun hitWithHammer(world: World): Int {
+    /** A trunk smack. The third one bursts it. Returns the hit number, from 1. */
+    fun hitWithTrunk(world: World): Int {
         if (broken) return cracks
         cracks = (cracks + 1).coerceAtMost(MAX_CRACKS)
         shake = 1f

@@ -148,7 +148,7 @@ object SceneDirector {
         sounds?.play(event)
         when (event) {
             is StageEvent.Landed -> if (event.impact > 0.6f) haptic(p, HapticFeedbackConstants.CLOCK_TICK)
-            StageEvent.HeadBump, is StageEvent.HammerHit -> haptic(p, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY)
+            StageEvent.HeadBump, is StageEvent.TrunkHit -> haptic(p, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY)
             StageEvent.CrateBroken -> haptic(p, HapticFeedbackConstants.LONG_PRESS)
             StageEvent.LaunchApp -> if (!p.launched) {
                 p.launched = true

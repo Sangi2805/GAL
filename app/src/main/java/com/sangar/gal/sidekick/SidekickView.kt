@@ -27,7 +27,7 @@ enum class SidekickState { IDLE, LISTENING, SPEAKING, THINKING }
 
 /**
  * The face Sidekick pulls while a roast card is on screen: GetALife's four faces in escalation order, drawn
- * live on the blob. The card's picture (res/drawable/mascot_*.xml, from tools/mascot/generate_blob_faces.py)
+ * live on the elephant. The card's picture (res/drawable/mascot_*.xml, from tools/mascot/generate_elephant.py)
  * shows the same four, so keep the two in step. [NONE] is Sidekick's own face.
  */
 enum class Mood { NONE, SMUG, BORED, DISAPPOINTED, HORRIFIED }
@@ -472,7 +472,7 @@ class SidekickView(context: Context) : View(context) {
         val cy = hgt / 2f
         val base = min(w, hgt) * BlobPainter.BODY_FILL
 
-        // Breathing: a slow sine. Volume is conserved-ish, so the blob widens as
+        // Breathing: a slow sine. Volume is conserved-ish, so the elephant widens as
         // it flattens, which reads as squash-and-stretch rather than a zoom.
         val breathSine = sin(breathe * 2f * PI.toFloat())
         var scaleX = 1f - 0.030f * breathSine
@@ -505,7 +505,24 @@ class SidekickView(context: Context) : View(context) {
         pose.listeningRings = state == SidekickState.LISTENING
         pose.thinkingDots = state == SidekickState.THINKING
         pose.phase = phase
+        // The trunk is never quite still: a slow sway with the breath, a wiggle while talking, lifted while
+        // listening, and it always swings towards the middle of the screen.
+        pose.facing = facingTowardsScreenMiddle()
+        pose.trunkAngle = BlobPose.REST_TRUNK + 9f * breathSine +
+            when (state) {
+                SidekickState.LISTENING -> 38f + 8f * sin(phase * 2f * PI.toFloat())
+                SidekickState.SPEAKING -> 22f * chatter
+                SidekickState.THINKING -> 20f
+                else -> 0f
+            }
+        pose.earFlap = (poke * 2f + 0.5f * wideEyes).coerceIn(0f, 1f)
         painter.draw(canvas, cx, cy, base * scaleX, base * scaleY, base, pose)
+    }
+
+    private fun facingTowardsScreenMiddle(): Int {
+        val h = host ?: return 1
+        val bounds = h.overlayBounds()
+        return if (h.overlayX() + width / 2 > bounds.centerX()) -1 else 1
     }
 
     /** Ease a raw 0..1 yawn timeline into open -> hold -> close. */

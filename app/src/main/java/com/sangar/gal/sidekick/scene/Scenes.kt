@@ -31,7 +31,7 @@ internal object Moves {
         val a = world.actor
         val t = world.tuning
         a.pose.reset()
-        a.putHammerAway()
+        a.lowerTrunk()
         if (entry.fromFloatingBlob && !entry.x.isNaN() && !entry.y.isNaN()) {
             val feet = (entry.y + t.bodySize / 2f).coerceAtMost(world.groundY)
             a.place(entry.x.coerceIn(world.left + t.bodySize / 2f, world.right - t.bodySize / 2f), feet, airborne = feet < world.groundY)
@@ -49,6 +49,15 @@ internal object Moves {
         val ax = world.actor.x
         return if (ax > world.width / 2f) world.width * 0.36f else world.width * 0.64f
     }
+
+    /** Where to stand so a trunk smack reaches [crate]: on our own side of it, a short trunk's length away. */
+    fun trunkSpot(world: World, crate: AppCrate, crateX: Float): Float {
+        val side = if (world.actor.x >= crateX) 1f else -1f
+        return crateX + side * (crate.width / 2f + world.tuning.bodySize * TRUNK_GAP)
+    }
+
+    /** Gap between the crate and the elephant's middle, in body sizes, so the trunk tip lands on the crate. */
+    const val TRUNK_GAP = 0.48f
 
     /**
      * Runs towards [targetX] and stops on it. Returns true once standing there. Brakes early enough to stop on
@@ -84,73 +93,53 @@ internal object Moves {
 }
 
 /**
- * Any app: a crate with the app's icon comes down on a parachute, the blob runs under it, jumps and bumps it
- * with its head, the icon pops out and the app opens. About two seconds.
+ * Any app: a crate with the app's icon floats down on a parachute and lands, Sidekick trots up to it and gives
+ * it one boop with her trunk, the icon pops out and the app opens. About two seconds.
  */
 class NormalOpenScene(private val entry: Entry) : Scene() {
     override val name = "NormalOpen"
 
-    private enum class Step { ENTER, RUN, JUMP, POP }
+    private enum class Step { ENTER, WALK, BOOP, POP }
 
     private var step = Step.ENTER
     private lateinit var crate: AppCrate
     private var crateX = 0f
-    private var jumps = 0
+    private var spotX = 0f
     private var poppedAt = -1f
 
     override fun start(world: World) {
         Moves.enter(world, entry)
         crateX = Moves.crateX(world)
-        val t = world.tuning
         crate = world.newCrate()
-        val hangY = world.groundY - t.bodySize - t.jumpHeight * HEAD_REACH
-        crate.floatDown(crateX, fromY = world.top - crate.height * 1.5f, hangY = hangY)
+        // Down to the ground under its parachute.
+        crate.floatDown(crateX, fromY = world.top - crate.height * 1.5f, hangY = world.groundY)
+        spotX = Moves.trunkSpot(world, crate, crateX)
     }
 
     override fun onUpdate(dt: Float, world: World) {
         val a = world.actor
-        val t = world.tuning
         when (step) {
-            Step.ENTER -> if (a.onGround && time > 0.15f) step = Step.RUN
-            Step.RUN -> {
-                val dx = crateX - a.x
-                val hanging = crate.state == AppCrate.State.HANGING
-                if (!hanging) {
-                    // Get underneath and look up while it comes down.
-                    Moves.runTo(world, crateX)
-                    a.pose.gazeY = -0.8f
-                    return
-                }
-                a.pose.gazeY = -0.5f
-                a.moveDir = if (abs(dx) > t.bodySize * 0.05f) sign(dx).toInt() else 0
-                val rise = (world.groundY - t.bodySize) - (crate.y + crate.bumpOffset)
-                val lead = Moves.leadDistance(world, rise)
-                if (a.onGround && abs(dx) <= lead + t.bodySize * 0.12f) {
-                    a.pressJump()
-                    jumps++
-                    step = Step.JUMP
+            Step.ENTER -> if (a.onGround && time > 0.15f) step = Step.WALK
+            Step.WALK -> {
+                a.pose.gazeY = if (crate.state == AppCrate.State.HANGING) 0f else -0.7f
+                if (Moves.runTo(world, spotX) && crate.state == AppCrate.State.HANGING) {
+                    a.facing = if (crateX > a.x) 1 else -1
+                    a.swingTrunk {
+                        crate.hitFromBelow(world)
+                        world.emit(StageEvent.HeadBump)
+                    }
+                    step = Step.BOOP
                 }
             }
-            Step.JUMP -> {
-                val dx = crateX - a.x
-                a.moveDir = if (abs(dx) > t.bodySize * 0.06f) sign(dx).toInt() else 0
-                if (crate.broken) {
-                    poppedAt = time
-                    a.releaseJump()
-                    a.pose.wideEyes = 1f
-                    a.pose.gazeY = -1f
-                    step = Step.POP
-                } else if (a.onGround && a.vy == 0f && time > 0.3f) {
-                    // Missed (it can happen if the crate moved). Try again, then force it.
-                    if (jumps >= 2) {
-                        crate.hitFromBelow(world)
-                    } else {
-                        step = Step.RUN
-                    }
-                }
+            Step.BOOP -> if (crate.broken) {
+                poppedAt = time
+                a.pose.wideEyes = 1f
+                a.pose.gazeY = -1f
+                step = Step.POP
             }
             Step.POP -> {
                 a.moveDir = 0
+                if (!a.isSwinging) a.lowerTrunk()
                 if (time - poppedAt >= POP_SECONDS) launch(world)
                 if (time - poppedAt >= POP_SECONDS + LINGER_SECONDS) end(world)
             }
@@ -158,7 +147,7 @@ class NormalOpenScene(private val entry: Entry) : Scene() {
     }
 
     companion object {
-        /** Crate's bottom edge sits this share of a full jump above the head. */
+        /** Where the playground's crate hangs: this share of a full jump above the head. */
         const val HEAD_REACH = 0.55f
         const val POP_SECONDS = 0.35f
         const val LINGER_SECONDS = 0.2f
@@ -167,7 +156,7 @@ class NormalOpenScene(private val entry: Entry) : Scene() {
 
 /**
  * A heavily used social app: the crate thuds onto the ground, the blob walks up, turns to us with a roast in a
- * speech bubble, pulls out a hammer and smashes the crate open in three blows. Then the app opens.
+ * speech bubble, winds her trunk up and smacks the crate open in three blows. Then the app opens.
  */
 class RoastOpenScene(
     private val entry: Entry,
@@ -176,7 +165,7 @@ class RoastOpenScene(
 ) : Scene() {
     override val name = "RoastOpen"
 
-    private enum class Step { ENTER, WALK, TALK, HAMMER, POP }
+    private enum class Step { ENTER, WALK, TALK, SMACK, POP }
 
     private var step = Step.ENTER
     private lateinit var crate: AppCrate
@@ -195,9 +184,8 @@ class RoastOpenScene(
         crateX = Moves.crateX(world)
         crate = world.newCrate()
         crate.dropToGround(crateX, fromY = world.top - crate.height * 1.2f)
-        // Stand on our own side of the crate, close enough to swing at it.
-        val side = if (world.actor.x >= crateX) 1f else -1f
-        spotX = crateX + side * (crate.width / 2f + world.tuning.bodySize * 0.62f)
+        // Stand on our own side of the crate, close enough for the trunk to reach it.
+        spotX = Moves.trunkSpot(world, crate, crateX)
     }
 
     override fun onUpdate(dt: Float, world: World) {
@@ -221,22 +209,22 @@ class RoastOpenScene(
                 a.pose.gazeY = 0f
                 if (time - talkStarted >= bubbleSeconds - 0.25f && crate.state == AppCrate.State.RESTING) {
                     a.facing = if (crateX > a.x) 1 else -1
-                    a.drawHammer()
+                    a.raiseTrunk()
                     a.pose.gazeX = a.facing * 0.9f
                     nextSwing = time + 0.12f
-                    step = Step.HAMMER
+                    step = Step.SMACK
                 }
             }
-            Step.HAMMER -> {
+            Step.SMACK -> {
                 if (crate.broken) {
                     poppedAt = time
-                    a.putHammerAway()
+                    a.lowerTrunk()
                     a.pose.mood = Mood.SMUG
                     step = Step.POP
                 } else if (!a.isSwinging && time >= nextSwing) {
-                    a.swingHammer {
-                        val hit = crate.hitWithHammer(world)
-                        world.emit(StageEvent.HammerHit(hit))
+                    a.swingTrunk {
+                        val hit = crate.hitWithTrunk(world)
+                        world.emit(StageEvent.TrunkHit(hit))
                         world.popWord(WORDS[(hit - 1).coerceIn(0, WORDS.lastIndex)], crate.x, crate.y - crate.height * 1.1f)
                     }
                     swings++
