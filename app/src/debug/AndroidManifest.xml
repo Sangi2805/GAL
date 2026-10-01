@@ -20,6 +20,8 @@
             <intent-filter>
                 <action android:name="com.sangar.gal.debug.SET_THRESHOLD" />
                 <action android:name="com.sangar.gal.debug.TEST_CARD" />
+                <action android:name="com.sangar.gal.debug.PLAYGROUND" />
+                <action android:name="com.sangar.gal.debug.DEMO_SCENE" />
             </intent-filter>
         </receiver>
     </application>

@@ -25,6 +25,7 @@ import com.sangar.gal.Permissions
 import com.sangar.gal.R
 import com.sangar.gal.overlay.CardEvents
 import com.sangar.gal.service.NagLog
+import com.sangar.gal.sidekick.scene.SceneDirector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -123,12 +124,33 @@ class SidekickOverlay(
                 view?.mood = mood
             }
         }
+        SceneDirector.floatingBlob = floatingBlob
         SidekickStatus.running = true
         NagLog.i(C, "Sidekick is on screen")
         return true
     }
 
+    /** Lets the stage blob take the floating blob's place for a scene, so it reads as the same character. */
+    private val floatingBlob = object : SceneDirector.FloatingBlob {
+        override fun centerOnScreen(out: IntArray): Boolean {
+            val v = view ?: return false
+            if (v.width == 0 || !v.isAttachedToWindow) return false
+            v.getLocationOnScreen(out)
+            out[0] += v.width / 2
+            out[1] += v.height / 2
+            return true
+        }
+
+        override fun setHiddenForScene(hidden: Boolean) {
+            view?.visibility = if (hidden) android.view.View.INVISIBLE else android.view.View.VISIBLE
+        }
+    }
+
     fun release() {
+        if (SceneDirector.floatingBlob === floatingBlob) {
+            SceneDirector.cancel()
+            SceneDirector.floatingBlob = null
+        }
         moodJob?.cancel()
         moodJob = null
         if (view != null) runCatching { context.unregisterReceiver(packageWatcher) }

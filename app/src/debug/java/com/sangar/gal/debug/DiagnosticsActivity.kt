@@ -205,6 +205,13 @@ private fun DiagnosticsScreen() {
                 context.container.appScope.launch { context.container.settings.setThresholdMinutes(1) }
             }) { Text("Threshold 1 min") }
         }
+        // The stage scenes without a voice command. Leave this screen first if a scene should run over another app.
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = { StageDebug.playground(context) }) { Text("Playground") }
+            OutlinedButton(onClick = { StageDebug.demo(context, "normal") }) { Text("Open") }
+            OutlinedButton(onClick = { StageDebug.demo(context, "roast") }) { Text("Roast") }
+            OutlinedButton(onClick = { StageDebug.demo(context, "notfound") }) { Text("?") }
+        }
     }
 }
 
