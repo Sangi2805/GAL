@@ -39,6 +39,8 @@ class StageView(
     private var lastFrameNanos = 0L
     private var accumulator = 0f
     private var announcedReady = false
+    private var boundsWidth = 0
+    private var boundsHeight = 0
 
     private var insetLeft = 0f
     private var insetTop = 0f
@@ -91,7 +93,8 @@ class StageView(
 
     override fun onApplyWindowInsets(insets: WindowInsets): WindowInsets {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+            // The keyboard too, where Android reports it to an overlay: then the blob runs on top of it.
+            val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout() or WindowInsets.Type.ime())
             insetLeft = bars.left.toFloat()
             insetTop = bars.top.toFloat()
             insetRight = bars.right.toFloat()
@@ -116,6 +119,12 @@ class StageView(
 
     private fun updateBounds() {
         if (width <= 0 || height <= 0) return
+        // Once a scene is under way, the ground stays put when only the insets change: the keyboard of the app
+        // being left usually goes away just as the new app opens, and the floor dropping mid-scene looks broken.
+        // The first moments still take late insets, in case they arrive after the first layout.
+        if (announcedReady && world.time > INSETS_SETTLE_SECONDS && width == boundsWidth && height == boundsHeight) return
+        boundsWidth = width
+        boundsHeight = height
         world.setBounds(width.toFloat(), height.toFloat(), insetLeft, insetTop, insetRight, insetBottom)
         if (!announcedReady && world.ready) {
             announcedReady = true
@@ -175,6 +184,7 @@ class StageView(
 
     companion object {
         const val STEP_SECONDS = 1f / 60f
+        private const val INSETS_SETTLE_SECONDS = 0.1f
         private const val MAX_FRAME_SECONDS = 0.1f
         private const val MAX_STEPS_PER_FRAME = 6
     }

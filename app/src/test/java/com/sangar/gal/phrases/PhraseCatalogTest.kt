@@ -8,8 +8,9 @@ import org.junit.Test
 class PhraseCatalogTest {
 
     private val phrases = PhraseTestData.phrases
-    private val nag = phrases.filter { Tags.OWL_MODE !in it.tags && it.pack == PhrasePack.SPICY }
+    private val nag = phrases.filter { Tags.OWL_MODE !in it.tags && Tags.APP_ROAST !in it.tags && it.pack == PhrasePack.SPICY }
     private val owl = phrases.filter { Tags.OWL_MODE in it.tags }
+    private val appRoasts = phrases.filter { Tags.APP_ROAST in it.tags }
     private val roasts = phrases.filter { it.pack == PhrasePack.CRY && Tags.GIVE_UP !in it.tags }
     private val cryGiveUps = phrases.filter { it.pack == PhrasePack.CRY && Tags.GIVE_UP in it.tags }
 
@@ -20,6 +21,7 @@ class PhraseCatalogTest {
         assertEquals(2677, roasts.size)
         assertEquals(80, nag.count { Tags.GIVE_UP in it.tags })
         assertEquals(80, cryGiveUps.size)
+        assertEquals(150, appRoasts.size)
         assertEquals(phrases.size, phrases.map { it.id }.toSet().size)
     }
 
@@ -115,6 +117,21 @@ class PhraseCatalogTest {
             assertTrue(p.text.isNotBlank())
         }
         Tags.TIERS.forEach { tier -> assertEquals("owl lines at tier $tier", 20, owl.count { it.tier == tier }) }
+    }
+
+    @Test
+    fun appRoastLinesCarryOnlyAppRoastFiftyPerTierAndNameTheApp() {
+        appRoasts.forEach { p ->
+            assertEquals("${p.id} must carry app_roast alone", setOf(Tags.APP_ROAST), p.tags)
+            assertEquals("${p.id} is not in the spicy pack", PhrasePack.SPICY, p.pack)
+            assertTrue("${p.id} has no {app}: ${p.text}", Tags.APP_PLACEHOLDER in p.text)
+            // Filled with a ten letter name it still fits the speech bubble.
+            assertTrue("${p.id} too long: ${p.text}", fillAppName(p.text, "Tenletters").length <= 90)
+        }
+        Tags.TIERS.forEach { tier -> assertEquals("app roasts at tier $tier", 50, appRoasts.count { it.tier == tier }) }
+        // Only app roasts have a placeholder, so no card can ever show a raw {app}.
+        val stray = phrases.filter { Tags.APP_ROAST !in it.tags && ('{' in it.text || '}' in it.text) }
+        assertTrue("braces outside app roasts: ${stray.map { it.id }}", stray.isEmpty())
     }
 
     @Test

@@ -55,8 +55,16 @@ class PhraseEngine(
 ) {
     private val valid: List<Phrase> = phrases.filter { it.text.isNotBlank() && it.tier in Tags.TIERS }
 
-    /** Everything a spicy card may use. owl_mode and roast lines are excluded here, so no fallback can reach them. */
-    private val usable: List<Phrase> = valid.filter { Tags.OWL_MODE !in it.tags && it.pack == PhrasePack.SPICY }
+    /**
+     * Everything a spicy card may use. owl_mode, app_roast and roast lines are excluded here, so no fallback can
+     * reach them.
+     */
+    private val usable: List<Phrase> =
+        valid.filter { Tags.OWL_MODE !in it.tags && Tags.APP_ROAST !in it.tags && it.pack == PhrasePack.SPICY }
+
+    /** Sidekick's lines for opening a social app you use a lot. Tiered, never on a card. */
+    private val appRoasts: List<Phrase> = valid.filter { Tags.APP_ROAST in it.tags }
+    private val appRoastsByTier: Map<Int, List<Phrase>> = appRoasts.groupBy { it.tier }
 
     /** The "You may cry" roasts: one flat pool, no tiers or moment tags. Their sign-offs are kept apart. */
     private val roasts: List<Phrase> =
@@ -116,6 +124,23 @@ class PhraseEngine(
     }
 
     val cryGiveUpSize: Int get() = cryGiveUps.size
+
+    val appRoastSize: Int get() = appRoasts.size
+
+    /**
+     * A line for smashing open a social app used a lot, still holding the {app} placeholder. Same tier if there
+     * is one, any tier otherwise, and a hardcoded line if the file has none, so it is never empty.
+     */
+    suspend fun pickAppRoast(tier: Int): Pick {
+        val sameTier = appRoastsByTier[tier].orEmpty()
+        val (pool, source) = when {
+            sameTier.isNotEmpty() -> sameTier to PoolSource.MATCHED
+            appRoasts.isNotEmpty() -> appRoasts to PoolSource.GENERAL_ANY_TIER
+            else -> return Pick(Phrase(DEFAULT_PHRASE_ID, DEFAULT_APP_ROAST, tier, setOf(Tags.APP_ROAST)), 0, 0, PoolSource.HARDCODED_DEFAULT)
+        }
+        if (source != PoolSource.MATCHED) log("app roast fallback $source fired for tier=$tier")
+        return mutex.withLock { drawFrom(pool, setOf(Tags.APP_ROAST), source) }
+    }
 
     /**
      * An owl_mode line for a confirmed threshold. Tier comes from the threshold. Falls back to any owl line,
@@ -233,6 +258,7 @@ class PhraseEngine(
         private const val OWL_WINDOW = 10
         const val DEFAULT_PHRASE_ID = 0
         const val DEFAULT_TEXT = "Hey. Look up for a second. The rest of the world is still there."
+        const val DEFAULT_APP_ROAST = "Are you married to {app}?"
 
         fun defaultPhrase(tier: Int) = Phrase(
             id = DEFAULT_PHRASE_ID,

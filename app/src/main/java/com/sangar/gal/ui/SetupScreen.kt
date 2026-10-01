@@ -199,6 +199,9 @@ fun SetupScreen(onDone: () -> Unit) {
             granted = live::granted,
             onFix = { walk.askOne(Feature.VOICE, it) },
         )
+        if (settings.voiceEnabled && Permissions.isXiaomiFamily) {
+            XiaomiPopupHint(onOpen = { Permissions.openXiaomiOtherPermissions(context) })
+        }
 
         Spacer(Modifier.height(4.dp))
         Button(
@@ -307,6 +310,33 @@ private fun FeatureCard(
                     NeedRow(need, granted(need)) { onFix(need) }
                 }
             }
+        }
+    }
+}
+
+/** Xiaomi, Redmi and POCO only: the extra switch that lets Sidekick open apps. Optional, so it never blocks setup. */
+@Composable
+private fun XiaomiPopupHint(onOpen: () -> Unit) {
+    Card(
+        shape = RoundedCornerShape(22.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                "One more switch on this phone",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            Text(
+                "Xiaomi, Redmi and POCO phones stop apps from opening other apps unless you allow it. Open GAL's " +
+                    "permissions, find \"Other permissions\" and allow \"Display pop-up windows while running in " +
+                    "the background\". Without it Sidekick hears you, but the app may not open.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+            OutlinedButton(onClick = onOpen) { Text("Open GAL's permissions") }
         }
     }
 }

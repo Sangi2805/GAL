@@ -22,6 +22,7 @@
                 <action android:name="com.sangar.gal.debug.TEST_CARD" />
                 <action android:name="com.sangar.gal.debug.PLAYGROUND" />
                 <action android:name="com.sangar.gal.debug.DEMO_SCENE" />
+                <action android:name="com.sangar.gal.debug.HEAR" />
             </intent-filter>
         </receiver>
     </application>

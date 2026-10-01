@@ -28,6 +28,10 @@ A code of "-" means the phrase is general only.
     o owl_mode        A reaction to the user choosing a threshold over an hour. Shown once in the app,
                       never on an overlay card, so it carries no other tag, not even "general".
 
+    p app_roast       Said by Sidekick when asked to open a social app the user opens a lot, before it smashes
+                      the app's crate open. Has {app} where the app's name goes. Never on a card, so it carries
+                      no other tag, not even "general".
+
 Every phrase gets a "length" from its word count (whitespace separated): short is under 6 words,
 medium 6 to 12, long 13 or more. The app mixes lengths by moment (see LengthMix.kt). Batches whose
 file name contains "_short" may only hold short lines.
@@ -48,6 +52,9 @@ Packs. Every entry gets "pack", the home screen tab it belongs to:
             Files with "giveup" in the name hold the pack's sign-offs for card 12, the last card of a session.
             They get the give_up tag alone, no "general", so no ordinary roast card can draw one.
 
+App roasts live in app_*.txt, in the tiered batch format with the p code. They are read last, so adding
+lines there never renumbers anything else (a phrase's id is its position).
+
 Usage:  python build_phrases.py [--check-only]
 """
 import json
@@ -67,13 +74,18 @@ CODES = {
 
     "e": "give_up",
     "o": "owl_mode",
+    "p": "app_roast",
 }
 OWL = "owl_mode"
 WORK = "work_hours"
+APP = "app_roast"
 # Tags that must stand alone: no other tag, no "general".
-SOLO = {"o": OWL, "j": WORK, "e": "give_up"}
+SOLO = {"o": OWL, "j": WORK, "e": "give_up", "p": APP}
 TAG_ORDER = ["general"] + list(CODES.values())
-NAG_TAGS = [t for t in TAG_ORDER if t != OWL]
+NAG_TAGS = [t for t in TAG_ORDER if t not in (OWL, APP)]
+APP_TARGET_PER_TIER = 50
+APP_MAX_CHARS = 90           # with {app} replaced by a ten letter name, so it fits a speech bubble
+APP_SAMPLE_NAME = "Tenletters"
 LENGTHS = ["short", "medium", "long"]
 
 # Tone guard: the app is a joke, never about health, bodies or mental state, never cruel about the person.
@@ -165,7 +177,7 @@ def main() -> int:
     phrases, seen, errors = [], {}, []
     banned_res = [re.compile(b, re.IGNORECASE) for b in BANNED]
 
-    for batch in batches:
+    def parse_tiered(batch):
         added = dupes = 0
         for lineno, raw in enumerate(batch.read_text(encoding="utf-8").splitlines(), 1):
             line = raw.strip()
@@ -194,6 +206,14 @@ def main() -> int:
                     errors.append(f"{where}: banned topic /{rx.pattern}/ in: {text}")
             if len(text) > 140:
                 errors.append(f"{where}: too long for the card ({len(text)} chars)")
+            if APP in tags:
+                if "{app}" not in text:
+                    errors.append(f"{where}: app_roast lines need {{app}} where the app's name goes: {text}")
+                filled = text.replace("{app}", APP_SAMPLE_NAME)
+                if len(filled) > APP_MAX_CHARS:
+                    errors.append(f"{where}: too long for the bubble ({len(filled)} chars with a ten letter name, max {APP_MAX_CHARS})")
+            elif "{" in text or "}" in text:
+                errors.append(f"{where}: only app_roast lines may use {{app}}: {text}")
             length = length_of(text)
             if "_short" in batch.name and length != "short":
                 errors.append(f"{where}: {len(text.split())} words is not short (under 6): {text}")
@@ -207,6 +227,9 @@ def main() -> int:
             phrases.append({"id": len(phrases) + 1, "text": text, "tier": tier, "length": length, "pack": "spicy", "tags": tags, "_where": where})
             added += 1
         print(f"{batch.name}: +{added} (dupes dropped: {dupes}) total {len(phrases)}")
+
+    for batch in batches:
+        parse_tiered(batch)
 
     cry_res = [re.compile(b, re.IGNORECASE) for b in BANNED if b not in CRY_ALLOWED] + \
         [re.compile(b, re.IGNORECASE) for b in CRY_BANNED]
@@ -238,6 +261,11 @@ def main() -> int:
             added += 1
         print(f"{batch.name}: +{added} (dupes: {dupes}) total {len(phrases)}")
 
+    # App roasts come last so adding them never renumbers the lines above (ids are positions).
+    app_batches = sorted(HERE.glob("app_*.txt"))
+    for batch in app_batches:
+        parse_tiered(batch)
+
     # Near-duplicate warnings: very high word overlap.
     wsets = [(p, words(p["text"])) for p in phrases]
     near = 0
@@ -255,8 +283,9 @@ def main() -> int:
                 print(f"  near-duplicate ({jac:.2f}): {pi['_where']} '{pi['text']}' ~ {pj['_where']} '{pj['text']}'")
 
     final = len(batches) >= 10
-    nag = [p for p in phrases if OWL not in p["tags"] and p["pack"] == "spicy"]
+    nag = [p for p in phrases if OWL not in p["tags"] and APP not in p["tags"] and p["pack"] == "spicy"]
     owl = [p for p in phrases if OWL in p["tags"]]
+    app = [p for p in phrases if APP in p["tags"]]
     cry = [p for p in phrases if p["pack"] == "cry" and "give_up" not in p["tags"]]
     cry_giveup = [p for p in phrases if p["pack"] == "cry" and "give_up" in p["tags"]]
     # Coverage matrix, nag phrases only.
@@ -306,6 +335,10 @@ def main() -> int:
         errors.append(f"expected exactly {CRY_GIVEUP_TARGET} You may cry give_up lines, got {len(cry_giveup)}")
     if owl and any(c != OWL_TARGET_PER_TIER for c in owl_counts):
         errors.append(f"expected {OWL_TARGET_PER_TIER} owl_mode lines per tier, got {owl_counts}")
+    app_counts = [sum(1 for p in app if p["tier"] == t) for t in (1, 2, 3)]
+    print(f"app_roast lines per tier: {app_counts}")
+    if app and any(c != APP_TARGET_PER_TIER for c in app_counts):
+        errors.append(f"expected {APP_TARGET_PER_TIER} app_roast lines per tier, got {app_counts}")
     for w in warnings:
         print("  warning: " + w)
     if errors:

@@ -1,0 +1,161 @@
+# Batch 15: app roasts. Said by Sidekick in a speech bubble (and out loud) when you ask it to open a social app
+# you use a lot, just before it smashes the crate open with a hammer. Never on an overlay card.
+# p app_roast  carries no other code and no "general", so no card and no fallback can reach one.
+# Every line has {app} where the app's name goes. The tier follows how far past the limits the usage is.
+# Keep them short enough for a bubble (the builder checks with a ten letter app name).
+
+# ---------- Tier 1: mild. A raised eyebrow. ----------
+1 p | {app} again? Bold choice.
+1 p | Back to {app}. Of course you are.
+1 p | Are you married to {app}?
+1 p | You and {app}, joined at the thumb.
+1 p | {app} called. It missed you terribly.
+1 p | Opening {app}. I am sure this time will be different.
+1 p | Ah, {app}. Your second home.
+1 p | {app} should start charging you rent.
+1 p | Fine, {app} it is.
+1 p | You open {app} like it owes you money.
+1 p | One more peek at {app}? Sure.
+1 p | {app} has seen you more than your mirror has.
+1 p | Knock knock. It is you, at {app}.
+1 p | Do you two want some privacy? You and {app}?
+1 p | {app}: apparently your favourite hobby.
+1 p | Look who is back for more {app}.
+1 p | Just a quick look at {app}, right?
+1 p | {app} is not going anywhere, you know.
+1 p | You really like {app}, huh?
+1 p | Another visit to {app}. Collecting stamps?
+1 p | {app} should give you a loyalty card.
+1 p | Somewhere, {app} is blushing.
+1 p | {app} once more. The plot thickens.
+1 p | Still not bored of {app}? Impressive.
+1 p | You and {app}. Classic.
+1 p | {app}: open. Self-control: closed.
+1 p | A little trip to {app}, for no reason at all.
+1 p | Let me guess. {app}?
+1 p | {app} knows your thumb by name.
+1 p | Your phone's favourite child: {app}.
+1 p | A quick trip to {app}. Pack a snack.
+1 p | {app} must feel very loved.
+1 p | Okay, {app}. One more round.
+1 p | Is {app} paying you? Asking for a friend.
+1 p | Right on schedule. {app}.
+1 p | Here we go, {app} time.
+1 p | You have a type, and it is {app}.
+1 p | {app}, because why not.
+1 p | Maybe {app} has changed since last time. It has not.
+1 p | Visiting {app} like it is a museum.
+1 p | I will open {app}. You will thank me never.
+1 p | {app} is lucky to have you. Very lucky.
+1 p | Ten seconds on {app}, said nobody ever.
+1 p | {app}? We were just there.
+1 p | Welcome back to {app}, regular.
+1 p | {app} keeps a chair warm for you.
+1 p | You and {app} should get matching shirts.
+1 p | Opening {app}. Brace yourself for more of the same.
+1 p | Consistency is a skill, I suppose. Here is {app}.
+1 p | Fresh content on {app}? Probably not.
+
+# ---------- Tier 2: pointed. A proper look. ----------
+2 p | Are you married to {app}? Because this looks serious.
+2 p | You and {app} need a little space from each other.
+2 p | {app} has your attention. Everything else is on hold.
+2 p | At this point {app} should list you as staff.
+2 p | Back on {app}? Your thumb never even cooled down.
+2 p | Your relationship with {app} is getting a bit intense.
+2 p | You visit {app} more than you visit anyone.
+2 p | {app} is not a personality, you know.
+2 p | Opening {app}. My hammer is ready.
+2 p | Let me break this open for you, gently. It is {app}.
+2 p | You must have {app} memorised by now.
+2 p | {app} has seen more of you than daylight has.
+2 p | Truly, {app} should be paying you.
+2 p | Every road leads to {app} with you.
+2 p | You keep coming back to {app} like a boomerang.
+2 p | If {app} were a place, you would get mail there.
+2 p | Another {app} visit. The streak continues, unfortunately.
+2 p | {app} has you on a short lead.
+2 p | Your thumb found {app} without even asking you.
+2 p | Opening {app} this much is not a habit. It is a lifestyle.
+2 p | {app}, yet again. I am starting to take it personally.
+2 p | Are you and {app} exclusive now?
+2 p | Who is counting your {app} visits? Me. I am.
+2 p | {app} is the first stop and the last stop with you.
+2 p | You could open {app} with your eyes shut by now.
+2 p | Should I just leave {app} open for you permanently?
+2 p | {app} wants you back. It always wants you back.
+2 p | You have built a small house inside {app}.
+2 p | Count your minutes on {app}. Actually, do not.
+2 p | Here is {app}. Try to leave before it gets dark.
+2 p | {app} is the snack you keep calling the last one.
+2 p | I am opening {app}, but I am judging you while I do it.
+2 p | Your phone opens {app} by muscle memory now.
+2 p | Nobody opens {app} just once. Least of all you.
+2 p | {app} got a promotion to main character.
+2 p | Back to {app}. The rest of the phone feels ignored.
+2 p | {app} is your comfort blanket with notifications.
+2 p | You treat {app} like a fridge you keep checking.
+2 p | The algorithm sends its regards. Enjoy {app}.
+2 p | Somebody tell {app} to play hard to get.
+2 p | You have opened {app} so often it should know your birthday.
+2 p | At this rate {app} will need a bigger chair for you.
+2 p | {app} has a reserved seat with your name on it.
+2 p | I would roast you, but {app} already has you well done.
+2 p | Ah yes, {app}. The scenic route to nowhere.
+2 p | You and {app} are going steady, I see.
+2 p | Smash first, scroll later. Welcome to {app}.
+2 p | Let me smash this open so you can stare at {app}.
+2 p | The hammer is for the crate. The guilt is for you. Enjoy {app}.
+2 p | {app} gets more of your time than your houseplants do.
+
+# ---------- Tier 3: brutal. The hammer was not for the crate. ----------
+3 p | Are you married to {app}? You never leave the house.
+3 p | I have run out of polite ways to say {app}.
+3 p | You do not use {app}. You live in it.
+3 p | {app} has more of your day than you do.
+3 p | Fine. I will smash {app} open. You clearly cannot wait.
+3 p | Your thumb has a permanent address on {app}.
+3 p | {app} should list you as a resident.
+3 p | You opened {app}. I am filing a complaint.
+3 p | If staring at {app} were a sport, you would have a sponsor.
+3 p | Let me hammer this open, since {app} is apparently oxygen now.
+3 p | You and {app}, till battery do you part.
+3 p | {app}. I will not be taking questions.
+3 p | You have spent so long on {app} it should charge a membership.
+3 p | Every time you open {app}, a book somewhere gets dusty.
+3 p | {app} is winning, and you are not even playing.
+3 p | You are not checking {app}. {app} is checking you.
+3 p | Breaking news: you opened {app}. Nobody is surprised.
+3 p | Your phone has other apps besides {app}. Want a tour?
+3 p | {app} is basically your landlord now.
+3 p | Opening {app} once more is a choice. A loud one.
+3 p | I am smashing this crate the way {app} smashes your plans.
+3 p | Round who knows on {app}. I lost count and so did you.
+3 p | At this point I should tattoo {app} on your home screen.
+3 p | You have been on {app} long enough to have a favourite chair there.
+3 p | The only thing growing around here is your time on {app}.
+3 p | {app} has you on a leash and you call it browsing.
+3 p | Somebody should separate you and {app} for a while.
+3 p | Congratulations, top {app} customer. Nobody else wanted the title.
+3 p | You will open {app}, close it, and open it a minute later. I have seen this film.
+3 p | {app} must be running out of things to show you.
+3 p | Your future called. You sent it to voicemail and opened {app}.
+3 p | {app}? Even the hammer is tired of you.
+3 p | This crate is all that stands between you and {app}. Not for long.
+3 p | I will open {app}. Just know that I know.
+3 p | You and {app} have been together longer than some marriages.
+3 p | You could have learned a language in the time you gave {app}.
+3 p | You know {app} better than you know your own street.
+3 p | If {app} vanished, would you recognise the room around you?
+3 p | Your thumb has a gym membership, and it is called {app}.
+3 p | You will be quick on {app}, you say. You never are.
+3 p | {app} is not a break if you never come back from it.
+3 p | Opening {app} again, you absolute regular.
+3 p | {app} has turned you into furniture with a thumb.
+3 p | This is the {app} crate. I break it, you break your evening.
+3 p | Sure, {app}. The day was going too well anyway.
+3 p | {app} has more of your attention than anything else in this room.
+3 p | Here, have {app}. I give up trying to stop you.
+3 p | You open {app} the way other people blink.
+3 p | {app} is eating your time and you keep feeding it.
+3 p | The crate gets the hammer, you get {app}, your evening gets nothing.

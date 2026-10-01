@@ -50,6 +50,14 @@ object Tags {
     /** Reaction to choosing a threshold over an hour. Not a nag tag: never used for overlay cards. */
     const val OWL_MODE = "owl_mode"
 
+    /**
+     * What Sidekick says before it smashes open a social app you use a lot. Not a nag tag: never on a card.
+     * The text has [APP_PLACEHOLDER] where the app's name goes.
+     */
+    const val APP_ROAST = "app_roast"
+
+    const val APP_PLACEHOLDER = "{app}"
+
     /** Tags that describe a nag moment. */
     val ALL = listOf(
         GENERAL, SHORT_SESSION, LONG_SESSION, MARATHON, MORNING, LATE_NIGHT, WEEKEND,
@@ -57,7 +65,7 @@ object Tags {
         GIVE_UP,
     )
 
-    val KNOWN = ALL + OWL_MODE
+    val KNOWN = ALL + OWL_MODE + APP_ROAST
 
     val TIERS = 1..3
 }

@@ -112,7 +112,7 @@ class PhraseNeverEmptyTest {
         error = null
         assertTrue(PhraseCatalog.parseOrEmpty(null, onError = { error = it }).isEmpty())
         assertFalse(error == null)
-        // 1380 spicy (80 of them give_up), 60 owl_mode, 2677 roasts and 80 roast give_up lines.
-        assertEquals(4197, PhraseCatalog.parseOrEmpty(PhraseTestData.rawJson, onError = { throw it }).size)
+        // 1380 spicy (80 of them give_up), 60 owl_mode, 2677 roasts, 80 roast give_up lines and 150 app roasts.
+        assertEquals(4347, PhraseCatalog.parseOrEmpty(PhraseTestData.rawJson, onError = { throw it }).size)
     }
 }

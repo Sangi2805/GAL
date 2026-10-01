@@ -47864,5 +47864,1505 @@
   "tags": [
    "give_up"
   ]
+ },
+ {
+  "id": 4198,
+  "text": "{app} again? Bold choice.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4199,
+  "text": "Back to {app}. Of course you are.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4200,
+  "text": "Are you married to {app}?",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4201,
+  "text": "You and {app}, joined at the thumb.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4202,
+  "text": "{app} called. It missed you terribly.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4203,
+  "text": "Opening {app}. I am sure this time will be different.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4204,
+  "text": "Ah, {app}. Your second home.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4205,
+  "text": "{app} should start charging you rent.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4206,
+  "text": "Fine, {app} it is.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4207,
+  "text": "You open {app} like it owes you money.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4208,
+  "text": "One more peek at {app}? Sure.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4209,
+  "text": "{app} has seen you more than your mirror has.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4210,
+  "text": "Knock knock. It is you, at {app}.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4211,
+  "text": "Do you two want some privacy? You and {app}?",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4212,
+  "text": "{app}: apparently your favourite hobby.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4213,
+  "text": "Look who is back for more {app}.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4214,
+  "text": "Just a quick look at {app}, right?",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4215,
+  "text": "{app} is not going anywhere, you know.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4216,
+  "text": "You really like {app}, huh?",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4217,
+  "text": "Another visit to {app}. Collecting stamps?",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4218,
+  "text": "{app} should give you a loyalty card.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4219,
+  "text": "Somewhere, {app} is blushing.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4220,
+  "text": "{app} once more. The plot thickens.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4221,
+  "text": "Still not bored of {app}? Impressive.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4222,
+  "text": "You and {app}. Classic.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4223,
+  "text": "{app}: open. Self-control: closed.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4224,
+  "text": "A little trip to {app}, for no reason at all.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4225,
+  "text": "Let me guess. {app}?",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4226,
+  "text": "{app} knows your thumb by name.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4227,
+  "text": "Your phone's favourite child: {app}.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4228,
+  "text": "A quick trip to {app}. Pack a snack.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4229,
+  "text": "{app} must feel very loved.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4230,
+  "text": "Okay, {app}. One more round.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4231,
+  "text": "Is {app} paying you? Asking for a friend.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4232,
+  "text": "Right on schedule. {app}.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4233,
+  "text": "Here we go, {app} time.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4234,
+  "text": "You have a type, and it is {app}.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4235,
+  "text": "{app}, because why not.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4236,
+  "text": "Maybe {app} has changed since last time. It has not.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4237,
+  "text": "Visiting {app} like it is a museum.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4238,
+  "text": "I will open {app}. You will thank me never.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4239,
+  "text": "{app} is lucky to have you. Very lucky.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4240,
+  "text": "Ten seconds on {app}, said nobody ever.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4241,
+  "text": "{app}? We were just there.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4242,
+  "text": "Welcome back to {app}, regular.",
+  "tier": 1,
+  "length": "short",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4243,
+  "text": "{app} keeps a chair warm for you.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4244,
+  "text": "You and {app} should get matching shirts.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4245,
+  "text": "Opening {app}. Brace yourself for more of the same.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4246,
+  "text": "Consistency is a skill, I suppose. Here is {app}.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4247,
+  "text": "Fresh content on {app}? Probably not.",
+  "tier": 1,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4248,
+  "text": "Are you married to {app}? Because this looks serious.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4249,
+  "text": "You and {app} need a little space from each other.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4250,
+  "text": "{app} has your attention. Everything else is on hold.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4251,
+  "text": "At this point {app} should list you as staff.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4252,
+  "text": "Back on {app}? Your thumb never even cooled down.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4253,
+  "text": "Your relationship with {app} is getting a bit intense.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4254,
+  "text": "You visit {app} more than you visit anyone.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4255,
+  "text": "{app} is not a personality, you know.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4256,
+  "text": "Opening {app}. My hammer is ready.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4257,
+  "text": "Let me break this open for you, gently. It is {app}.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4258,
+  "text": "You must have {app} memorised by now.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4259,
+  "text": "{app} has seen more of you than daylight has.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4260,
+  "text": "Truly, {app} should be paying you.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4261,
+  "text": "Every road leads to {app} with you.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4262,
+  "text": "You keep coming back to {app} like a boomerang.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4263,
+  "text": "If {app} were a place, you would get mail there.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4264,
+  "text": "Another {app} visit. The streak continues, unfortunately.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4265,
+  "text": "{app} has you on a short lead.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4266,
+  "text": "Your thumb found {app} without even asking you.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4267,
+  "text": "Opening {app} this much is not a habit. It is a lifestyle.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4268,
+  "text": "{app}, yet again. I am starting to take it personally.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4269,
+  "text": "Are you and {app} exclusive now?",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4270,
+  "text": "Who is counting your {app} visits? Me. I am.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4271,
+  "text": "{app} is the first stop and the last stop with you.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4272,
+  "text": "You could open {app} with your eyes shut by now.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4273,
+  "text": "Should I just leave {app} open for you permanently?",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4274,
+  "text": "{app} wants you back. It always wants you back.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4275,
+  "text": "You have built a small house inside {app}.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4276,
+  "text": "Count your minutes on {app}. Actually, do not.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4277,
+  "text": "Here is {app}. Try to leave before it gets dark.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4278,
+  "text": "{app} is the snack you keep calling the last one.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4279,
+  "text": "I am opening {app}, but I am judging you while I do it.",
+  "tier": 2,
+  "length": "long",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4280,
+  "text": "Your phone opens {app} by muscle memory now.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4281,
+  "text": "Nobody opens {app} just once. Least of all you.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4282,
+  "text": "{app} got a promotion to main character.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4283,
+  "text": "Back to {app}. The rest of the phone feels ignored.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4284,
+  "text": "{app} is your comfort blanket with notifications.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4285,
+  "text": "You treat {app} like a fridge you keep checking.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4286,
+  "text": "The algorithm sends its regards. Enjoy {app}.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4287,
+  "text": "Somebody tell {app} to play hard to get.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4288,
+  "text": "You have opened {app} so often it should know your birthday.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4289,
+  "text": "At this rate {app} will need a bigger chair for you.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4290,
+  "text": "{app} has a reserved seat with your name on it.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4291,
+  "text": "I would roast you, but {app} already has you well done.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4292,
+  "text": "Ah yes, {app}. The scenic route to nowhere.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4293,
+  "text": "You and {app} are going steady, I see.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4294,
+  "text": "Smash first, scroll later. Welcome to {app}.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4295,
+  "text": "Let me smash this open so you can stare at {app}.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4296,
+  "text": "The hammer is for the crate. The guilt is for you. Enjoy {app}.",
+  "tier": 2,
+  "length": "long",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4297,
+  "text": "{app} gets more of your time than your houseplants do.",
+  "tier": 2,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4298,
+  "text": "Are you married to {app}? You never leave the house.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4299,
+  "text": "I have run out of polite ways to say {app}.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4300,
+  "text": "You do not use {app}. You live in it.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4301,
+  "text": "{app} has more of your day than you do.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4302,
+  "text": "Fine. I will smash {app} open. You clearly cannot wait.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4303,
+  "text": "Your thumb has a permanent address on {app}.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4304,
+  "text": "{app} should list you as a resident.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4305,
+  "text": "You opened {app}. I am filing a complaint.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4306,
+  "text": "If staring at {app} were a sport, you would have a sponsor.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4307,
+  "text": "Let me hammer this open, since {app} is apparently oxygen now.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4308,
+  "text": "You and {app}, till battery do you part.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4309,
+  "text": "{app}. I will not be taking questions.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4310,
+  "text": "You have spent so long on {app} it should charge a membership.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4311,
+  "text": "Every time you open {app}, a book somewhere gets dusty.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4312,
+  "text": "{app} is winning, and you are not even playing.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4313,
+  "text": "You are not checking {app}. {app} is checking you.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4314,
+  "text": "Breaking news: you opened {app}. Nobody is surprised.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4315,
+  "text": "Your phone has other apps besides {app}. Want a tour?",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4316,
+  "text": "{app} is basically your landlord now.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4317,
+  "text": "Opening {app} once more is a choice. A loud one.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4318,
+  "text": "I am smashing this crate the way {app} smashes your plans.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4319,
+  "text": "Round who knows on {app}. I lost count and so did you.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4320,
+  "text": "At this point I should tattoo {app} on your home screen.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4321,
+  "text": "You have been on {app} long enough to have a favourite chair there.",
+  "tier": 3,
+  "length": "long",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4322,
+  "text": "The only thing growing around here is your time on {app}.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4323,
+  "text": "{app} has you on a leash and you call it browsing.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4324,
+  "text": "Somebody should separate you and {app} for a while.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4325,
+  "text": "Congratulations, top {app} customer. Nobody else wanted the title.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4326,
+  "text": "You will open {app}, close it, and open it a minute later. I have seen this film.",
+  "tier": 3,
+  "length": "long",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4327,
+  "text": "{app} must be running out of things to show you.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4328,
+  "text": "Your future called. You sent it to voicemail and opened {app}.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4329,
+  "text": "{app}? Even the hammer is tired of you.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4330,
+  "text": "This crate is all that stands between you and {app}. Not for long.",
+  "tier": 3,
+  "length": "long",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4331,
+  "text": "I will open {app}. Just know that I know.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4332,
+  "text": "You and {app} have been together longer than some marriages.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4333,
+  "text": "You could have learned a language in the time you gave {app}.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4334,
+  "text": "You know {app} better than you know your own street.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4335,
+  "text": "If {app} vanished, would you recognise the room around you?",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4336,
+  "text": "Your thumb has a gym membership, and it is called {app}.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4337,
+  "text": "You will be quick on {app}, you say. You never are.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4338,
+  "text": "{app} is not a break if you never come back from it.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4339,
+  "text": "Opening {app} again, you absolute regular.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4340,
+  "text": "{app} has turned you into furniture with a thumb.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4341,
+  "text": "This is the {app} crate. I break it, you break your evening.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4342,
+  "text": "Sure, {app}. The day was going too well anyway.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4343,
+  "text": "{app} has more of your attention than anything else in this room.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4344,
+  "text": "Here, have {app}. I give up trying to stop you.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4345,
+  "text": "You open {app} the way other people blink.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4346,
+  "text": "{app} is eating your time and you keep feeding it.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
+ },
+ {
+  "id": 4347,
+  "text": "The crate gets the hammer, you get {app}, your evening gets nothing.",
+  "tier": 3,
+  "length": "medium",
+  "pack": "spicy",
+  "tags": [
+   "app_roast"
+  ]
  }
 ]

@@ -42,6 +42,7 @@ import com.sangar.gal.R
 import com.sangar.gal.container
 import com.sangar.gal.data.SessionCardCap
 import com.sangar.gal.overlay.DefaultExclusions
+import com.sangar.gal.sidekick.scene.AppHabitsReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -108,6 +109,8 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
             )
         }
 
+        SceneSettingsCard(current)
+
         SectionCard {
             Text("Privacy", style = MaterialTheme.typography.titleMedium)
             Text(
@@ -122,8 +125,8 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
         SectionCard {
             Text("Data", style = MaterialTheme.typography.titleMedium)
             Text(
-                "Everything stays on this phone. Wiping removes all sessions, daily history, stats and the list " +
-                    "of recently shown lines. Your settings and exclusions stay.",
+                "Everything stays on this phone. Wiping removes all sessions, daily history, stats, the list " +
+                    "of recently shown lines and which apps Sidekick has roasted. Your settings and exclusions stay.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -160,6 +163,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
                     container.appScope.launch {
                         container.usage.wipeAll()
                         container.phrases.resetRecent()
+                        AppHabitsReader(context.applicationContext).clear()
                         withContext(Dispatchers.Main) {
                             Toast.makeText(context, "All data wiped", Toast.LENGTH_SHORT).show()
                         }

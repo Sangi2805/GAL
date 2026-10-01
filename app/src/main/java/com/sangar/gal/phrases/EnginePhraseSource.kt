@@ -62,6 +62,20 @@ class EnginePhraseSource(
         return pickAndLog(tags, tier)
     }
 
+    /**
+     * What Sidekick says before it smashes open [appLabel] because you use it a lot. [tier] 1 to 3 follows how
+     * far past the limits the usage is. Never empty.
+     */
+    suspend fun appRoast(appLabel: String, tier: Int): String {
+        val pick = runCatching { engine().pickAppRoast(tier.coerceIn(1, 3)) }.getOrElse {
+            NagLog.e(TAG, "app roast pick threw, using the hardcoded line", it)
+            Pick(Phrase(PhraseEngine.DEFAULT_PHRASE_ID, PhraseEngine.DEFAULT_APP_ROAST, tier, setOf(Tags.APP_ROAST)), 0, 0, PoolSource.HARDCODED_DEFAULT)
+        }
+        val template = pick.phrase.text.takeIf { it.isNotBlank() } ?: PhraseEngine.DEFAULT_APP_ROAST
+        NagLog.d(TAG, "app roast tier=$tier pool=${pick.poolSize} source=${pick.source} id=${pick.phrase.id}")
+        return fillAppName(template, appLabel)
+    }
+
     /** How many lines a pack holds, for the home screen tabs. */
     suspend fun sizeOf(pack: PhrasePack): Int = engine().sizeOf(pack)
 
@@ -143,4 +157,10 @@ class EnginePhraseSource(
         const val ASSET = "phrases.json"
         const val ROAST_TIER = 3
     }
+}
+
+/** Puts the app's name into an app roast line. A line without the placeholder gets the name in front. */
+fun fillAppName(template: String, appLabel: String): String {
+    val name = appLabel.trim().ifEmpty { "this app" }
+    return if (Tags.APP_PLACEHOLDER in template) template.replace(Tags.APP_PLACEHOLDER, name) else "$name? $template"
 }

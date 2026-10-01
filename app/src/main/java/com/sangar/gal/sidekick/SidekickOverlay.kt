@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.graphics.Point
 import android.graphics.Rect
@@ -21,14 +22,32 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
+import androidx.core.graphics.drawable.toBitmap
+import com.sangar.gal.BuildConfig
 import com.sangar.gal.Permissions
 import com.sangar.gal.R
+import com.sangar.gal.container
+import com.sangar.gal.data.Settings
 import com.sangar.gal.overlay.CardEvents
+import com.sangar.gal.overlay.QuietRules
 import com.sangar.gal.service.NagLog
+import com.sangar.gal.sidekick.scene.AfterSceneAndSpeech
+import com.sangar.gal.sidekick.scene.AppHabits
+import com.sangar.gal.sidekick.scene.AppHabitsReader
+import com.sangar.gal.sidekick.scene.NormalOpenScene
+import com.sangar.gal.sidekick.scene.NotFoundScene
+import com.sangar.gal.sidekick.scene.RoastOpenScene
+import com.sangar.gal.sidekick.scene.RoastRules
+import com.sangar.gal.sidekick.scene.SceneChoice
 import com.sangar.gal.sidekick.scene.SceneDirector
+import com.sangar.gal.sidekick.scene.SceneKind
+import com.sangar.gal.sidekick.scene.SceneSounds
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.concurrent.thread
 import kotlin.math.roundToInt
 
@@ -38,6 +57,9 @@ import kotlin.math.roundToInt
  */
 object SidekickStatus {
     var running: Boolean by mutableStateOf(false)
+
+    /** Debug builds only: feeds a command to the Sidekick on screen as if it heard it. Null while none is up. */
+    var debugHear: ((spoken: String, forceRoast: Boolean) -> Unit)? = null
 }
 
 /**
@@ -46,6 +68,11 @@ object SidekickStatus {
  *
  * While a roast card is on screen the blob wears the card's face ([CardEvents]), so the roast visibly comes
  * from Sidekick.
+ *
+ * "Open X" plays a scene on the stage ([SceneDirector]): a plain open, or for a social app used a lot a roast
+ * and a hammer ([AppHabits]). The line is spoken while the scene plays, and the app opens from inside the
+ * scene while the stage is still on screen. Quick open, the phone's "Remove animations" setting or a stage
+ * that cannot be shown all fall back to the old way: say it, then open.
  */
 class SidekickOverlay(
     private val context: Context,
@@ -55,14 +82,28 @@ class SidekickOverlay(
     private val windowManager: WindowManager = context.getSystemService()!!
     private val voice = VoiceEngine(context, this)
     private val resolver = AppResolver(context)
+    private val habits = AppHabitsReader(context)
     private val main = Handler(Looper.getMainLooper())
 
     private var view: SidekickView? = null
     private var params: WindowManager.LayoutParams? = null
     private var moodJob: Job? = null
+    private var settingsJob: Job? = null
+    private var openJob: Job? = null
+    private var sounds: SceneSounds? = null
+
+    /** The latest settings, kept current while Sidekick is on screen. */
+    private var settings = Settings()
+
+    /** Debug builds: the next command roasts whatever it opens, without the usage rules or the history. */
+    private var forceRoastOnce = false
+    private val debugHear: (String, Boolean) -> Unit = { spoken, forceRoast -> hearForDebug(spoken, forceRoast) }
 
     /** True from tap until the character finishes talking. Blocks re-entry. */
     private var busy = false
+
+    /** Set once by [release]. Late callbacks check it before speaking or opening anything. */
+    private var released = false
 
     /** Keeps the index fresh when the user installs or removes something. */
     private val packageWatcher = object : BroadcastReceiver() {
@@ -124,7 +165,14 @@ class SidekickOverlay(
                 view?.mood = mood
             }
         }
+        settingsJob = scope.launch {
+            context.container.settings.settings.collect { latest ->
+                settings = latest
+                applySceneSettings(latest)
+            }
+        }
         SceneDirector.floatingBlob = floatingBlob
+        if (BuildConfig.DEBUG) SidekickStatus.debugHear = debugHear
         SidekickStatus.running = true
         NagLog.i(C, "Sidekick is on screen")
         return true
@@ -147,12 +195,21 @@ class SidekickOverlay(
     }
 
     fun release() {
+        released = true
+        if (SidekickStatus.debugHear === debugHear) SidekickStatus.debugHear = null
         if (SceneDirector.floatingBlob === floatingBlob) {
             SceneDirector.cancel()
             SceneDirector.floatingBlob = null
         }
         moodJob?.cancel()
         moodJob = null
+        settingsJob?.cancel()
+        settingsJob = null
+        openJob?.cancel()
+        openJob = null
+        if (SceneDirector.sounds === sounds) SceneDirector.sounds = null
+        sounds?.release()
+        sounds = null
         if (view != null) runCatching { context.unregisterReceiver(packageWatcher) }
         main.removeCallbacksAndMessages(null)
         voice.release()
@@ -238,24 +295,150 @@ class SidekickOverlay(
         view?.state = SidekickState.THINKING
         // What was said is private: debug builds only, like every other NAG line that names an app.
         NagLog.d(C, "heard: $candidates")
+        val forceRoast = forceRoastOnce
+        forceRoastOnce = false
 
         val match = resolver.resolve(candidates)
         if (match == null) {
             // Maybe the app was installed after the last index build.
             refreshAppsAsync()
-            voice.speak(voice.randomConfusedLine()) { finishInteraction() }
+            notFound(voice.randomConfusedLine())
             return
         }
 
-        NagLog.d(C, "matched '${match.entry.label}' (${NagLog.app(match.entry.packageName)}) score=${"%.2f".format(match.score)}")
+        val entry = match.entry
+        NagLog.d(C, "matched '${entry.label}' (${NagLog.app(entry.packageName)}) score=${"%.2f".format(match.score)}")
 
-        voice.speak(voice.randomAcknowledgement()) {
-            if (!resolver.launch(match.entry)) {
-                voice.speak(context.getString(R.string.voice_launch_failed)) { finishInteraction() }
-            } else {
-                finishInteraction()
+        // Usage numbers and the icon come off the main thread; a busy day's events take a moment to read.
+        val now = settings
+        openJob = scope.launch {
+            val plan = try {
+                withContext(Dispatchers.Default) { planOpen(entry, now, forceRoast) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                NagLog.e(C, "planning the open failed; opening it plainly", e)
+                OpenPlan(roast = false, tier = 0, roastLine = null, icon = null, counts = false)
             }
+            if (released) return@launch
+            open(entry, plan)
         }
+    }
+
+    /**
+     * What opening an app will look like, worked out off the main thread. [counts] is false for a roast forced
+     * from adb, so testing does not use up the day's roasts.
+     */
+    private class OpenPlan(val roast: Boolean, val tier: Int, val roastLine: String?, val icon: Bitmap?, val counts: Boolean)
+
+    private suspend fun planOpen(entry: AppResolver.AppEntry, s: Settings, forceRoast: Boolean): OpenPlan {
+        val pkg = entry.packageName
+        val enabled = s.roastsActive && s.appRoastsEnabled
+        val social = enabled && !forceRoast && habits.isSocial(pkg)
+        val usage = if (social) habits.usage(pkg) else null
+        val decision = if (forceRoast) AppHabits.Decision(roast = true, tier = 2, reason = "forced from adb") else AppHabits.decide(
+            packageName = pkg,
+            enabled = enabled,
+            social = social,
+            usage = usage,
+            rules = RoastRules(minOpensToday = s.roastMinOpens, minMinutesToday = s.roastMinMinutes, minAverageMinutes = s.roastMinAverage),
+            history = habits.history(),
+            nowWall = System.currentTimeMillis(),
+            today = habits.today(),
+            inCall = QuietRules.isInCall(context),
+            quiet = pkg in s.exclusions,
+        )
+        NagLog.d(C, "open ${NagLog.app(pkg)}: ${if (decision.roast) "roast, tier ${decision.tier}" else "plain"} (${decision.reason})")
+        val line = if (decision.roast) context.container.phrases.appRoast(entry.label, decision.tier) else null
+        val icon = if (s.scenesEnabled) appIcon(pkg) else null
+        return OpenPlan(decision.roast, decision.tier, line, icon, counts = decision.roast && !forceRoast)
+    }
+
+    private fun open(entry: AppResolver.AppEntry, plan: OpenPlan) {
+        val line = plan.roastLine ?: voice.randomAcknowledgement()
+        if (plan.counts) habits.recordRoast(entry.packageName)
+        val kind = SceneChoice.choose(found = true, roast = plan.roast, scenesEnabled = settings.scenesEnabled, animationsOff = SceneDirector.animationsOff(context))
+        if (kind != null && playScene(kind, entry, plan.icon, line, AppHabits.moodFor(plan.tier))) return
+        // Quick open, no animations, or no stage: say it, then open.
+        voice.speak(line) { finishAfterLaunch(launched = resolver.launch(entry)) }
+    }
+
+    private fun notFound(line: String) {
+        val kind = SceneChoice.choose(found = false, roast = false, scenesEnabled = settings.scenesEnabled, animationsOff = SceneDirector.animationsOff(context))
+        if (kind != null && playScene(kind, null, null, line, Mood.DISAPPOINTED)) return
+        voice.speak(line) { finishInteraction() }
+    }
+
+    /**
+     * Plays [kind] with [line] in its bubble and in Sidekick's voice at the same time. [entry] opens from inside
+     * the scene, while the stage is still on screen, which is what lets Android 15 start it from the background.
+     * A tap on the stage skips the scene, opens the app at once and cuts the line short. Returns false if the
+     * stage could not be shown; nothing has been said or opened then.
+     */
+    private fun playScene(kind: SceneKind, entry: AppResolver.AppEntry?, icon: Bitmap?, line: String, mood: Mood): Boolean {
+        var launched = entry == null
+        val after = AfterSceneAndSpeech { finishAfterLaunch(launched) }
+        val started = SceneDirector.play(
+            context,
+            icon = icon,
+            makeScene = { at ->
+                when (kind) {
+                    SceneKind.ROAST_OPEN -> RoastOpenScene(at, line, mood)
+                    SceneKind.NORMAL_OPEN -> NormalOpenScene(at)
+                    SceneKind.NOT_FOUND -> NotFoundScene(at, line)
+                }
+            },
+            callbacks = SceneDirector.Callbacks(
+                onLaunch = { if (entry != null) launched = resolver.launch(entry) },
+                onDone = { skipped ->
+                    if (skipped) voice.stopSpeaking()
+                    after.sceneDone()
+                },
+            ),
+        )
+        if (!started) {
+            NagLog.w(C, "no stage for ${kind.name}; saying it instead")
+            return false
+        }
+        voice.speak(line) { after.speechDone() }
+        return true
+    }
+
+    private fun finishAfterLaunch(launched: Boolean) {
+        if (launched || released) {
+            finishInteraction()
+        } else {
+            voice.speak(context.getString(R.string.voice_launch_failed)) { finishInteraction() }
+        }
+    }
+
+    /** Sounds and haptics follow Settings, live. */
+    private fun applySceneSettings(s: Settings) {
+        SceneDirector.hapticsEnabled = s.sceneHaptics
+        if (s.sceneSounds && sounds == null) {
+            sounds = SceneSounds(context).also { SceneDirector.sounds = it }
+        } else if (!s.sceneSounds && sounds != null) {
+            if (SceneDirector.sounds === sounds) SceneDirector.sounds = null
+            sounds?.release()
+            sounds = null
+        }
+    }
+
+    private fun appIcon(packageName: String): Bitmap? = runCatching {
+        val px = (ICON_DP * context.resources.displayMetrics.density).roundToInt()
+        context.packageManager.getApplicationIcon(packageName).toBitmap(px, px)
+    }.getOrNull()
+
+    /** Debug builds only, from adb: runs [spoken] as if Sidekick heard it. [forceRoast] skips the usage rules. */
+    private fun hearForDebug(spoken: String, forceRoast: Boolean) {
+        if (busy || released) {
+            NagLog.w(C, "debug command ignored: Sidekick is busy")
+            return
+        }
+        busy = true
+        view?.mood = Mood.NONE
+        forceRoastOnce = forceRoast
+        onHeard(listOf(spoken))
     }
 
     override fun onListenFailed(reason: String) {
@@ -298,5 +481,8 @@ class SidekickOverlay(
     private companion object {
         const val C = "Sidekick"
         const val SIZE_DP = 116f
+
+        /** Icon size on the crate. */
+        const val ICON_DP = 96f
     }
 }

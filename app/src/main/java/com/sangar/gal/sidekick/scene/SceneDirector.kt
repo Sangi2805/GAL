@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import com.sangar.gal.service.NagLog
 import com.sangar.gal.sidekick.stage.MovementTuning
@@ -120,6 +121,14 @@ object SceneDirector {
         }, limitMillis)
         return true
     }
+
+    /**
+     * The phone's "Remove animations" setting (animator duration scale 0). Scenes are skipped then: the app just
+     * opens, after the line is said.
+     */
+    fun animationsOff(context: Context): Boolean = runCatching {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
+    }.getOrDefault(false)
 
     /** Ends whatever is playing at once, opening its app if it had not yet. */
     fun skip() {

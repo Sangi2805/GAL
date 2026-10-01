@@ -159,6 +159,27 @@ object Permissions {
     )
 
     /**
+     * Xiaomi, Redmi and POCO phones have their own switch, "Display pop-up windows while running in the
+     * background", and without it Android's usual overlay exemption is not enough to open an app from Sidekick.
+     * It cannot be read reliably, so setup just points at it on these phones.
+     */
+    val isXiaomiFamily: Boolean
+        get() = listOf(Build.MANUFACTURER, Build.BRAND).any { it.orEmpty().lowercase() in XIAOMI_FAMILY }
+
+    private val XIAOMI_FAMILY = setOf("xiaomi", "redmi", "poco")
+
+    /** Xiaomi's own permission page for GAL ("Other permissions"), or the app's info page where it is missing. */
+    fun openXiaomiOtherPermissions(context: Context) = context.startFirst(
+        Intent("miui.intent.action.APP_PERM_EDITOR")
+            .setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
+            .putExtra("extra_pkgname", context.packageName),
+        Intent("miui.intent.action.APP_PERM_EDITOR")
+            .setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.AppPermissionsEditorActivity")
+            .putExtra("extra_pkgname", context.packageName),
+        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri(context)),
+    )
+
+    /**
      * Needs REQUEST_IGNORE_BATTERY_OPTIMIZATIONS. Falls back to the full list if the direct dialog is missing.
      * Lint flags this as against Play policy; the app is sideloaded, asks once, and a screen timer that OEM
      * battery managers kill is the exact failure this prevents.

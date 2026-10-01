@@ -120,6 +120,17 @@ class VoiceEngine(
         }
     }
 
+    /**
+     * Cuts off whatever is being said or waiting to be said. Every pending done callback still runs, at once, so
+     * nothing waiting on the speech is stranded.
+     */
+    fun stopSpeaking() {
+        if (released) return
+        pending.clear()
+        runCatching { tts?.stop() }
+        doneCallbacks.keys.toList().forEach { finishUtterance(it) }
+    }
+
     private fun selectLanguage() {
         val engine = tts ?: return
         val preferred = Locale.getDefault()
@@ -160,6 +171,11 @@ class VoiceEngine(
         }
 
         override fun onDone(utteranceId: String?) {
+            main.post { if (!released) finishUtterance(utteranceId) }
+        }
+
+        // Interrupted by stop() or by a newer QUEUE_FLUSH utterance. Without this its done callback never runs.
+        override fun onStop(utteranceId: String?, interrupted: Boolean) {
             main.post { if (!released) finishUtterance(utteranceId) }
         }
 

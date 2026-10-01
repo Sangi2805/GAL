@@ -39,6 +39,20 @@ data class Settings(
     val overlayFailed: Boolean = false,
     /** The home screen tab: which set of lines the cards use. */
     val phrasePack: PhrasePack = PhrasePack.SPICY,
+    /** Voice Sidekick: play a short scene when opening an app. Off means "Quick open": just open it. */
+    val scenesEnabled: Boolean = true,
+    /** Roast and hammer open a social app used a lot (needs Screen Time Roasts for the usage numbers). */
+    val appRoastsEnabled: Boolean = true,
+    /** Heavy use, any one of: opened this many times today... */
+    val roastMinOpens: Int = AppRoastLimits.DEFAULT_OPENS,
+    /** ...more than this many minutes today... */
+    val roastMinMinutes: Int = AppRoastLimits.DEFAULT_MINUTES,
+    /** ...or a seven day average over this many minutes a day. */
+    val roastMinAverage: Int = AppRoastLimits.DEFAULT_AVERAGE,
+    /** Short original sound effects in scenes. Off by default. */
+    val sceneSounds: Boolean = false,
+    /** A tap of vibration on landings and hits. */
+    val sceneHaptics: Boolean = true,
 ) {
     /** Measuring runs once setup is finished with the roasts switch on, whether cards are on or off. */
     val roastsActive: Boolean get() = onboardingComplete && roastsEnabled
@@ -65,6 +79,13 @@ class SettingsRepository(context: Context) {
         val OVERLAY_FAILED = booleanPreferencesKey("overlay_failed")
         val RING_BUFFER = stringPreferencesKey("phrase_ring_buffer")
         val PHRASE_PACK = stringPreferencesKey("phrase_pack")
+        val SCENES_ENABLED = booleanPreferencesKey("scenes_enabled")
+        val APP_ROASTS_ENABLED = booleanPreferencesKey("app_roasts_enabled")
+        val ROAST_MIN_OPENS = intPreferencesKey("roast_min_opens")
+        val ROAST_MIN_MINUTES = intPreferencesKey("roast_min_minutes")
+        val ROAST_MIN_AVERAGE = intPreferencesKey("roast_min_average")
+        val SCENE_SOUNDS = booleanPreferencesKey("scene_sounds")
+        val SCENE_HAPTICS = booleanPreferencesKey("scene_haptics")
     }
 
     private val preferences: Flow<Preferences> = store.data.catch { e ->
@@ -87,6 +108,13 @@ class SettingsRepository(context: Context) {
             microphonePermissionRequested = p[Keys.MICROPHONE_PERMISSION_REQUESTED] ?: false,
             overlayFailed = p[Keys.OVERLAY_FAILED] ?: false,
             phrasePack = PhrasePack.parse(p[Keys.PHRASE_PACK]),
+            scenesEnabled = p[Keys.SCENES_ENABLED] ?: true,
+            appRoastsEnabled = p[Keys.APP_ROASTS_ENABLED] ?: true,
+            roastMinOpens = AppRoastLimits.clampOpens(p[Keys.ROAST_MIN_OPENS] ?: AppRoastLimits.DEFAULT_OPENS),
+            roastMinMinutes = AppRoastLimits.clampMinutes(p[Keys.ROAST_MIN_MINUTES] ?: AppRoastLimits.DEFAULT_MINUTES),
+            roastMinAverage = AppRoastLimits.clampAverage(p[Keys.ROAST_MIN_AVERAGE] ?: AppRoastLimits.DEFAULT_AVERAGE),
+            sceneSounds = p[Keys.SCENE_SOUNDS] ?: false,
+            sceneHaptics = p[Keys.SCENE_HAPTICS] ?: true,
         )
     }.distinctUntilChanged()
 
@@ -138,6 +166,20 @@ class SettingsRepository(context: Context) {
     suspend fun setOverlayFailed(failed: Boolean) = store.edit { it[Keys.OVERLAY_FAILED] = failed }
 
     suspend fun setPhrasePack(pack: PhrasePack) = store.edit { it[Keys.PHRASE_PACK] = pack.key }
+
+    suspend fun setScenesEnabled(on: Boolean) = store.edit { it[Keys.SCENES_ENABLED] = on }
+
+    suspend fun setAppRoastsEnabled(on: Boolean) = store.edit { it[Keys.APP_ROASTS_ENABLED] = on }
+
+    suspend fun setRoastMinOpens(value: Int) = store.edit { it[Keys.ROAST_MIN_OPENS] = AppRoastLimits.clampOpens(value) }
+
+    suspend fun setRoastMinMinutes(value: Int) = store.edit { it[Keys.ROAST_MIN_MINUTES] = AppRoastLimits.clampMinutes(value) }
+
+    suspend fun setRoastMinAverage(value: Int) = store.edit { it[Keys.ROAST_MIN_AVERAGE] = AppRoastLimits.clampAverage(value) }
+
+    suspend fun setSceneSounds(on: Boolean) = store.edit { it[Keys.SCENE_SOUNDS] = on }
+
+    suspend fun setSceneHaptics(on: Boolean) = store.edit { it[Keys.SCENE_HAPTICS] = on }
 
     suspend fun readRingBuffer(): List<Int> =
         preferences.first()[Keys.RING_BUFFER].orEmpty()
