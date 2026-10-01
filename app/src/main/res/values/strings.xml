@@ -15,6 +15,7 @@
     <string name="voice_err_audio">Something is wrong with the microphone.</string>
     <string name="voice_err_permission">I am not allowed to use the microphone.</string>
     <string name="voice_err_network">I only listen offline. Download your language for offline speech in your phone\'s settings.</string>
+    <string name="voice_downloading_pack">Downloading the offline speech pack for your language. Try me again in a minute.</string>
     <string name="voice_err_language">No offline speech pack for this language yet. Download it in your phone\'s speech settings.</string>
     <string name="voice_err_busy">Give me a second, I am still busy.</string>
     <string name="voice_err_generic">That did not work. Try again.</string>

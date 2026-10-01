@@ -4,13 +4,16 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.os.Build
 import android.os.Looper
+import android.os.SystemClock
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
 import android.util.Log
+import com.sangar.gal.BuildConfig
 import com.sangar.gal.R
 import java.util.Locale
 
@@ -189,51 +192,81 @@ class VoiceEngine(
 
     // ---- Input ------------------------------------------------------------
 
+    /** Which recogniser we hold: the on-device one (Android 12+) or the phone's default. */
+    private var recognizerOnDevice = false
+
+    /** Set when the on-device recogniser failed in a way the default one might not. Cleared on release. */
+    private var avoidOnDevice = false
+
+    private var heardSpeech = false
+    private var listenStartedAt = 0L
+    private var retriedEarly = false
+    private var lastIntent: Intent? = null
+
     /** Caller must have already confirmed RECORD_AUDIO is granted. */
     fun startListening() {
+        retriedEarly = false
+        beginListening()
+    }
+
+    private fun beginListening() {
         if (released || listening) return
 
-        if (!SpeechRecognizer.isRecognitionAvailable(appContext)) {
+        // Android 12+ has a recogniser that is guaranteed to run on the phone. It is more reliable for an
+        // offline app than asking the default one to "prefer offline", which some phones ignore or answer
+        // with an instant "no match".
+        val onDevice = !avoidOnDevice && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+            runCatching { SpeechRecognizer.isOnDeviceRecognitionAvailable(appContext) }.getOrDefault(false)
+        if (!onDevice && !SpeechRecognizer.isRecognitionAvailable(appContext)) {
             listener.onListenFailed(appContext.getString(R.string.voice_no_recognizer))
             return
         }
 
+        if (recognizer == null || recognizerOnDevice != onDevice) {
+            runCatching { recognizer?.destroy() }
+            recognizer = null
+        }
         val engine = recognizer ?: try {
-            SpeechRecognizer.createSpeechRecognizer(appContext).also {
+            val created = if (onDevice && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                SpeechRecognizer.createOnDeviceSpeechRecognizer(appContext)
+            } else {
+                SpeechRecognizer.createSpeechRecognizer(appContext)
+            }
+            created.also {
                 it.setRecognitionListener(recognitionListener)
                 recognizer = it
+                recognizerOnDevice = onDevice
             }
         } catch (t: Throwable) {
-            Log.e(TAG, "createSpeechRecognizer failed", t)
-            listener.onListenFailed(appContext.getString(R.string.voice_no_recognizer))
+            Log.e(TAG, "creating the recogniser failed (onDevice=$onDevice)", t)
+            if (onDevice) {
+                avoidOnDevice = true
+                beginListening()
+            } else {
+                listener.onListenFailed(appContext.getString(R.string.voice_no_recognizer))
+            }
             return
         }
 
         val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(
-                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM,
-            )
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            // The on-device recogniser needs to be told the language; the phone's own is the right one.
+            putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault().toLanguageTag())
             putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, appContext.packageName)
             putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, MAX_RESULTS)
             putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, false)
-            // GAL is offline. We hold no INTERNET permission, but the recogniser is another app that might,
-            // so ask it to stay on the phone. With no offline pack for the language it fails with a
-            // language or network error, which describeError() turns into "download the offline pack".
+            // GAL is offline. We hold no INTERNET permission, but the default recogniser is another app that
+            // might, so ask it to stay on the phone. No silence-length extras: on several phones they make the
+            // recogniser give up at once with "no match".
             putExtra(RecognizerIntent.EXTRA_PREFER_OFFLINE, true)
-            // App names are short; stop listening quickly after they stop talking.
-            putExtra(
-                RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS,
-                SILENCE_MS,
-            )
-            putExtra(
-                RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS,
-                SILENCE_MS,
-            )
         }
+        lastIntent = intent
 
         listening = true
+        heardSpeech = false
+        listenStartedAt = SystemClock.elapsedRealtime()
         main.postDelayed(listenTimeout, LISTEN_TIMEOUT_MS)
+        Log.i(TAG, "listening (onDevice=$onDevice, language=${Locale.getDefault().toLanguageTag()})")
         try {
             engine.startListening(intent)
         } catch (t: Throwable) {
@@ -266,8 +299,9 @@ class VoiceEngine(
                 ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                 ?.filter { it.isNotBlank() }
                 .orEmpty()
+            Log.i(TAG, "results: ${candidates.size} candidate(s)")
             if (candidates.isEmpty()) {
-                listener.onListenFailed(appContext.getString(R.string.voice_heard_nothing))
+                listener.onListenFailed(withCode(appContext.getString(R.string.voice_heard_nothing), -1))
             } else {
                 listener.onHeard(candidates)
             }
@@ -277,16 +311,57 @@ class VoiceEngine(
             stopListenTimer()
             listening = false
             if (released) return
-            listener.onListenFailed(describeError(error))
+            val elapsed = SystemClock.elapsedRealtime() - listenStartedAt
+            Log.w(TAG, "recogniser error $error (onDevice=$recognizerOnDevice, heardSpeech=$heardSpeech, after ${elapsed}ms)")
+
+            // A "no match" before anyone could have spoken is a known recogniser hiccup: try once more.
+            val noMatch = error == SpeechRecognizer.ERROR_NO_MATCH || error == SpeechRecognizer.ERROR_SPEECH_TIMEOUT
+            if (noMatch && !heardSpeech && elapsed < EARLY_FAIL_MS && !retriedEarly) {
+                retriedEarly = true
+                runCatching { recognizer?.cancel() }
+                main.postDelayed({ beginListening() }, RETRY_DELAY_MS)
+                return
+            }
+
+            if (recognizerOnDevice && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val language = error == SpeechRecognizer.ERROR_LANGUAGE_NOT_SUPPORTED ||
+                    error == SpeechRecognizer.ERROR_LANGUAGE_UNAVAILABLE
+                if (language && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    // Ask the phone to fetch the offline pack for this language, then say so.
+                    val intent = lastIntent
+                    val started = intent != null && runCatching { recognizer?.triggerModelDownload(intent) }.isSuccess
+                    if (started) {
+                        listener.onListenFailed(appContext.getString(R.string.voice_downloading_pack))
+                        return
+                    }
+                }
+                // Anything else odd from the on-device recogniser: fall back to the phone's default one.
+                if (!noMatch && !language && error != SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS &&
+                    error != SpeechRecognizer.ERROR_RECOGNIZER_BUSY && !retriedEarly
+                ) {
+                    retriedEarly = true
+                    avoidOnDevice = true
+                    main.postDelayed({ beginListening() }, RETRY_DELAY_MS)
+                    return
+                }
+            }
+            listener.onListenFailed(withCode(describeError(error), error))
         }
 
-        override fun onBeginningOfSpeech() = Unit
+        override fun onBeginningOfSpeech() {
+            heardSpeech = true
+        }
+
         override fun onRmsChanged(rmsdB: Float) = Unit
         override fun onBufferReceived(buffer: ByteArray?) = Unit
         override fun onEndOfSpeech() = Unit
         override fun onPartialResults(partialResults: Bundle?) = Unit
         override fun onEvent(eventType: Int, params: Bundle?) = Unit
     }
+
+    /** Debug builds say the recogniser's error number too, so a test on a real phone tells us what broke. */
+    private fun withCode(message: String, code: Int): String =
+        if (BuildConfig.DEBUG) "$message Code $code." else message
 
     private fun describeError(error: Int): String {
         val res = when (error) {
@@ -311,6 +386,7 @@ class VoiceEngine(
 
     fun release() {
         released = true
+        avoidOnDevice = false
         stopListenTimer()
         main.removeCallbacksAndMessages(null)
         doneCallbacks.clear()
@@ -332,12 +408,9 @@ class VoiceEngine(
         const val TAG = "VoiceEngine"
         const val MAX_RESULTS = 5
 
-        /**
-         * Must be Int, not Long. These extras are read with Bundle.getInt(); a
-         * Long is silently rejected and the recogniser falls back to 0, which
-         * logs "expected Integer but value was a java.lang.Long".
-         */
-        const val SILENCE_MS = 1_200
+        /** A "no match" sooner than this after starting cannot be the user's fault; retry once. */
+        const val EARLY_FAIL_MS = 1_500L
+        const val RETRY_DELAY_MS = 250L
         const val LISTEN_TIMEOUT_MS = 12_000L
         const val TTS_INIT_TIMEOUT_MS = 3_000L
 
