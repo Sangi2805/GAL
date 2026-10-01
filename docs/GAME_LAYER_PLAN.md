@@ -1,6 +1,6 @@
 # GAL game layer plan
 
-Status: proposal, waiting for Sangar's approval. Nothing here is built yet.
+Status: approved by Sangar on 1 October 2026 (crate approach for v1, launcher mode later). Phase 0 is next.
 
 ## Goal
 
@@ -79,12 +79,20 @@ Otherwise the app gets NormalOpen. If Screen Time Roasts is turned off, we never
 
 ## Phases
 
-**Phase 0: finish the merge.** Do this before any game work.
-1. `git init` in GAL, with a .gitignore matching GetALife's (keystore, keystore.properties, local.properties, build folders). Then make the first commit.
-2. Decide on the daily limit card. The code removed it but the README and NagController still describe it. Either restore it from GetALife commit 5855a7b or remove it from the docs.
-3. Persist the 2-minute gap guard so a crash loop cannot show a card on every restart.
-4. Create the release keystore and back it up. Build the release APK.
-5. Do a real-phone pass: speech, open by voice, "tap to bring Sidekick back" after a reboot, and one phone with a strict battery manager.
+**Phase 0: finish the merge.** Do this before any game work. Decisions from Sangar, 1 October 2026:
+
+1. Git is set up (baseline commit b8b5245). Note that the old .gitignore had `*.json`, which would have left out phrases.json and the Room schemas. It now only ignores google-services.json. Push to github.com/Sangi2805 once the repo exists.
+2. Drop the daily limit card for good. Remove what is left of it: the comment in NagController.kt that mentions DailyNagRules, the unused DailyLimit.kt if nothing else needs it, and every mention in README.md.
+3. Change the session card rules:
+   - Keep the threshold slider at 1 minute to 8 hours, default 30 minutes.
+   - The gap between cards in a session is the threshold itself, not a fixed 10 minutes. With a 10 minute threshold we get cards at 10, 20, 30 minutes and so on.
+   - Every session gets exactly 12 cards at most. Remove the auto 6/4/3 cap and the Advanced cap override.
+   - The 12th card is always a give-up sign-off, in both packs. Spicy keeps its 80 give_up lines. "You may cry" needs about 80 new give-up lines in its own roast style (new file tools/phrases/cry_10_giveup.txt, same builder checks), replacing the heavy closing roast. The give-up card wears the bored face in both packs.
+   - A new session starts after the screen has been off for more than 1 minute, as now. It runs until Screen Time Roasts is switched off.
+   - Update the tests that pinned the old cap and gap (SessionCardCapTest, NagSchedulerTest, ClosingRoastTest, GiveUpPhraseTest) and the README.
+4. Persist the 2-minute gap guard so a crash loop cannot show a card on every restart.
+5. Create the release keystore and back it up. Build the release APK.
+6. Do a real-phone pass: speech, open by voice, "tap to bring Sidekick back" after a reboot, and one phone with a strict battery manager.
 
 **Phase 1: stage and movement.** Build StageOverlay, StageView, World, BlobActor and MovementTuning. Add a debug-only "playground" scene where the blob runs and jumps across the screen, so we can tune the feel on a real phone. Done when the movement feels good to Sangar and frame time stays under 8 ms on a mid-range phone.
 
