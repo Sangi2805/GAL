@@ -25,16 +25,17 @@ fun interface NagListener {
 }
 
 /**
- * Runs on every tracker tick. Checks health, asks both triggers whether a card is due, applies the quiet
- * rules, then shows the card. Never throws: anything missing turns into a [problem] the UI can show.
+ * Runs on every tracker tick. Checks health, asks the scheduler whether a session card is due, applies the
+ * quiet rules, then shows the card. Never throws: anything missing turns into a [problem] the UI can show.
  * Every threshold comparison and every show or suppress decision is logged under the NAG tag.
  *
- * Two independent triggers share the snooze, the exclusion list and the quiet rules:
- * - session: one continuous session reaches the "nag me after" threshold, then every 10 minutes, up to
- *   the session's card cap ([NagScheduler]), whose last card is a give_up sign-off;
- * - daily: today's total reaches the daily limit, then every extra hour, three times a day ([DailyNagRules]).
- * When both are due the daily card wins and also counts as the session's card. Any card holds the other
- * trigger off for [MIN_GAP_MILLIS], so the two never arrive back to back.
+ * One trigger: a continuous session reaches the "nag me after" threshold, then another card each time one
+ * more threshold of session time passes, up to [SessionCardCap.PER_SESSION] cards ([NagScheduler]). The last
+ * of them is the give-up sign-off. Any card holds the next one off for at least [MIN_GAP_MILLIS] of real time.
+ *
+ * The session's progress, a running snooze and the time of the last card are saved in [stateStore], so a
+ * restarted service carries on where it was instead of starting the 12 cards again, and a crash loop cannot
+ * show a card on every restart.
  */
 class NagController(
     private val context: Context,
@@ -44,10 +45,18 @@ class NagController(
     private val phrases: PhraseSource,
     private val listener: NagListener,
     private val onProblemChanged: (String?) -> Unit,
+    private val stateStore: NagStateStore = PrefsNagStateStore(context),
+    private val wallClock: () -> Long = System::currentTimeMillis,
 ) {
     private val scheduler = NagScheduler()
     private var evaluating = false
     private var lastCardElapsed: Long? = null
+    private var lastCardWall = 0L
+    private var snoozeUntilWall = 0L
+
+    init {
+        restoreSavedState()
+    }
 
     var problem: String? = null
         private set(value) {
@@ -63,14 +72,14 @@ class NagController(
         val now = SystemClock.elapsedRealtime()
         val thresholdMillis = settings.thresholdMinutes * 60_000L
         // The scheduler latches this when the session starts, so a mid-session change waits for the next one.
-        val check = scheduler.check(sessionKey, activeMillis, thresholdMillis, settings.sessionCardCap, now)
+        val check = scheduler.check(sessionKey, activeMillis, thresholdMillis, now)
         DiagnosticsState.update {
             it.copy(
                 nextDueActiveMillis = check.dueAtActiveMillis,
                 snoozeUntilElapsed = now + check.snoozeRemainingMillis,
                 sessionCardCap = check.cap,
                 sessionCardsShown = check.nagsThisSession,
-                sessionCardCapSetting = SessionCardCap.describe(settings.thresholdMinutes, settings.sessionCardCapOverride),
+                sessionCardCapSetting = SessionCardCap.describe(settings.thresholdMinutes),
             )
         }
         NagLog.d(
@@ -179,12 +188,16 @@ class NagController(
                     onSnooze = {
                         NagLog.i(C, "user tapped Snooze, silent for ${NagScheduler.SNOOZE_MILLIS / 60_000} min")
                         scheduler.onSnoozed(SystemClock.elapsedRealtime())
+                        snoozeUntilWall = wallClock() + NagScheduler.SNOOZE_MILLIS
+                        saveState()
                     },
                 )
                 when (result) {
                     ShowResult.SHOWN -> {
                         lastCardElapsed = SystemClock.elapsedRealtime()
-                        scheduler.onShown(sessionKey, activeMillis, check.cap, thresholdMillis)
+                        lastCardWall = wallClock()
+                        scheduler.onShown(sessionKey, activeMillis, thresholdMillis)
+                        saveState()
                         DiagnosticsState.decision("SHOWN phrase ${NagLog.phrase(phrase.id)} at ${sessionMinutes} min")
                         NagLog.i(C, "decision SHOWN")
                         listener.onNagShown(phrase, sessionMinutes, final.observed.foregroundPackage)
@@ -213,6 +226,42 @@ class NagController(
 
     fun release() = overlay.dismiss("service stopped")
 
+    /** Picks up where a killed or crashed service left off. See [NagStateStore]. */
+    private fun restoreSavedState() {
+        val saved = runCatching { stateStore.load() }
+            .onFailure { NagLog.w(C, "could not read the saved card state", it) }
+            .getOrNull() ?: return
+        val nowWall = wallClock()
+        val nowElapsed = SystemClock.elapsedRealtime()
+        scheduler.restore(NagScheduler.Snapshot(saved.sessionKey, saved.nagsThisSession, saved.nextDueActiveMillis))
+        lastCardWall = saved.lastCardWall
+        lastCardElapsed = NagStatePersistence.lastCardElapsed(saved.lastCardWall, nowWall, nowElapsed, MIN_GAP_MILLIS)
+        NagStatePersistence.snoozeUntilElapsed(saved.snoozeUntilWall, nowWall, nowElapsed, NagScheduler.SNOOZE_MILLIS)?.let {
+            scheduler.restoreSnooze(it, nowElapsed)
+            snoozeUntilWall = saved.snoozeUntilWall
+        }
+        NagLog.i(
+            C,
+            "restored card state: ${saved.nagsThisSession} card(s) shown in the saved session, " +
+                "last card ${lastCardElapsed?.let { "${(nowElapsed - it) / 1000}s ago" } ?: "long ago"}",
+        )
+    }
+
+    private fun saveState() {
+        val snapshot = scheduler.snapshot() ?: return
+        runCatching {
+            stateStore.save(
+                PersistedNagState(
+                    sessionKey = snapshot.sessionKey,
+                    nagsThisSession = snapshot.nagsThisSession,
+                    nextDueActiveMillis = snapshot.nextDueActiveMillis,
+                    snoozeUntilWall = snoozeUntilWall,
+                    lastCardWall = lastCardWall,
+                ),
+            )
+        }.onFailure { NagLog.w(C, "could not save the card state", it) }
+    }
+
     private fun suppress(reason: String) {
         NagLog.i(C, "decision SUPPRESSED: $reason")
         DiagnosticsState.decision("SUPPRESSED: $reason")
@@ -235,7 +284,7 @@ class NagController(
     companion object {
         private const val C = "Nag"
 
-        /** Minimum real time between any two cards, whichever trigger they come from. */
+        /** Minimum real time between any two cards. Saved across restarts, so a crash loop cannot beat it. */
         const val MIN_GAP_MILLIS = 1 * 60_000L
         const val PROBLEM_OVERLAY_PERMISSION = "\"Display over other apps\" is off, so nagging is paused."
         const val PROBLEM_USAGE_ACCESS = "Usage access is off, so nagging is paused."

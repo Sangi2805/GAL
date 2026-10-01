@@ -36,16 +36,15 @@ class EnginePhraseSource(
 
         val tier = NagContext.tier(request.sessionMinutes, usage)
         val tags = NagContext.tags(request.sessionMinutes, request.nagsThisSession, now, usage)
+        // The session's last card is a sign-off in both packs: the app announcing that it gives up on you
+        // until the next session.
         if (request.pack == PhrasePack.CRY) {
             return if (request.lastOfSession) {
-                closingRoastAndLog(tags, greet = false, now)
+                cryGiveUpAndLog()
             } else {
                 roastAndLog(tags, greet = request.nagsThisSession == 0, now)
             }
         }
-        
-        // The spicy session's last card is a sign-off: the app is announcing that it is done
-        // nagging this session.
         if (request.lastOfSession) return pickAndLog(NagContext.GIVE_UP_TAGS, tier)
         return pickAndLog(tags, tier)
     }
@@ -101,15 +100,15 @@ class EnginePhraseSource(
         return ChosenPhrase(roast.id, text, ROAST_TIER, roast.tags)
     }
 
-    private suspend fun closingRoastAndLog(tags: Set<String>, greet: Boolean, now: LocalDateTime): ChosenPhrase {
-        val pick = runCatching { engine().pickClosingRoast(tags, ROAST_TIER) }.getOrElse {
-            NagLog.e(TAG, "closing roast pick threw, using the hardcoded default line", it)
+    /** The "You may cry" sign-off. It carries the give_up tag, so the card wears the bored face. */
+    private suspend fun cryGiveUpAndLog(): ChosenPhrase {
+        val pick = runCatching { engine().pickCryGiveUp(ROAST_TIER) }.getOrElse {
+            NagLog.e(TAG, "cry give_up pick threw, using the hardcoded default line", it)
             Pick(PhraseEngine.defaultPhrase(ROAST_TIER), 0, 0, PoolSource.HARDCODED_DEFAULT)
         }
-        val roast = pick.phrase.takeIf { it.text.isNotBlank() } ?: PhraseEngine.defaultPhrase(ROAST_TIER)
-        val text = RoastGreeting.compose(roast.text, if (greet) 0 else 1, now)
-        NagLog.d(TAG, "closing roast pack=${roast.pack.key} pool=${pick.poolSize} window=${pick.effectiveWindow} source=${pick.source} id=${roast.id} greeting=$greet")
-        return ChosenPhrase(roast.id, text, ROAST_TIER, roast.tags)
+        val phrase = pick.phrase.takeIf { it.text.isNotBlank() } ?: PhraseEngine.defaultPhrase(ROAST_TIER)
+        NagLog.d(TAG, "cry give_up pack=${phrase.pack.key} pool=${pick.poolSize} window=${pick.effectiveWindow} source=${pick.source} id=${phrase.id}")
+        return ChosenPhrase(phrase.id, phrase.text, ROAST_TIER, phrase.tags)
     }
 
     private suspend fun pickAndLog(tags: Set<String>, tier: Int): ChosenPhrase {

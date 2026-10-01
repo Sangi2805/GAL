@@ -52,7 +52,7 @@ class UsageRepository(
         return stored + liveShare
     }
 
-    /** Today's screen-on time so far, including the open session, for the daily total trigger. */
+    /** Today's screen-on time so far, including the open session, for the home and stats screens. */
     suspend fun todayTotalMillis(): Long = withContext(Dispatchers.IO) {
         val day = today()
         val sessions = db.screenSessions().overlapping(startOf(day), startOf(day.plusDays(1)))

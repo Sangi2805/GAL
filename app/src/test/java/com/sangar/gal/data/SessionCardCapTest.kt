@@ -1,51 +1,39 @@
 package com.sangar.gal.data
 
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SessionCardCapTest {
 
-    /** The brief's boundaries, including both sides of the 45 minute edge. */
     @Test
-    fun theThresholdDecidesHowManyCardsASessionGets() {
-        assertEquals(6, SessionCardCap.auto(5))
-        assertEquals(6, SessionCardCap.auto(10))
-        assertEquals(4, SessionCardCap.auto(15))
-        assertEquals(4, SessionCardCap.auto(30))
-        assertEquals(4, SessionCardCap.auto(45))
-        assertEquals(3, SessionCardCap.auto(46))
-        assertEquals(3, SessionCardCap.auto(120))
+    fun everySessionGetsTwelveCards() {
+        assertEquals(12, SessionCardCap.PER_SESSION)
     }
 
     @Test
-    fun everyThresholdInRangeGetsACapAndTheCapOnlyFalls() {
-        var previous = Int.MAX_VALUE
-        for (minutes in Threshold.MIN_MINUTES..Threshold.MAX_MINUTES) {
-            val cap = SessionCardCap.auto(minutes)
-            assertEquals("$minutes min is out of range", cap, cap.coerceIn(SessionCardCap.MIN, SessionCardCap.MAX))
-            assertTrue("$minutes min went back up to $cap from $previous", cap <= previous)
-            previous = cap
-        }
+    fun theGapBetweenCardsIsTheThresholdItself() {
+        assertEquals(60_000L, SessionCardCap.gapMillis(1))
+        assertEquals(10 * 60_000L, SessionCardCap.gapMillis(10))
+        assertEquals(30 * 60_000L, SessionCardCap.gapMillis(30))
+        assertEquals(8 * 60 * 60_000L, SessionCardCap.gapMillis(8 * 60))
     }
 
     @Test
-    fun autoFollowsTheThresholdAndAnOverrideDoesNot() {
-        assertEquals(6, SessionCardCap.effective(5, SessionCardCap.AUTO))
-        assertEquals(3, SessionCardCap.effective(120, SessionCardCap.AUTO))
-        assertEquals(2, SessionCardCap.effective(5, 2))
-        assertEquals(2, SessionCardCap.effective(120, 2))
+    fun theGapFollowsTheThresholdRange() {
+        assertEquals(SessionCardCap.gapMillis(Threshold.MIN_MINUTES), SessionCardCap.gapMillis(0))
+        assertEquals(SessionCardCap.gapMillis(Threshold.MAX_MINUTES), SessionCardCap.gapMillis(10_000))
     }
 
     @Test
-    fun anOverrideOutOfRangeIsClamped() {
-        assertEquals(SessionCardCap.MIN, SessionCardCap.effective(30, -4))
-        assertEquals(SessionCardCap.MAX, SessionCardCap.effective(30, 999))
+    fun theLastCardFallsAfterTwelveThresholds() {
+        assertEquals(120L, SessionCardCap.lastCardAtMinutes(10))
+        assertEquals(360L, SessionCardCap.lastCardAtMinutes(30))
+        assertEquals(12L, SessionCardCap.lastCardAtMinutes(1))
     }
 
     @Test
-    fun describeSaysWhereTheCapCameFrom() {
-        assertEquals("4 (auto)", SessionCardCap.describe(30, SessionCardCap.AUTO))
-        assertEquals("2 (set by hand)", SessionCardCap.describe(30, 2))
+    fun describesTheDealInPlainWords() {
+        assertEquals("12 cards, one every 10 min", SessionCardCap.describe(10))
+        assertEquals("12 cards, one every 1 h 30 min", SessionCardCap.describe(90))
     }
 }

@@ -93,44 +93,16 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
         TestPopupCard()
 
         SectionCard {
-            Text("Advanced", style = MaterialTheme.typography.titleMedium)
-            Text("Cards per session", style = MaterialTheme.typography.bodyLarge)
+            Text("How the cards work", style = MaterialTheme.typography.titleMedium)
             Text(
-                "How many cards one sitting gets before the app gives up on you and goes quiet until the " +
-                    "next one. Auto follows your \"nag me after\" time, since the gap between cards does not: " +
-                    "${SessionCardCap.auto(5)} cards under ${SessionCardCap.SHORT_THRESHOLD_MINUTES} min, " +
-                    "${SessionCardCap.auto(30)} up to ${SessionCardCap.LONG_THRESHOLD_MINUTES} min, " +
-                    "${SessionCardCap.auto(120)} above that. A change applies from your next session, " +
-                    "never the one you are in.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                SessionCardCap.describe(current.thresholdMinutes) + " of continuous use.",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
             )
-            val autoCap = current.sessionCardCapOverride == SessionCardCap.AUTO
-            val cap = current.sessionCardCap
-            val setCap: (Int) -> Unit = { value ->
-                scope.launch { container.settings.setSessionCardCapOverride(value) }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                if (autoCap) {
-                    Button(onClick = { setCap(SessionCardCap.AUTO) }) { Text("Auto") }
-                } else {
-                    OutlinedButton(onClick = { setCap(SessionCardCap.AUTO) }) { Text("Auto") }
-                }
-                Spacer(Modifier.width(4.dp))
-                OutlinedButton(onClick = { setCap(cap - 1) }, enabled = cap > SessionCardCap.MIN) { Text("−") }
-                Text(
-                    if (cap == 1) "1 card" else "$cap cards",
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-                OutlinedButton(onClick = { setCap(cap + 1) }, enabled = cap < SessionCardCap.MAX) { Text("+") }
-            }
             Text(
-                if (autoCap) {
-                    "Auto: $cap for your ${current.thresholdMinutes} min threshold."
-                } else {
-                    "Set by hand. Auto would give ${SessionCardCap.auto(current.thresholdMinutes)}."
-                },
+                "A card arrives each time another \"nag me after\" stretch of continuous use goes by. " +
+                    "Card ${SessionCardCap.PER_SESSION} is the last one: Sidekick gives up on you and stays quiet " +
+                    "until your next session. A session ends once the screen has been off for more than a minute.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

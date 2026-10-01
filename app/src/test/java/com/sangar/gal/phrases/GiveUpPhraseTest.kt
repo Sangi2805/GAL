@@ -10,13 +10,14 @@ import java.time.LocalDateTime
 import kotlin.random.Random
 
 /**
- * The give_up sign-off: the last card a session's cap allows, and only that card. See NagSchedulerTest for
+ * The give_up sign-off: card 12 of a session, and only that card. See NagSchedulerTest for
  * the other half, which is that the last card only exists when the cap is actually reached.
  */
 class GiveUpPhraseTest {
 
     private val phrases = PhraseTestData.phrases
-    private val giveUp = phrases.filter { Tags.GIVE_UP in it.tags }
+    /** The spicy pack's sign-offs. The You may cry ones are covered by CryGiveUpTest. */
+    private val giveUp = phrases.filter { Tags.GIVE_UP in it.tags && it.pack == PhrasePack.SPICY }
 
     /** Every moment a session card can be drawn for: length, repeat count, hour, day and history. */
     private val moments: List<Set<String>> = buildList {

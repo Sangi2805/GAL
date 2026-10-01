@@ -58,8 +58,12 @@ class PhraseEngine(
     /** Everything a spicy card may use. owl_mode and roast lines are excluded here, so no fallback can reach them. */
     private val usable: List<Phrase> = valid.filter { Tags.OWL_MODE !in it.tags && it.pack == PhrasePack.SPICY }
 
-    /** The "You may cry" roasts: one flat pool, no tiers or moment tags. */
-    private val roasts: List<Phrase> = valid.filter { Tags.OWL_MODE !in it.tags && it.pack == PhrasePack.CRY }
+    /** The "You may cry" roasts: one flat pool, no tiers or moment tags. Their sign-offs are kept apart. */
+    private val roasts: List<Phrase> =
+        valid.filter { Tags.OWL_MODE !in it.tags && Tags.GIVE_UP !in it.tags && it.pack == PhrasePack.CRY }
+
+    /** The "You may cry" give-up lines: only the session's last card may draw one. */
+    private val cryGiveUps: List<Phrase> = valid.filter { Tags.GIVE_UP in it.tags && it.pack == PhrasePack.CRY }
     private val owlLines: List<Phrase> = valid.filter { Tags.OWL_MODE in it.tags }
     private val byTier: Map<Int, List<Phrase>> = usable.groupBy { it.tier }
     private val mutex = Mutex()
@@ -98,36 +102,20 @@ class PhraseEngine(
     }
 
     /**
-     * The final cry card. It draws from tier 3 AND the long length bucket so the session ends on the
-     * heaviest line. The window is scaled to the pool size, but the closing draw excludes the whole
-     * MAX_WINDOW buffer (making the fallback real and testable).
-     * Fallback chain: tier 3 long -> tier 3 medium -> any tier 3 -> ordinary roast selector.
-     * Never falls back into give_up.
+     * The "You may cry" session's last card: the app giving up on you, in the roast pack's voice. Draws from
+     * the pack's own give_up lines with the usual recent-id window. If the pack has none (an old or broken
+     * phrases.json) it falls back to a spicy give_up line, then to the hardcoded default, so the last card is
+     * never empty and never an ordinary roast pretending to be a sign-off.
      */
-    suspend fun pickClosingRoast(tags: Set<String>, tier: Int): Pick {
-        val cleanTags = tags - Tags.GIVE_UP
-        if (roasts.isEmpty()) {
-            log("no roast lines loaded; using a spicy line instead")
-            return pick(cleanTags, tier)
+    suspend fun pickCryGiveUp(tier: Int): Pick {
+        if (cryGiveUps.isEmpty()) {
+            log("no You may cry give_up lines loaded; using a spicy give_up line instead")
+            return pick(NagContext.GIVE_UP_TAGS, tier)
         }
-        return mutex.withLock {
-            val tier3 = roasts.filter { it.tier == 3 }
-            val tier3Long = tier3.filter { it.length == PhraseLength.LONG }
-            val tier3Medium = tier3.filter { it.length == PhraseLength.MEDIUM }
-
-            drawUnseen(tier3Long, cleanTags, PoolSource.MATCHED, excludeFullBuffer = true)?.let { return@withLock it }
-            log("closing roast fallback: tier 3 long exhausted")
-
-            drawUnseen(tier3Medium, cleanTags, PoolSource.GENERAL_SAME_TIER, excludeFullBuffer = true)?.let { return@withLock it }
-            log("closing roast fallback: tier 3 medium exhausted")
-
-            drawUnseen(tier3, cleanTags, PoolSource.GENERAL_ANY_TIER, excludeFullBuffer = true)?.let { return@withLock it }
-            log("closing roast fallback: any tier 3 exhausted")
-
-            log("closing roast fallback: falling back to ordinary roast selector")
-            drawFrom(roasts, cleanTags, PoolSource.MATCHED)
-        }
+        return mutex.withLock { drawFrom(cryGiveUps, NagContext.GIVE_UP_TAGS, PoolSource.MATCHED) }
     }
+
+    val cryGiveUpSize: Int get() = cryGiveUps.size
 
     /**
      * An owl_mode line for a confirmed threshold. Tier comes from the threshold. Falls back to any owl line,

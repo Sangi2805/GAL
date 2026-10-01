@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.sangar.gal.R
 import com.sangar.gal.container
+import com.sangar.gal.data.SessionCardCap
 import com.sangar.gal.data.Threshold
 import com.sangar.gal.overlay.Mascot
 import com.sangar.gal.phrases.ChosenPhrase
@@ -115,6 +116,12 @@ fun ThresholdCard(storedMinutes: Int, onCommit: (Int) -> Unit, onSwitchOff: () -
             style = MaterialTheme.typography.displaySmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary,
+        )
+        Text(
+            "of continuous use, then again every ${Threshold.describe(shownMinutes)}. " +
+                "${SessionCardCap.PER_SESSION} cards a session, and the last one gives up on you.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Slider(
             value = index.toFloat(),

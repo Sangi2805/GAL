@@ -17,7 +17,7 @@ A code of "-" means the phrase is general only.
 
 
     e give_up         The sign-off on the last card a session's cap allows: the app announcing it is done
-                      nagging until next time. Session cards only, never the daily total ones. Like j, each
+                      nagging until next time. Card 12 of a session only. Like j, each
                       stands alone with no "general", so no earlier card and no fallback can reach one.
                       These are exempt from the short-line preference and may run a little longer.
 
@@ -45,6 +45,8 @@ Packs. Every entry gets "pack", the home screen tab it belongs to:
             They are written to hold at any moment (the app adds a time-of-day greeting to the first card
             of a session), so wording tied to a time, a day or a repeat is refused. The tone is allowed to be
             mean, "loser" included, but never personal, bodily, religious, political or controversial.
+            Files with "giveup" in the name hold the pack's sign-offs for card 12, the last card of a session.
+            They get the give_up tag alone, no "general", so no ordinary roast card can draw one.
 
 Usage:  python build_phrases.py [--check-only]
 """
@@ -107,7 +109,8 @@ CRY_BANNED = [
     r"\b(mon|tues|wednes|thurs|fri|satur|sun)day", r"\bagain\b", r"\bhours?\b", r"\ball day\b", r"\b\d+ ?(am|pm)\b",
     r"\brecord\b", r"\bbedtime", r"\bsunrise", r"\bsunset", r"\bbreakfast", r"\blunch", r"\bdinner",
 ]
-CRY_TARGET = 2677
+CRY_TARGET = 2677          # ordinary roasts
+CRY_GIVEUP_TARGET = 80     # sign-offs for the last card of a session
 CRY_MAX_CHARS = 110  # leaves room for the greeting on a first card
 
 MIN_TIER_TAG = 120  # the brief's aim; reported, not enforced
@@ -217,6 +220,7 @@ def main() -> int:
             where = f"{batch.name}:{lineno}"
             if "|" in text:
                 errors.append(f"{where}: roast lines are plain text, no tier or codes: {text}")
+            cry_tags = ["give_up"] if "giveup" in batch.name else ["general"]
             for rx in cry_res:
                 if rx.search(text):
                     errors.append(f"{where}: not allowed in a roast /{rx.pattern}/ in: {text}")
@@ -230,7 +234,7 @@ def main() -> int:
                 errors.append(f"{where}: duplicate of {seen[key]}: {text}")
                 continue
             seen[key] = where
-            phrases.append({"id": len(phrases) + 1, "text": text, "tier": 3, "length": length_of(text), "pack": "cry", "tags": ["general"], "_where": where})
+            phrases.append({"id": len(phrases) + 1, "text": text, "tier": 3, "length": length_of(text), "pack": "cry", "tags": cry_tags, "_where": where})
             added += 1
         print(f"{batch.name}: +{added} (dupes: {dupes}) total {len(phrases)}")
 
@@ -253,7 +257,8 @@ def main() -> int:
     final = len(batches) >= 10
     nag = [p for p in phrases if OWL not in p["tags"] and p["pack"] == "spicy"]
     owl = [p for p in phrases if OWL in p["tags"]]
-    cry = [p for p in phrases if p["pack"] == "cry"]
+    cry = [p for p in phrases if p["pack"] == "cry" and "give_up" not in p["tags"]]
+    cry_giveup = [p for p in phrases if p["pack"] == "cry" and "give_up" in p["tags"]]
     # Coverage matrix, nag phrases only.
     print("\ncoverage (nag phrases carrying tag, per tier)")
     print(f"{'tag':<15}{'t1':>6}{'t2':>6}{'t3':>6}")
@@ -282,7 +287,7 @@ def main() -> int:
     if thin:
         print(f"below {MIN_TIER_TAG}: {', '.join(thin)}")
     cry_lengths = {length: sum(1 for p in cry if p["length"] == length) for length in LENGTHS}
-    print(f"roast lines (You may cry): {len(cry)}  by length: {cry_lengths}")
+    print(f"roast lines (You may cry): {len(cry)}  by length: {cry_lengths}  give_up sign-offs: {len(cry_giveup)}")
 
     if final and len(nag) != TARGET:
         errors.append(f"expected exactly {TARGET} nag phrases, got {len(nag)}")
@@ -297,6 +302,8 @@ def main() -> int:
         errors.append(f"{len(group)} lines share the pattern '{key}' (max {MAX_PER_PATTERN}), e.g. {examples}")
     if cry_batches and len(cry) != CRY_TARGET:
         errors.append(f"expected exactly {CRY_TARGET} roast lines, got {len(cry)}")
+    if cry_batches and len(cry_giveup) != CRY_GIVEUP_TARGET:
+        errors.append(f"expected exactly {CRY_GIVEUP_TARGET} You may cry give_up lines, got {len(cry_giveup)}")
     if owl and any(c != OWL_TARGET_PER_TIER for c in owl_counts):
         errors.append(f"expected {OWL_TARGET_PER_TIER} owl_mode lines per tier, got {owl_counts}")
     for w in warnings:

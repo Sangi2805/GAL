@@ -39,12 +39,7 @@ data class Settings(
     val overlayFailed: Boolean = false,
     /** The home screen tab: which set of lines the cards use. */
     val phrasePack: PhrasePack = PhrasePack.SPICY,
-    /** Advanced: cards per session, or [SessionCardCap.AUTO] to follow the threshold. */
-    val sessionCardCapOverride: Int = SessionCardCap.AUTO,
 ) {
-    /** How many cards the next session may show. */
-    val sessionCardCap: Int get() = SessionCardCap.effective(thresholdMinutes, sessionCardCapOverride)
-
     /** Measuring runs once setup is finished with the roasts switch on, whether cards are on or off. */
     val roastsActive: Boolean get() = onboardingComplete && roastsEnabled
 
@@ -70,7 +65,6 @@ class SettingsRepository(context: Context) {
         val OVERLAY_FAILED = booleanPreferencesKey("overlay_failed")
         val RING_BUFFER = stringPreferencesKey("phrase_ring_buffer")
         val PHRASE_PACK = stringPreferencesKey("phrase_pack")
-        val SESSION_CARD_CAP = intPreferencesKey("session_card_cap")
     }
 
     private val preferences: Flow<Preferences> = store.data.catch { e ->
@@ -93,8 +87,6 @@ class SettingsRepository(context: Context) {
             microphonePermissionRequested = p[Keys.MICROPHONE_PERMISSION_REQUESTED] ?: false,
             overlayFailed = p[Keys.OVERLAY_FAILED] ?: false,
             phrasePack = PhrasePack.parse(p[Keys.PHRASE_PACK]),
-            sessionCardCapOverride = (p[Keys.SESSION_CARD_CAP] ?: SessionCardCap.AUTO)
-                .let { if (it == SessionCardCap.AUTO) it else SessionCardCap.clamp(it) },
         )
     }.distinctUntilChanged()
 
@@ -146,11 +138,6 @@ class SettingsRepository(context: Context) {
     suspend fun setOverlayFailed(failed: Boolean) = store.edit { it[Keys.OVERLAY_FAILED] = failed }
 
     suspend fun setPhrasePack(pack: PhrasePack) = store.edit { it[Keys.PHRASE_PACK] = pack.key }
-
-    /** [SessionCardCap.AUTO] hands the cap back to the threshold. */
-    suspend fun setSessionCardCapOverride(cap: Int) = store.edit {
-        it[Keys.SESSION_CARD_CAP] = if (cap == SessionCardCap.AUTO) SessionCardCap.AUTO else SessionCardCap.clamp(cap)
-    }
 
     suspend fun readRingBuffer(): List<Int> =
         preferences.first()[Keys.RING_BUFFER].orEmpty()

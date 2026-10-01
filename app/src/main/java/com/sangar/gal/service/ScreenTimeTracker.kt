@@ -219,7 +219,9 @@ class ScreenTimeTracker(
             lastNotifiedMinute = minute
             onStatus(if (settings.enabled) "Current session: $minute min." else "Cards off. Current session: $minute min.")
         }
-        nagController?.onTick(tracker.sessionStartElapsed, activeMillis, settings, settingsLoaded) { tracker.isCounting }
+        // The session's wall-clock start is its key: unlike the elapsed start, it is the same after the service
+        // is killed and the session restored, so the saved card count still belongs to it.
+        nagController?.onTick(tracker.sessionStartWall, activeMillis, settings, settingsLoaded) { tracker.isCounting }
         publish(now)
     }
 

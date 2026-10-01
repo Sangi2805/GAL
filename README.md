@@ -24,15 +24,32 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
   | Microphone | not asked | required |
   | Battery exemption | offered once, optional | not asked |
 
-- **Screen Time Roasts** is GetALife unchanged: session clock, thresholds, per-session card caps, the daily
-  limit, both phrase packs (Spicy, You may cry), give_up sign-offs, stats, exclusions and quiet rules
-  (locked, in a call, excluded app). See `../GetALife/README.md` for the details, all of which still apply.
-  The card label now reads "Sidekick · 12 min on screen" and shows the blob's face for the tier.
+- **Screen Time Roasts** is GetALife's roast cards with simpler session rules (below): session clock,
+  both phrase packs (Spicy, You may cry), give-up sign-offs, stats, exclusions and quiet rules (locked, in a
+  call, excluded app). `../GetALife/README.md` still explains the phrase engine, stats and quiet rules, but
+  its card cap, its 10 minute gap and its daily limit card do not apply to GAL. The card label reads
+  "Sidekick · 12 min on screen" and shows the blob's face for the tier.
 - **Voice Sidekick** is Pocket Sidekick: tap the blob, say "open Maps", and it opens it. Drag it anywhere
   and it snaps to an edge. Speech recognition asks for on-device recognition (`EXTRA_PREFER_OFFLINE`). If
   the phone has no offline pack for the language, Sidekick says so instead of going online.
 - **Both on:** while a roast card is up, the floating blob wears the same face (and the sweat drop for
   horrified), then goes back to normal when the card goes.
+
+## Session cards
+
+- The "nag me after" slider runs from 1 minute to 8 hours, default 30 minutes.
+- A session is continuous, unlocked screen time. It ends once the screen has been off for more than a minute.
+- The first card comes when the session reaches the threshold, then one more each time another threshold of
+  session time passes. With 10 minutes that is a card at 10, 20, 30 minutes and so on.
+- Every session gets 12 cards at most. Card 12 is always the give-up sign-off, in both packs: Spicy uses its
+  80 `give_up` lines, You may cry has 80 of its own (`tools/phrases/cry_10_giveup.txt`). The sign-off wears the
+  bored face. After it the app stays quiet until the next session.
+- *Snooze 10 min* silences cards for 10 minutes of real time. Any two cards are at least a minute apart.
+- It keeps going until Screen Time Roasts (or the cards switch on home) is turned off.
+- There is no daily limit card any more. Today's total still shows on the home and stats screens.
+- The session's card count, a running snooze and the time of the last card are saved
+  (`service/NagStateStore.kt`). A service killed and restarted mid-session carries on at the same card, and a
+  crash loop cannot put a card on screen after every restart.
 
 ## One foreground service, two types
 

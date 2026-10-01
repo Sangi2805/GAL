@@ -10,7 +10,8 @@ class PhraseCatalogTest {
     private val phrases = PhraseTestData.phrases
     private val nag = phrases.filter { Tags.OWL_MODE !in it.tags && it.pack == PhrasePack.SPICY }
     private val owl = phrases.filter { Tags.OWL_MODE in it.tags }
-    private val roasts = phrases.filter { it.pack == PhrasePack.CRY }
+    private val roasts = phrases.filter { it.pack == PhrasePack.CRY && Tags.GIVE_UP !in it.tags }
+    private val cryGiveUps = phrases.filter { it.pack == PhrasePack.CRY && Tags.GIVE_UP in it.tags }
 
     @Test
     fun hasCorrectCountsWithUniqueIds() {
@@ -18,6 +19,7 @@ class PhraseCatalogTest {
         assertEquals(60, owl.size)
         assertEquals(2677, roasts.size)
         assertEquals(80, nag.count { Tags.GIVE_UP in it.tags })
+        assertEquals(80, cryGiveUps.size)
         assertEquals(phrases.size, phrases.map { it.id }.toSet().size)
     }
 
@@ -58,6 +60,12 @@ class PhraseCatalogTest {
 
     @Test
     fun roastsAreFormattedCorrectly() {
+        cryGiveUps.forEach { p ->
+            assertEquals("cry", p.declaredPack)
+            assertEquals(3, p.tier)
+            assertTrue(p.text.length <= 110)
+            assertEquals(setOf(Tags.GIVE_UP), p.tags)
+        }
         roasts.forEach { p ->
             assertEquals("cry", p.declaredPack)
             assertEquals(PhrasePack.CRY, p.pack)
