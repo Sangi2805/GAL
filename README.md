@@ -1,8 +1,9 @@
 # GAL (GetALife)
 
-GetALife's screen-time roast cards plus a floating character. Sidekick, a pink elephant, is the only
-character: she delivers the roast cards, wearing GetALife's four faces (smug, bored, disappointed, horrified),
-and she wanders the edges of your screen in between. The old monkey mascot and the green blob are gone.
+GetALife's screen-time roast cards plus a floating character: a chubby, full-body pink cartoon elephant
+(called Sidekick in the code; the app itself never names her). She delivers the roast cards, wearing
+GetALife's four faces (smug, bored, disappointed, horrified), walks around your screen in between, and reacts
+to what you open. The old monkey mascot and the green blob are gone.
 
 The app has one job: keeping you off your phone. Voice commands were dropped (speech recognition did not work
 reliably on real phones), so GAL no longer asks for the microphone at all.
@@ -15,26 +16,32 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
 
 ## What it does
 
-- **One setup screen, two switches.** *Screen Time Roasts* and *Floating Sidekick*. Nothing is asked for up
-  front. Turning a switch on walks through that feature's missing permissions one at a time:
-
-  | Permission | Screen Time Roasts | Floating Sidekick |
-  | --- | --- | --- |
-  | Usage access | required | not asked |
-  | Display over other apps | required | required |
-  | Notifications | required | required |
-  | Battery exemption | offered once, optional | not asked |
+- **One simple setup screen.** First-time users see no feature names and no switches: one elephant, one
+  list of what GAL needs, one **Allow** button that walks through every missing permission in turn (usage
+  access, display over other apps, notifications), then offers the battery exemption once. **Start** switches
+  everything on together. Settings is where the elephant can be hidden or kept still.
 
 - **Screen Time Roasts** is GetALife's roast cards with simpler session rules (below): session clock,
   both phrase packs (Spicy, You may cry), give-up sign-offs, stats, exclusions and quiet rules (locked, in a
   call, excluded app). `../GetALife/README.md` still explains the phrase engine, stats and quiet rules, but
   its card cap, its 10 minute gap and its daily limit card do not apply to GAL. The card label reads
-  "Sidekick · 12 min on screen" and shows the elephant's face for the tier.
-- **Floating Sidekick** is the elephant in a small window over every app. Every 5 to 12 seconds she picks
-  something to do: stroll along the screen edge, now and then walk across to the other side, hop, look around,
-  or nap for a while. She keeps still while you hold her, while a card is up and while the screen is off. Tap
-  her and she hops; drag her anywhere and she snaps to an edge. "Let her wander" in Settings turns the walking
-  off.
+  "GAL · 12 min on screen" and shows the elephant's face for the tier.
+- **The floating elephant** lives in a small window over every app. She walks like an elephant (one leg at a
+  time, a heavy bob, swinging trunk and tail). Every 5 to 12 seconds she picks something to do: stroll along
+  the screen edge, now and then walk across to the other side, hop, look around, or nap for a while. She keeps
+  still while you hold her, while a card is up and while the screen is off. Tap her and she hops; drag her
+  anywhere and she snaps to an edge. "Let her wander" in Settings turns the walking off; "Show her on screen"
+  hides her.
+- **Reactions** (`sidekick/Reactions.kt`, every 1.5 s from usage access):
+  - Open a social or video app (Instagram, TikTok, YouTube, X, Reddit and the like, or anything the store
+    files as social or video; messaging apps do not count) and she hurries to the middle of the screen,
+    horrified, then shakes her head and wags her trunk "nooo" at you before walking back.
+  - Open something useful (Docs, Keep, Calendar, Notion, Duolingo, Kindle, chess and the like, or anything
+    filed as productivity) and she puffs up, grins, raises her trunk, sparkles and hops.
+  - At most one reaction every 20 seconds.
+  - The longer the phone session, the crosser she gets: calm up to half the "nag me after" time, then
+    redder, with an angry face and steam from the threshold on, fully furious at twice the threshold. Too
+    cross to nap.
 - **First launch:** a box asks you to describe yourself in one word. Three seconds later, typed or not, it cuts
   you off: "Never mind. We don't care." Nothing typed is kept.
 - **Both on:** while a roast card is up, the floating elephant wears the same face (and the sweat drop for
@@ -83,12 +90,12 @@ every touch, so it must not linger), and a tap anywhere skips the scene and open
 | Part | Type | Why | Restart |
 | --- | --- | --- | --- |
 | Screen Time Roasts | `specialUse` | Measuring screen time for an optional card is not one of Android's named types; the manifest property explains the use. No runtime permission is needed, and it may start from the background (boot, update). | **Sticky.** After a kill, Android restarts it and the session is picked back up. |
-| Floating Sidekick | `specialUse` | Keeps the floating elephant on screen. It needs only "Display over other apps". | **Sticky**, like roasts. |
+| Floating elephant | `specialUse` | Keeps the floating elephant on screen. It needs only "Display over other apps". | **Sticky**, like roasts. |
 
-If Sidekick should be on but is not and Android will not restart the service, GAL posts **"Tap to bring
-Sidekick back"**; a WorkManager job (`SidekickWatchdog`, every 30 minutes while Floating Sidekick is on) is
-the safety net for phones that kill apps without restarting them. Opening GAL also brings her back. The
-ongoing notification has a **Turn off Sidekick** button.
+If the elephant should be on but is not and Android will not restart the service, GAL posts **"The elephant
+took a break. Tap to bring her back."**; a WorkManager job (`SidekickWatchdog`, every 30 minutes while she is
+on) is the safety net for phones that kill apps without restarting them. Opening GAL also brings her back. The
+ongoing notification has a **Hide the elephant** button.
 
 ## Package visibility
 
@@ -97,11 +104,12 @@ stats), `MAIN`/`HOME`, and the camera, maps and clock intents for default exclus
 
 ## Branding
 
-Sidekick is a pink elephant with a bow and a bendy trunk, our own design (no hammer, no circus hat, nothing
-borrowed). `tools/mascot/generate_elephant.py` writes every picture of her from one list of shapes: the
+She is a full-body pink cartoon elephant with a bow, lashes, toenails, a little tail and a bendy trunk, our
+own design (no hammer, no circus hat, nothing borrowed). `tools/mascot/generate_elephant.py` writes every picture of her from one list of shapes: the
 adaptive launcher icon with its monochrome layer (`drawable/ic_launcher_*.xml`, mint `#BDF2D5` background),
-the Android 12+ splash (`drawable/splash_icon.xml` on `@color/splash_background`), the four roast card faces
-(`drawable/mascot_*.xml`) and the notification icon. Previews land in `tools/mascot/preview/`. The landing
+the Android 12+ splash (`drawable/splash_icon.xml` on `@color/splash_background`), the four roast card
+elephants (`drawable/mascot_*.xml`) and the notification icon. Previews land in `tools/mascot/preview/`,
+including the 512 px store icon (`logo.png`) and a 1024 x 500 cover picture (`cover.png`). The landing
 page draws the same splash drawable at the same size and position, so the splash hands over without a jump.
 
 The live elephant (floating Sidekick and the stage) is drawn in code by `sidekick/BlobPainter.kt` with the same
@@ -174,7 +182,7 @@ app/src/main/java/com/sangar/gal/
 ├── sidekick/stage/           stage window, frame loop, world, elephant physics, crate, props, renderer
 ├── sidekick/scene/           SceneDirector, the scenes, AppHabits (when to roast), SceneSounds
 ├── overlay/ phrases/ data/   GetALife, plus session card rules, app roast lines and scene settings
-└── ui/                       Landing, SetupScreen (two switches), Home, Stats, Settings (+ scenes card)
+└── ui/                       Landing, SetupScreen (one Allow button), Home, Stats, Settings (+ scenes card)
 
 tools/phrases/                phrase batches and build_phrases.py (writes assets/phrases.json)
 tools/sounds/make_sounds.py   writes res/raw/scene_*.wav

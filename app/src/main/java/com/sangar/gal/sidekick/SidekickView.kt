@@ -31,7 +31,7 @@ enum class SidekickState { IDLE, LISTENING, SPEAKING, THINKING }
  * live on the elephant. The card's picture (res/drawable/mascot_*.xml, from tools/mascot/generate_elephant.py)
  * shows the same four, so keep the two in step. [NONE] is Sidekick's own face.
  */
-enum class Mood { NONE, SMUG, BORED, DISAPPOINTED, HORRIFIED }
+enum class Mood { NONE, SMUG, BORED, DISAPPOINTED, HORRIFIED, ANGRY, PROUD }
 
 /**
  * The view cannot move its own window, so the component that owns the
@@ -137,6 +137,44 @@ class SidekickView(context: Context) : View(context) {
             invalidate()
         }
 
+    // ---- Reactions (driven by SidekickOverlay) ------------------------------
+
+    /** 0..1: how cross she is with how long you have been on the phone. */
+    var anger = 0f
+        set(value) {
+            val v = value.coerceIn(0f, 1f)
+            if (field == v) return
+            field = v
+            updatePhaseLoop()
+            invalidate()
+        }
+
+    /** 0..1: puffed up and pleased, for opening something useful. */
+    var proud = 0f
+        set(value) {
+            val v = value.coerceIn(0f, 1f)
+            if (field == v) return
+            field = v
+            updatePhaseLoop()
+            invalidate()
+        }
+
+    /** Head tilt in degrees, for shaking her head. */
+    var headTilt = 0f
+        set(value) {
+            if (field == value) return
+            field = value
+            invalidate()
+        }
+
+    /** Extra trunk angle on top of the resting sway, for "no no no" wags and a proud raised trunk. */
+    var trunkBoost = 0f
+        set(value) {
+            if (field == value) return
+            field = value
+            invalidate()
+        }
+
     /** A nap: eyes shut, trunk drooping, no blinks or yawns. */
     var napping = false
         set(value) {
@@ -149,6 +187,7 @@ class SidekickView(context: Context) : View(context) {
                 scheduleBlink()
                 scheduleYawn()
             }
+            updatePhaseLoop()
             invalidate()
         }
 
@@ -322,15 +361,23 @@ class SidekickView(context: Context) : View(context) {
         else -> 0f
     }
 
-    private fun applyStateAnimators(next: SidekickState) {
+    /** Steam, sparkles and z's all ride on [phase], so it loops whenever one of them is showing. */
+    private fun updatePhaseLoop() {
         if (!isAttachedToWindow) return
-
-        if (next == SidekickState.LISTENING || next == SidekickState.THINKING) {
+        val needed = state == SidekickState.LISTENING || state == SidekickState.THINKING ||
+            napping || anger > 0.3f || proud > 0.3f
+        if (needed) {
             if (!phaseAnimator.isStarted) phaseAnimator.start()
-        } else {
+        } else if (phaseAnimator.isStarted) {
             phaseAnimator.cancel()
             phase = 0f
         }
+    }
+
+    private fun applyStateAnimators(next: SidekickState) {
+        if (!isAttachedToWindow) return
+
+        updatePhaseLoop()
 
         if (next == SidekickState.SPEAKING) {
             if (!chatterAnimator.isStarted) chatterAnimator.start()
@@ -583,8 +630,9 @@ class SidekickView(context: Context) : View(context) {
         val base = min(w, hgt) * BlobPainter.BODY_FILL
         val cx = w / 2f
         // Walking bounces her on each step; a hop lifts her clear of the spot.
+        // The painter does the walking bob itself; we only lift her for a hop.
         val step = if (walking) abs(sin(walkPhase * 2f * PI.toFloat())) else 0f
-        val cy = hgt / 2f - base * (0.06f * step + 0.16f * hopLift)
+        val cy = hgt / 2f - base * 0.16f * hopLift
 
         // Breathing: a slow sine. Volume is conserved-ish, so the elephant widens as
         // it flattens, which reads as squash-and-stretch rather than a zoom.
@@ -623,6 +671,11 @@ class SidekickView(context: Context) : View(context) {
         // listening, and it always swings towards the middle of the screen.
         pose.facing = if (walkFacing != 0) walkFacing else facingTowardsScreenMiddle()
         pose.eyesShut = napping
+        pose.walking = walking
+        pose.walkPhase = walkPhase
+        pose.anger = anger
+        pose.proud = proud
+        pose.headTilt = headTilt
         pose.trunkAngle = BlobPose.REST_TRUNK + 9f * breathSine +
             when (state) {
                 SidekickState.LISTENING -> 38f + 8f * sin(phase * 2f * PI.toFloat())
@@ -630,7 +683,8 @@ class SidekickView(context: Context) : View(context) {
                 SidekickState.THINKING -> 20f
                 else -> 0f
             } +
-            (if (walking) 18f * sin(walkPhase * 4f * PI.toFloat()) else 0f) +
+            (if (walking) 10f * sin(walkPhase * 4f * PI.toFloat()) else 0f) +
+            trunkBoost +
             (if (napping) -30f else 0f) +
             70f * hopLift
         pose.earFlap = (poke * 2f + 0.5f * wideEyes + (if (walking) 0.5f * step else 0f) + hopLift).coerceIn(0f, 1f)

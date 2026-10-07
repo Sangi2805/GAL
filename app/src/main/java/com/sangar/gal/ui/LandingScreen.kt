@@ -87,7 +87,7 @@ fun PrivacyScreen(onBack: () -> Unit) {
 
 /**
  * The logo alone, on the same pixels, for the frame or two it takes DataStore to say which screen comes
- * next. Without it Sidekick would blink out between the splash and the landing page. It waits for real
+ * next. Without it the elephant would blink out between the splash and the landing page. It waits for real
  * work and adds no delay of its own.
  */
 @Composable
@@ -124,7 +124,7 @@ private fun LandingContent(footer: @Composable () -> Unit) {
             Box(Modifier.fillMaxWidth().height(LandingLogoSize - LogoTrim), contentAlignment = Alignment.Center) {
                 Image(
                     painter = painterResource(R.drawable.splash_icon),
-                    contentDescription = "Sidekick, a pink elephant, smacking an app crate with her trunk",
+                    contentDescription = "A pink cartoon elephant",
                     modifier = Modifier.requiredSize(LandingLogoSize),
                 )
             }
@@ -147,8 +147,7 @@ private fun LandingContent(footer: @Composable () -> Unit) {
             Spacer(Modifier.height(16.dp))
 
             Text(
-                "Sidekick, our pink elephant, roasts you when you have been on your phone too long. That is the whole " +
-                    "point: less phone, more life.",
+                "Our pink elephant roasts you when you have been on your phone too long. Less phone, more life.",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
             )

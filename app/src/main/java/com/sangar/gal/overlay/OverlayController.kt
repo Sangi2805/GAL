@@ -35,7 +35,7 @@ data class NagCard(
     @param:DrawableRes val mascot: Int,
     val mascotDescription: String = "",
     /** Small line above the phrase, so the card is never mistaken for part of the app underneath. */
-    val label: String = "Sidekick",
+    val label: String = "GAL",
     /** The face, so the live Sidekick can pull it too while the card is up. */
     val face: Mascot? = null,
 )

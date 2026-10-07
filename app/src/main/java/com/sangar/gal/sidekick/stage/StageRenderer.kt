@@ -323,6 +323,9 @@ class StageRenderer(
             else -> BlobActor.TRUNK_REST + 12f * kotlin.math.sin(world.time * 9f)
         }
         a.pose.earFlap = if (a.onGround) 0f else 1f
+        // On the ground and moving: legs stride. The phase follows the clock, a stride every 0.6 s.
+        a.pose.walking = a.onGround && kotlin.math.abs(a.vx) > 1f
+        a.pose.walkPhase = (world.time / 0.6f) % 1f
         painter.alpha = (255 * fade * a.alpha).roundToInt()
         painter.draw(canvas, cx, cy, bw, bh, body, a.pose)
     }

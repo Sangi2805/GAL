@@ -28,15 +28,15 @@ object GalNotifications {
         val manager = context.getSystemService<NotificationManager>() ?: return
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_ID, "GAL running", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "The quiet ongoing notification that keeps the screen timer and Sidekick alive."
+                description = "The quiet ongoing notification that keeps the screen timer and the elephant alive."
                 setShowBadge(false)
                 enableVibration(false)
                 setSound(null, null)
             },
         )
         manager.createNotificationChannel(
-            NotificationChannel(BRING_BACK_CHANNEL_ID, "Bring Sidekick back", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = "Shown when Android stopped Sidekick. Tap it to bring Sidekick back."
+            NotificationChannel(BRING_BACK_CHANNEL_ID, "Bring the elephant back", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = "Shown when Android stopped the elephant. Tap it to bring her back."
                 setShowBadge(false)
                 enableVibration(false)
                 setSound(null, null)
@@ -56,11 +56,11 @@ object GalNotifications {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
         val title = when {
-            roastStatus != null && sidekickOn -> "Sidekick is watching and listening"
-            roastStatus != null -> "Sidekick is watching"
-            else -> "Sidekick is on duty"
+            roastStatus != null && sidekickOn -> "GAL is watching, and so is the elephant"
+            roastStatus != null -> "GAL is watching"
+            else -> "The elephant is on duty"
         }
-        val text = listOfNotNull(roastStatus, if (sidekickOn) "Tap Sidekick, then say an app name." else null)
+        val text = listOfNotNull(roastStatus, if (sidekickOn) "Tap her to make her hop." else null)
             .joinToString(" ")
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_sidekick)
@@ -81,7 +81,7 @@ object GalNotifications {
                 Intent(context, GalService::class.java).setAction(GalService.ACTION_TURN_OFF_VOICE),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
-            builder.addAction(0, "Turn off Sidekick", turnOff)
+            builder.addAction(0, "Hide the elephant", turnOff)
         }
         return builder.build()
     }
@@ -113,8 +113,8 @@ object GalNotifications {
         )
         val notification = NotificationCompat.Builder(context, BRING_BACK_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_sidekick)
-            .setContentTitle("Sidekick took a break")
-            .setContentText("Tap to bring Sidekick back.")
+            .setContentTitle("The elephant took a break")
+            .setContentText("Tap to bring her back.")
             .setContentIntent(bringBack)
             .setAutoCancel(true)
             .setSilent(true)

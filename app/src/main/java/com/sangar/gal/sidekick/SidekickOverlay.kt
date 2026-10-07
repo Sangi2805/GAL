@@ -22,13 +22,21 @@ import androidx.core.content.getSystemService
 import com.sangar.gal.Permissions
 import com.sangar.gal.container
 import com.sangar.gal.overlay.CardEvents
+import com.sangar.gal.service.ForegroundApp
+import com.sangar.gal.service.LiveTracker
 import com.sangar.gal.service.NagLog
 import com.sangar.gal.sidekick.scene.SceneDirector
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.abs
+import kotlin.math.PI
 import kotlin.math.hypot
+import kotlin.math.sin
 import kotlin.math.roundToInt
 import kotlin.random.Random
 
@@ -48,6 +56,10 @@ object SidekickStatus {
  * She does not just stand there: every few seconds she picks something to do: stroll along the edge, now and
  * then walk across to the other side, hop, look around, or take a nap. She keeps still while a finger is on
  * her, while a card is up and while the screen is off. Main thread only.
+ *
+ * She also reacts to what you do ([Reactions]): open a social app and she marches into the middle of the
+ * screen and wags her trunk "nooo" at you; open something useful and she puffs up, sparkles and hops; stay on
+ * the phone too long and she gets redder and crosser until steam comes out.
  *
  * (She used to listen for "open X" with the microphone. Voice was dropped because speech recognition did not
  * work reliably on real phones; the app-opening scenes remain in sidekick/scene for the debug tools.)
@@ -69,6 +81,16 @@ class SidekickOverlay(
     private var walkAnimator: ValueAnimator? = null
     private var wanders = true
     private var released = false
+    private var pollJob: Job? = null
+
+    /** The face a roast card asked for; it wins over everything else. */
+    private var cardMood = Mood.NONE
+
+    /** True while she is busy with a "nooo" or a proud moment. */
+    private var reacting = false
+    private var reactionAnimator: ValueAnimator? = null
+    private var lastPackage: String? = null
+    private var lastReactionAt = 0L
 
     private val wanderRunnable = Runnable { wanderStep() }
     private val wakeRunnable = Runnable { view?.napping = false }
@@ -113,13 +135,17 @@ class SidekickOverlay(
             CardEvents.face.collect { face ->
                 val mood = face?.mood ?: Mood.NONE
                 NagLog.d(C, "wearing face $mood")
+                cardMood = mood
                 view?.let { v ->
                     // A card wakes her up and stops her in her tracks.
                     if (mood != Mood.NONE) {
+                        endReaction()
                         stopWalking()
                         v.napping = false
+                        v.mood = mood
+                    } else {
+                        applyAnger()
                     }
-                    v.mood = mood
                 }
             }
         }
@@ -130,6 +156,15 @@ class SidekickOverlay(
                     stopWalking()
                     view?.napping = false
                 }
+            }
+        }
+        pollJob = scope.launch {
+            while (isActive) {
+                delay(POLL_MS)
+                if (power?.isInteractive == false) continue
+                val pkg = withContext(Dispatchers.Default) { ForegroundApp.current(context) }
+                onForegroundApp(pkg)
+                applyAnger()
             }
         }
         SceneDirector.floatingBlob = floatingBlob
@@ -165,6 +200,10 @@ class SidekickOverlay(
         moodJob = null
         settingsJob?.cancel()
         settingsJob = null
+        pollJob?.cancel()
+        pollJob = null
+        reactionAnimator?.cancel()
+        reactionAnimator = null
         walkAnimator?.cancel()
         walkAnimator = null
         main.removeCallbacksAndMessages(null)
@@ -196,8 +235,8 @@ class SidekickOverlay(
     /** Picks the next little thing to do, then schedules the one after. */
     private fun wanderStep() {
         val v = view ?: return
-        val busy = !wanders || v.isHeld || v.mood != Mood.NONE || walkAnimator != null || v.napping ||
-            power?.isInteractive == false
+        val busy = !wanders || v.isHeld || cardMood != Mood.NONE || reacting || walkAnimator != null ||
+            v.napping || power?.isInteractive == false
         if (!busy) {
             val roll = Random.nextFloat()
             when {
@@ -205,7 +244,9 @@ class SidekickOverlay(
                 roll < 0.57f -> crossToOtherSide()
                 roll < 0.72f -> v.hop()
                 roll < 0.90f -> v.lookAround()
-                else -> nap()
+                // Too cross to sleep.
+                v.anger < 0.3f -> nap()
+                else -> v.hop()
             }
         }
         scheduleWander(Random.nextLong(REST_MIN_MS, REST_MAX_MS))
@@ -245,13 +286,16 @@ class SidekickOverlay(
         main.postDelayed(wakeRunnable, Random.nextLong(NAP_MIN_MS, NAP_MAX_MS))
     }
 
-    private fun walkTo(x: Int, y: Int, dpPerSecond: Float, facing: Int) {
+    private fun walkTo(x: Int, y: Int, dpPerSecond: Float, facing: Int, then: (() -> Unit)? = null) {
         val v = view ?: return
         val p = params ?: return
         val fromX = p.x
         val fromY = p.y
         val distance = hypot((x - fromX).toFloat(), (y - fromY).toFloat())
-        if (distance < 2f) return
+        if (distance < 2f) {
+            then?.invoke()
+            return
+        }
         val ms = (distance / (dpPerSecond * density) * 1000f).toLong().coerceIn(600L, 6000L)
         walkAnimator?.cancel()
         v.walkFacing = facing
@@ -262,7 +306,7 @@ class SidekickOverlay(
             addUpdateListener {
                 // Stop at once if she is grabbed or a card needs her face.
                 val now = view
-                if (now == null || now.isHeld || now.mood != Mood.NONE) {
+                if (now == null || now.isHeld || cardMood != Mood.NONE) {
                     cancel()
                     return@addUpdateListener
                 }
@@ -270,7 +314,16 @@ class SidekickOverlay(
                 moveOverlay((fromX + (x - fromX) * t).roundToInt(), (fromY + (y - fromY) * t).roundToInt())
             }
             addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: Animator) = arrived()
+                private var cancelled = false
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    arrived()
+                    // A walk that was part of a reaction and got interrupted (grabbed, tapped) ends the reaction.
+                    if (!cancelled) then?.invoke() else if (then != null) endReaction()
+                }
             })
             start()
         }
@@ -287,6 +340,138 @@ class SidekickOverlay(
         val walk = walkAnimator ?: return
         walk.cancel()
         arrived()
+    }
+
+    // ---- Reactions -----------------------------------------------------------
+
+    private fun onForegroundApp(pkg: String?) {
+        if (pkg == null || pkg == lastPackage) return
+        lastPackage = pkg
+        if (pkg == context.packageName) return
+        val category = runCatching { context.packageManager.getApplicationInfo(pkg, 0).category }.getOrNull()
+        val kind = Reactions.classify(pkg, category)
+        if (kind == AppKind.NEUTRAL) return
+        val v = view ?: return
+        val now = System.currentTimeMillis()
+        if (cardMood != Mood.NONE || reacting || v.isHeld || now - lastReactionAt < REACT_COOLDOWN_MS) return
+        lastReactionAt = now
+        NagLog.d(C, "reacting to $pkg as $kind")
+        if (kind == AppKind.SOCIAL) sayNo() else cheer()
+    }
+
+    /**
+     * "Nooo": she hurries to the middle of the screen, in front of the app, looking horrified, then shakes her
+     * head and wags her trunk at you to shoo you off it, and walks back to where she was.
+     */
+    private fun sayNo() {
+        val v = view ?: return
+        val p = params ?: return
+        stopWalking()
+        startReaction()
+        v.napping = false
+        v.anger = 0f
+        v.mood = Mood.HORRIFIED
+        val homeX = p.x
+        val homeY = p.y
+        val bounds = overlayBounds()
+        val midX = bounds.centerX() - v.width / 2
+        val midY = bounds.top + ((bounds.height() - v.height) * 0.55f).roundToInt()
+        walkTo(midX, midY, HURRY_DP_PER_S, facing = if (midX > p.x) 1 else -1) {
+            val me = view ?: return@walkTo
+            me.mood = Mood.DISAPPOINTED
+            me.walkFacing = 0
+            reactionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                duration = NO_MS
+                addUpdateListener {
+                    val t = it.animatedValue as Float
+                    val wag = sin(t * 2f * PI.toFloat() * NO_WAGS)
+                    me.trunkBoost = 60f + 50f * wag
+                    me.headTilt = -9f * wag
+                    // Turn to face one way then the other, like pacing in front of you.
+                    me.walkFacing = if ((t * 4f).toInt() % 2 == 0) 1 else -1
+                }
+                addListener(object : AnimatorListenerAdapter() {
+                    private var cancelled = false
+                    override fun onAnimationCancel(animation: Animator) {
+                        cancelled = true
+                    }
+
+                    override fun onAnimationEnd(animation: Animator) {
+                        reactionAnimator = null
+                        if (cancelled) return
+                        me.hop()
+                        walkTo(homeX, homeY, STROLL_DP_PER_S * 1.5f, facing = 0) { endReaction() }
+                    }
+                })
+                start()
+            }
+        }
+    }
+
+    /** Something useful: she puffs up, grins, raises her trunk like a trumpet and hops for joy. */
+    private fun cheer() {
+        val v = view ?: return
+        stopWalking()
+        startReaction()
+        v.napping = false
+        v.anger = 0f
+        v.mood = Mood.PROUD
+        reactionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = PROUD_MS
+            addUpdateListener {
+                val t = it.animatedValue as Float
+                // Swell in fast, hold, settle back at the end.
+                val swell = when {
+                    t < 0.1f -> t / 0.1f
+                    t > 0.85f -> (1f - t) / 0.15f
+                    else -> 1f
+                }
+                v.proud = swell
+                v.trunkBoost = 120f * swell
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    reactionAnimator = null
+                    endReaction()
+                }
+            })
+            start()
+        }
+        v.hop()
+        main.postDelayed({ if (reacting) view?.hop() }, 700L)
+        main.postDelayed({ if (reacting) view?.hop() }, 1_400L)
+    }
+
+    private fun startReaction() {
+        reactionAnimator?.cancel()
+        reactionAnimator = null
+        reacting = true
+    }
+
+    private fun endReaction() {
+        if (!reacting) return
+        reactionAnimator?.cancel()
+        reactionAnimator = null
+        reacting = false
+        view?.let { v ->
+            v.trunkBoost = 0f
+            v.headTilt = 0f
+            v.proud = 0f
+            v.walkFacing = 0
+            if (cardMood == Mood.NONE) v.mood = Mood.NONE
+        }
+        applyAnger()
+    }
+
+    /** The longer this phone session, the crosser she gets. A card or a reaction wins over it. */
+    private fun applyAnger() {
+        val v = view ?: return
+        if (reacting || cardMood != Mood.NONE) return
+        val s = LiveTracker.state.value
+        val level = Reactions.anger(s.activeMillisNow(), s.thresholdMinutes, s.sessionOpen)
+        v.anger = level
+        v.mood = if (level >= Reactions.ANGRY_FACE_AT) Mood.ANGRY else Mood.NONE
+        if (level >= Reactions.ANGRY_FACE_AT) v.napping = false
     }
 
     // ---- SidekickHost ------------------------------------------------------
@@ -330,6 +515,7 @@ class SidekickOverlay(
     /** A tap wakes her up and makes her hop. She has no voice any more, so that is the whole reply. */
     override fun onSidekickTapped() {
         val v = view ?: return
+        endReaction()
         stopWalking()
         main.removeCallbacks(wakeRunnable)
         v.napping = false
@@ -339,7 +525,7 @@ class SidekickOverlay(
 
     private companion object {
         const val C = "Sidekick"
-        const val SIZE_DP = 116f
+        const val SIZE_DP = 140f
 
         const val FIRST_WANDER_MS = 4_000L
         const val REST_MIN_MS = 5_000L
@@ -351,5 +537,12 @@ class SidekickOverlay(
         const val MIN_STROLL_DP = 120f
         const val STROLL_DP_PER_S = 70f
         const val CROSS_DP_PER_S = 120f
+        const val HURRY_DP_PER_S = 260f
+
+        const val POLL_MS = 1_500L
+        const val REACT_COOLDOWN_MS = 20_000L
+        const val NO_MS = 3_200L
+        const val NO_WAGS = 5f
+        const val PROUD_MS = 4_500L
     }
 }

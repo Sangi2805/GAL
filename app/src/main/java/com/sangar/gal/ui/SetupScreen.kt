@@ -26,7 +26,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -38,8 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
@@ -73,9 +70,10 @@ fun rememberPermissionState(): PermissionState {
 }
 
 /**
- * The one setup screen: a switch for Screen Time Roasts and a switch for Floating Sidekick. Nothing is asked for up
- * front. Turning a switch on walks through that feature's missing permissions one at a time; backing out of one
- * ends the walk, and the rows under the switch stay there to finish it by hand.
+ * The one setup screen, kept simple: one elephant, one list of what GAL needs, one button. The button walks
+ * through every missing permission in turn (and offers the battery exemption once, at the end). Backing out of
+ * one stops the walk; tapping the button again carries on, and each row can also be fixed on its own.
+ * Everything GAL does is switched on together; the Settings screen is where you turn parts off.
  */
 @Composable
 fun SetupScreen(onDone: () -> Unit) {
@@ -104,7 +102,11 @@ fun SetupScreen(onDone: () -> Unit) {
         when (need) {
             Need.USAGE_ACCESS -> Permissions.openUsageAccessSettings(context).let { false }
             Need.OVERLAY -> Permissions.openOverlaySettings(context).let { false }
-            Need.BATTERY -> Permissions.requestBatteryExemption(context).let { false }
+            Need.BATTERY -> {
+                // Ask exactly once, ever. The flag is written before the dialog so a crash cannot repeat it.
+                scope.launch { repo.markBatteryPromptShown() }
+                Permissions.requestBatteryExemption(context).let { false }
+            }
             Need.NOTIFICATIONS -> {
                 val canAskInline = Permissions.needsRuntimeNotificationPermission(context) && activity != null &&
                     (!settings.notificationPermissionRequested ||
@@ -121,29 +123,15 @@ fun SetupScreen(onDone: () -> Unit) {
             }
         }
     }
-
-    fun toggle(feature: Feature, on: Boolean) {
-        scope.launch {
-            when (feature) {
-                Feature.ROASTS -> repo.setRoastsEnabled(on)
-                Feature.SIDEKICK -> repo.setVoiceEnabled(on)
-            }
-            if (on) {
-                walk.start(feature, permissions)
-            } else {
-                walk.cancel()
-                // Switching off takes effect at once: the timer stops, or Sidekick leaves the screen.
-                val latest = repo.current()
-                if (latest.onboardingComplete) GalServiceStarter.syncFromForeground(context, latest)
-            }
+    // What the walk still has to ask for: every required permission, then the battery exemption once.
+    walk.pending = { status ->
+        buildList {
+            addAll(status.missingFor(Feature.ROASTS))
+            if (!settings.batteryPromptShown && !status.batteryUnrestricted) add(Need.BATTERY)
         }
     }
 
-    val anyOn = settings.roastsEnabled || settings.voiceEnabled
-    val missing = buildSet {
-        if (settings.roastsEnabled) addAll(live.missingFor(Feature.ROASTS))
-        if (settings.voiceEnabled) addAll(live.missingFor(Feature.SIDEKICK))
-    }
+    val missing = live.missingFor(Feature.ROASTS)
 
     Column(
         Modifier
@@ -153,147 +141,111 @@ fun SetupScreen(onDone: () -> Unit) {
             .padding(horizontal = 20.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(painterResource(R.drawable.mascot_smug), contentDescription = null, modifier = Modifier.size(56.dp))
-            Spacer(Modifier.size(12.dp))
-            Text("What should Sidekick do?", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        }
+        Image(
+            painterResource(R.drawable.mascot_smug),
+            contentDescription = null,
+            modifier = Modifier.size(120.dp).align(Alignment.CenterHorizontally),
+        )
         Text(
-            "Switch on what you want. GAL asks for a permission only when the switch that needs it goes on. " +
-                "It never blocks, closes or limits any app, and it has no internet access.",
+            "A few permissions",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.align(Alignment.CenterHorizontally),
+        )
+        Text(
+            "GAL needs these to notice when you have been on your phone too long. It never blocks or closes " +
+                "any app, and it has no internet access.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
 
-        FeatureCard(
-            title = "Screen Time Roasts",
-            body = "Sidekick times how long you stay on your phone and, after a limit you choose, pops up with a " +
-                "roast card. Your stats stay on the phone.",
-            checked = settings.roastsEnabled,
-            onCheckedChange = { toggle(Feature.ROASTS, it) },
-            needs = Need.forFeature(Feature.ROASTS),
-            granted = live::granted,
-            onFix = { walk.askOne(Feature.ROASTS, it) },
-        )
-        FeatureCard(
-            title = "Floating Sidekick",
-            body = "A little pink elephant who wanders along the edge of your screen, naps, hops when you tap her " +
-                "and pulls a face when a roast card shows up. Drag her wherever you like.",
-            checked = settings.voiceEnabled,
-            onCheckedChange = { toggle(Feature.SIDEKICK, it) },
-            needs = Need.forFeature(Feature.SIDEKICK),
-            granted = live::granted,
-            onFix = { walk.askOne(Feature.SIDEKICK, it) },
-        )
+        Card(
+            shape = RoundedCornerShape(22.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Need.forFeature(Feature.ROASTS).forEachIndexed { i, need ->
+                    if (i > 0) HorizontalDivider()
+                    NeedRow(need, live.granted(need)) { walk.askOne(need) }
+                }
+            }
+        }
 
         Spacer(Modifier.height(4.dp))
-        Button(
-            onClick = {
-                scope.launch {
-                    if (settings.roastsEnabled && !settings.batteryPromptShown && !live.batteryUnrestricted) {
-                        // Ask exactly once, ever. The flag is written before the dialog so a crash cannot repeat it.
-                        repo.markBatteryPromptShown()
-                        Permissions.requestBatteryExemption(context)
+        if (missing.isNotEmpty()) {
+            Button(
+                onClick = { walk.start(permissions) },
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                Text(if (missing.size == Need.forFeature(Feature.ROASTS).count { !it.optional }) "Allow" else "Allow the rest")
+            }
+        } else {
+            Button(
+                onClick = {
+                    scope.launch {
+                        // One app, everything on: the timer, the roast cards and the elephant.
+                        repo.setRoastsEnabled(true)
+                        repo.setVoiceEnabled(true)
+                        repo.setOnboardingComplete()
+                        // Permissions are back, so give the overlay another chance.
+                        repo.setOverlayFailed(false)
+                        GalServiceStarter.syncFromForeground(context, repo.current())
+                        onDone()
                     }
-                    repo.setOnboardingComplete()
-                    // Permissions are back, so give the overlay another chance.
-                    repo.setOverlayFailed(false)
-                    GalServiceStarter.syncFromForeground(context, repo.current())
-                    onDone()
-                }
-            },
-            enabled = anyOn && missing.isEmpty(),
-            modifier = Modifier.fillMaxWidth().height(52.dp),
-        ) {
-            Text(
-                when {
-                    !anyOn -> "Switch on at least one"
-                    missing.isNotEmpty() -> "Grant the ${missing.size} missing to continue"
-                    settings.onboardingComplete -> "Done"
-                    else -> "Continue"
                 },
-            )
+                modifier = Modifier.fillMaxWidth().height(52.dp),
+            ) {
+                Text(if (settings.onboardingComplete) "Done" else "Start")
+            }
         }
     }
 }
 
 /**
- * Asks for a feature's missing permissions in order, one at a time. [ask] opens the request for one permission
- * and says whether that was a runtime dialog (its answer comes back through the launcher) or a Settings page
- * (its answer comes back as the activity resuming).
+ * Asks for the missing permissions in order, one at a time. [ask] opens the request for one permission and says
+ * whether that was a runtime dialog (its answer comes back through the launcher) or a Settings page (its answer
+ * comes back as the activity resuming). [pending] lists what is still to ask.
  */
 private class PermissionWalk {
     var ask: (Need) -> Boolean = { false }
-    private var feature: Feature? = null
+    var pending: (com.sangar.gal.PermissionStatus) -> List<Need> = { emptyList() }
+    private var walking = false
     private var asking: Need? = null
     private var viaRuntimeDialog = false
 
-    fun start(feature: Feature, permissions: PermissionState) {
+    fun start(permissions: PermissionState) {
         permissions.refresh()
-        next(feature, permissions)
+        walking = true
+        next(permissions)
     }
 
-    /** A row's button: ask for just this one, then carry on with the rest. */
-    fun askOne(feature: Feature, need: Need) {
-        this.feature = feature
+    /** A row's button: ask for just this one. */
+    fun askOne(need: Need) {
         asking = need
         viaRuntimeDialog = ask(need)
     }
 
     fun cancel() {
-        feature = null
+        walking = false
         asking = null
     }
 
     fun returned(fromRuntimeDialog: Boolean, permissions: PermissionState) {
         val need = asking ?: return
-        val feature = feature ?: return
         if (fromRuntimeDialog != viaRuntimeDialog) return
-        if (permissions.status.granted(need)) next(feature, permissions) else cancel()
+        asking = null
+        // The battery exemption is optional: carry on (to the end) whatever the answer was.
+        if (walking && (permissions.status.granted(need) || need.optional)) next(permissions) else cancel()
     }
 
-    private fun next(feature: Feature, permissions: PermissionState) {
-        val need = permissions.status.missingFor(feature).firstOrNull()
+    private fun next(permissions: PermissionState) {
+        val need = pending(permissions.status).firstOrNull()
         if (need == null) {
             cancel()
             return
         }
-        askOne(feature, need)
-    }
-}
-
-@Composable
-private fun FeatureCard(
-    title: String,
-    body: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit,
-    needs: List<Need>,
-    granted: (Need) -> Boolean,
-    onFix: (Need) -> Unit,
-) {
-    Card(
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Switch(
-                    checked = checked,
-                    onCheckedChange = onCheckedChange,
-                    modifier = Modifier.semantics { contentDescription = "$title on or off" },
-                )
-            }
-            Text(body, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            if (checked) {
-                needs.forEach { need ->
-                    HorizontalDivider()
-                    NeedRow(need, granted(need)) { onFix(need) }
-                }
-            }
-        }
+        askOne(need)
     }
 }
 

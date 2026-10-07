@@ -168,7 +168,7 @@ class NagController(
                     nagIndex,
                     phrase.tags,
                 )
-                val label = "Sidekick · ${describeMinutes(sessionMinutes)} on screen"
+                val label = "GAL · ${describeMinutes(sessionMinutes)} on screen"
                 NagLog.i(
                     C,
                     "showing session card${if (lastOfSession) " (give_up sign-off, ${check.cap} of ${check.cap})" else ""}: " +

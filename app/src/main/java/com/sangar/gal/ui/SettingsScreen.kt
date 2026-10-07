@@ -104,7 +104,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
             )
             Text(
                 "A card arrives each time another \"nag me after\" stretch of continuous use goes by. " +
-                    "Card ${SessionCardCap.PER_SESSION} is the last one: Sidekick gives up on you and stays quiet " +
+                    "Card ${SessionCardCap.PER_SESSION} is the last one: GAL gives up on you and stays quiet " +
                     "until your next session. A session ends once the screen has been off for more than a minute.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -112,12 +112,33 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
         }
 
         SectionCard {
-            Text("Floating Sidekick", style = MaterialTheme.typography.titleMedium)
+            Text("The elephant", style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Show her on screen", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "She walks around over your apps, says no to social media, cheers for useful apps and " +
+                            "gets cross when you stay on too long.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = current.voiceEnabled,
+                    onCheckedChange = { on ->
+                        scope.launch {
+                            container.settings.setVoiceEnabled(on)
+                            com.sangar.gal.service.GalServiceStarter.syncFromForeground(context, container.settings.current())
+                        }
+                    },
+                    modifier = Modifier.semantics { contentDescription = "Show the elephant on or off" },
+                )
+            }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text("Let her wander", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
                     Text(
-                        "Every few seconds she strolls along the edge, hops, looks around or naps. Off keeps her still.",
+                        "Every few seconds she strolls, hops, looks around or naps. Off keeps her still.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

@@ -102,29 +102,11 @@ fun HomeScreen(
             ActionIcon(R.drawable.ic_tune, "Settings", onOpenSettings)
         },
     ) {
-        FeaturesCard(current, onOpenSetup)
-
-        if (current.voiceActive) {
-            if (!voiceReady) {
-                WarningCard(
-                    message = "Floating Sidekick is missing: ${permissions.missingFor(Feature.SIDEKICK).joinToString { it.label.lowercase() }}. " +
-                        "Sidekick stays off until it is back.",
-                    actionLabel = "Fix in setup",
-                    onAction = onOpenSetup,
-                )
-            }
-            SidekickCard(
-                onScreen = sidekickUp,
-                ready = voiceReady,
-                onBringBack = { GalServiceStarter.syncFromForeground(context, current) },
-            )
-        }
-
         if (current.roastsActive) {
             if (!roastsReady) {
                 val nagBlocking = !permissions.usageAccess || !permissions.overlay
                 WarningCard(
-                    message = "Screen Time Roasts is missing: ${permissions.missing.joinToString()}. " +
+                    message = "GAL is missing: ${permissions.missing.joinToString()}. " +
                         if (nagBlocking) "Cards are paused until it is back." else "The timer still runs, but Android may stop it sooner.",
                     actionLabel = "Fix in setup",
                     onAction = onOpenSetup,
@@ -161,64 +143,6 @@ fun HomeScreen(
                 .filterNot { live.sessionOpen && it.startEpochMillis == live.sessionStartEpochMillis }
                 .sumOf { it.unlockCount } + if (live.sessionOpen) live.unlockCount else 0
             TodayCard(todayMinutes, live, unlocks)
-        }
-    }
-}
-
-/** What is switched on, with the way back to the setup screen. */
-@Composable
-private fun FeaturesCard(settings: Settings, onOpenSetup: () -> Unit) {
-    SectionCard {
-        Text("Sidekick's jobs", style = MaterialTheme.typography.titleMedium)
-        FeatureLine("Screen Time Roasts", settings.roastsEnabled)
-        FeatureLine("Floating Sidekick", settings.voiceEnabled)
-        OutlinedButton(onClick = onOpenSetup, modifier = Modifier.align(Alignment.End)) { Text("Change") }
-    }
-}
-
-@Composable
-private fun FeatureLine(name: String, on: Boolean) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text(name, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.weight(1f))
-        Text(
-            if (on) "On" else "Off",
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            color = if (on) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun SidekickCard(onScreen: Boolean, ready: Boolean, onBringBack: () -> Unit) {
-    SectionCard {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Image(
-                painterResource(if (onScreen) R.drawable.mascot_smug else R.drawable.mascot_bored),
-                contentDescription = null,
-                modifier = Modifier.size(52.dp),
-            )
-            Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                    if (onScreen) "Sidekick is on duty" else "Sidekick is taking a break",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                )
-                Text(
-                    if (onScreen) {
-                        "She wanders the edge of your screen, naps and hops. Tap her to wake her up, drag her anywhere."
-                    } else {
-                        "Android stopped Sidekick. Bring it back here or from its notification."
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-        }
-        if (!onScreen) {
-            Button(onClick = onBringBack, enabled = ready, modifier = Modifier.align(Alignment.End)) {
-                Text("Bring Sidekick back")
-            }
         }
     }
 }

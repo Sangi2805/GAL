@@ -8,28 +8,28 @@ import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.cos
-import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.math.sqrt
 
 /**
- * One frame of what Sidekick is doing: the eyes, the mouth, the face she pulls and where her trunk is. Mutable
- * and reused, so a frame never allocates. The floating Sidekick ([SidekickView]) and the stage both fill one of
- * these and hand it to a [BlobPainter], which is what keeps the two looking identical.
+ * One frame of what Sidekick is doing: her face, her trunk, her legs. Mutable and reused, so a frame never
+ * allocates. The floating Sidekick ([SidekickView]) and the stage both fill one of these and hand it to a
+ * [BlobPainter], which is what keeps the two looking identical.
  */
 class BlobPose {
     /** 1 = eyes open, 0 = shut. Multiplied into the eye height. */
     var blink = 1f
 
-    /** 0 = normal eyes, 1 = wide (listening, horrified). */
+    /** 0 = normal eyes, 1 = wide (surprised, horrified). */
     var wideEyes = 0f
 
     /** 0..1 yawn amount, already eased. */
     var yawn = 0f
 
-    /** Extra mouth opening while speaking. */
+    /** Extra mouth opening while talking or trumpeting. */
     var chatter = 0f
 
     /** Pupil offset, -1..1 on each axis. */
@@ -38,25 +38,23 @@ class BlobPose {
 
     var mood = Mood.NONE
 
-    /** Talking: the open mouth wins over the roast face's mouth. */
+    /** The open mouth wins over the face's own mouth. */
     var speaking = false
 
-    /** The two pulsing rings while listening. */
+    /** Unused since voice was dropped; kept so old callers still compile. */
     var listeningRings = false
-
-    /** The three bouncing dots while thinking. */
     var thinkingDots = false
 
-    /** 0..1 phase for the rings and the dots. */
+    /** 0..1 phase for small loops (steam, sparkles, z's). */
     var phase = 0f
 
     /** Peaceful closed eyes, for sleeping. Overrides [blink]. */
     var eyesShut = false
 
-    /** Trunk angle in degrees: 0 hangs straight down, 90 points towards [facing], 180 points straight up. */
+    /** Trunk angle in degrees: 0 hangs straight down, 90 points forward, 180 points straight up. */
     var trunkAngle = REST_TRUNK
 
-    /** Which side the trunk swings to: 1 right, -1 left. */
+    /** Which way she faces: 1 right, -1 left. */
     var facing = 1
 
     /** 0..1: how far the tip curls back in, like a little hook. */
@@ -64,6 +62,19 @@ class BlobPose {
 
     /** 0..1: ears lifted out, for jumps and surprise. */
     var earFlap = 0f
+
+    /** 0..1 position in the walk cycle, and whether she is walking at all. */
+    var walkPhase = 0f
+    var walking = false
+
+    /** 0..1: how cross she is. Reddens her, adds steam. */
+    var anger = 0f
+
+    /** 0..1: puffed up, strong and pleased with you. */
+    var proud = 0f
+
+    /** Head tilt in degrees, for the "no no no" shake. */
+    var headTilt = 0f
 
     fun reset() {
         blink = 1f
@@ -82,21 +93,29 @@ class BlobPose {
         facing = 1
         trunkCurl = 0.35f
         earFlap = 0f
+        walkPhase = 0f
+        walking = false
+        anger = 0f
+        proud = 0f
+        headTilt = 0f
     }
 
     companion object {
-        const val REST_TRUNK = 50f
+        const val REST_TRUNK = 20f
     }
 }
 
 /**
- * Draws Sidekick, our pink elephant: big round ears, a bow, lashes, rosy cheeks and a bendy trunk that does the
- * work in the scenes (boops, smacks, waves). The roast faces bring their brows, lids, mouths and the sweat drop.
- * All paints and paths are allocated once. (The class keeps its old name from when Sidekick was a green blob.)
+ * Draws Sidekick, our pink cartoon elephant, whole: a round body on four sturdy legs, a little tail, a big ear,
+ * a bow, lashes, rosy cheeks and a bendy trunk. She walks the way elephants do, one leg at a time with a slow,
+ * heavy bob. Her faces: the four roast faces plus angry (red, steaming) and proud (puffed up, sparkling).
  *
- * Sizes are relative to the head: [draw] takes the head's width and height for this frame (already squashed or
- * stretched) and a [nominal] size, the resting size, which fixes the stroke widths so a squash does not make
- * the outline breathe. The ears and the trunk reach a little outside that box.
+ * Seen from the side with her head turned to us, facing [BlobPose.facing]. Everything is drawn facing right and
+ * mirrored for left. The class keeps its old name from when Sidekick was a green blob.
+ *
+ * [draw] takes the box she stands in: [bw] x [bh] this frame (already squashed or stretched) and a [nominal]
+ * size that fixes the stroke widths, so a squash does not make the outline breathe. Her feet touch the bottom
+ * of the box.
  */
 class BlobPainter {
 
@@ -104,12 +123,15 @@ class BlobPainter {
     private val gradientMatrix = Matrix()
 
     private val bodyPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { shader = skinGradient }
+    private val farPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_SKIN_FAR }
     private val rimPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         color = COLOR_RIM
         strokeJoin = Paint.Join.ROUND
+        strokeCap = Paint.Cap.ROUND
     }
     private val innerEarPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_INNER_EAR }
+    private val nailPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_NAIL }
     private val trunkOutlinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         color = COLOR_RIM
@@ -130,8 +152,6 @@ class BlobPainter {
     private val scleraPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_SCLERA }
     private val pupilPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_INK }
     private val mouthPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_INK }
-    private val ringPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-    private val dotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_SKIN_DARK }
     private val inkStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.STROKE
         color = COLOR_INK
@@ -143,28 +163,30 @@ class BlobPainter {
         color = COLOR_INK
         strokeCap = Paint.Cap.ROUND
     }
-    private val lidLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-        color = COLOR_INK
-        strokeCap = Paint.Cap.ROUND
-    }
     private val cheekPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_CHEEK }
     private val bowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_BOW }
     private val bowKnotPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_BOW_KNOT }
     private val highlightPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0x88FFFFFF.toInt() }
+    private val angerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_ANGER }
+    private val steamPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_STEAM }
+    private val sparklePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_SPARKLE }
     private val sweatPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_SWEAT }
     private val tonguePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = COLOR_TONGUE }
+    private val zPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = COLOR_RIM
+        strokeCap = Paint.Cap.ROUND
+        strokeJoin = Paint.Join.ROUND
+    }
 
     private val rect = RectF()
-    private val eyeRect = RectF()
-    private val mouthPath = Path()
-    private val moodPath = Path()
+    private val path = Path()
     private val trunkPath = Path()
-    private val earPath = Path()
 
     private val fadePaints = arrayOf(
-        bodyPaint, rimPaint, innerEarPaint, trunkOutlinePaint, trunkPaint, wrinklePaint, scleraPaint, pupilPaint,
-        mouthPaint, dotPaint, inkStrokePaint, lashPaint, lidLinePaint, bowPaint, bowKnotPaint, sweatPaint, tonguePaint,
+        bodyPaint, farPaint, rimPaint, innerEarPaint, nailPaint, trunkOutlinePaint, trunkPaint, wrinklePaint,
+        scleraPaint, pupilPaint, mouthPaint, inkStrokePaint, lashPaint, bowPaint, bowKnotPaint, sweatPaint,
+        tonguePaint, zPaint, sparklePaint,
     )
 
     /** Multiplies every colour's alpha, for fading the stage elephant in and out. */
@@ -178,112 +200,289 @@ class BlobPainter {
             highlightPaint.alpha = (HIGHLIGHT_ALPHA * clamped / 255f).roundToInt()
         }
 
-    /**
-     * Draws one frame. [cx], [cy] is the head's centre, [bw] x [bh] its size this frame and [nominal] its
-     * resting size. Draws nothing for a zero-sized head.
-     */
     fun draw(canvas: Canvas, cx: Float, cy: Float, bw: Float, bh: Float, nominal: Float, pose: BlobPose) {
         if (bw <= 0f || bh <= 0f || nominal <= 0f) return
-        val unit = nominal / BODY_FILL
-        rimPaint.strokeWidth = unit * 0.022f
-        ringPaint.strokeWidth = unit * 0.020f
-        inkStrokePaint.strokeWidth = unit * 0.030f
-        lashPaint.strokeWidth = unit * 0.016f
-        lidLinePaint.strokeWidth = unit * 0.016f
-        wrinklePaint.strokeWidth = unit * 0.012f
-        val trunkWidth = nominal * 0.19f
+        val u = bw
+        val unit = nominal
+        rimPaint.strokeWidth = unit * 0.016f
+        inkStrokePaint.strokeWidth = unit * 0.020f
+        lashPaint.strokeWidth = unit * 0.011f
+        wrinklePaint.strokeWidth = unit * 0.009f
+        zPaint.strokeWidth = unit * 0.012f
+        val trunkWidth = nominal * 0.088f
         trunkPaint.strokeWidth = trunkWidth
         trunkOutlinePaint.strokeWidth = trunkWidth + rimPaint.strokeWidth * 2f
 
-        val span = bh / BODY_FILL
-        gradientMatrix.setScale(1f, span)
-        gradientMatrix.postTranslate(0f, cy - span / 2f)
+        gradientMatrix.setScale(1f, bh)
+        gradientMatrix.postTranslate(0f, cy - bh / 2f)
         skinGradient.setLocalMatrix(gradientMatrix)
 
-        if (pose.listeningRings) drawListeningRings(canvas, cx, cy, bw, bh, pose.phase)
-        if (pose.thinkingDots) drawThinkingDots(canvas, cx, cy, bh, pose.phase)
+        val ground = cy + bh / 2f
+        val cycle = pose.walkPhase * 2f * PI.toFloat()
+        // A slow, heavy bob: down a little as each foot lands.
+        val bob = if (pose.walking) u * 0.012f * abs(sin(cycle * 2f)) else 0f
+        val puff = 1f + 0.10f * pose.proud
 
-        drawEars(canvas, cx, cy, bw, bh, pose.earFlap)
-
-        // Head.
-        rect.set(cx - bw * HEAD_RX, cy - bh * HEAD_RY - bh * 0.02f, cx + bw * HEAD_RX, cy + bh * HEAD_RY - bh * 0.02f)
-        canvas.drawOval(rect, bodyPaint)
-        canvas.drawOval(rect, rimPaint)
         canvas.save()
-        canvas.rotate(-25f, cx - bw * 0.20f, cy - bh * 0.30f)
-        rect.set(cx - bw * 0.31f, cy - bh * 0.35f, cx - bw * 0.09f, cy - bh * 0.25f)
+        if (pose.facing < 0) canvas.scale(-1f, 1f, cx, cy)
+
+        // Body sits on the legs; everything above the legs moves with the bob.
+        val bodyX = cx - u * 0.09f
+        val bodyY = ground - bh * 0.36f + bob
+        val bodyRx = u * 0.31f * puff
+        val bodyRy = bh * 0.225f * puff
+        val hipY = bodyY + bodyRy * 0.30f
+
+        // Far legs first, in a darker pink, then the tail, the body and the near legs.
+        drawLeg(canvas, bodyX - bodyRx * 0.48f, hipY, ground, u, legSwing(pose, 0.50f), far = true)
+        drawLeg(canvas, bodyX + bodyRx * 0.60f, hipY, ground, u, legSwing(pose, 0.25f), far = true)
+        drawTail(canvas, bodyX - bodyRx * 0.97f, bodyY - bodyRy * 0.15f, u, pose)
+        rect.set(bodyX - bodyRx, bodyY - bodyRy, bodyX + bodyRx, bodyY + bodyRy)
+        canvas.drawOval(rect, bodyPaint)
+        if (pose.anger > 0.01f) {
+            angerPaint.alpha = (60 * pose.anger * alpha / 255f).roundToInt()
+            canvas.drawOval(rect, angerPaint)
+        }
+        canvas.drawOval(rect, rimPaint)
+        drawLeg(canvas, bodyX - bodyRx * 0.68f, hipY, ground, u, legSwing(pose, 0.0f), far = false)
+        drawLeg(canvas, bodyX + bodyRx * 0.38f, hipY, ground, u, legSwing(pose, 0.75f), far = false)
+        // A soft shine on the back.
+        canvas.save()
+        canvas.rotate(-12f, bodyX - bodyRx * 0.3f, bodyY - bodyRy * 0.6f)
+        rect.set(bodyX - bodyRx * 0.55f, bodyY - bodyRy * 0.82f, bodyX - bodyRx * 0.05f, bodyY - bodyRy * 0.55f)
         canvas.drawOval(rect, highlightPaint)
         canvas.restore()
 
-        // Cheeks.
-        for (side in SIDES) {
-            val x = cx + side * bw * 0.27f
-            rect.set(x - bw * 0.085f, cy + bh * 0.07f, x + bw * 0.085f, cy + bh * 0.14f)
+        // Head, turned towards us, up and in front of the body.
+        val hx = bodyX + bodyRx * 0.84f
+        val hy = bodyY - bodyRy * 0.80f
+        val hr = u * 0.20f
+        canvas.save()
+        canvas.rotate(pose.headTilt, hx, hy + hr)
+        drawEar(canvas, hx - hr * 0.70f, hy + hr * 0.10f, hr, pose.earFlap)
+        rect.set(hx - hr, hy - hr * 0.95f, hx + hr, hy + hr * 0.95f)
+        canvas.drawOval(rect, bodyPaint)
+        if (pose.anger > 0.01f) {
+            angerPaint.alpha = (110 * pose.anger * alpha / 255f).roundToInt()
+            canvas.drawOval(rect, angerPaint)
+        }
+        canvas.drawOval(rect, rimPaint)
+        rect.set(hx - hr * 0.6f, hy - hr * 0.78f, hx - hr * 0.05f, hy - hr * 0.5f)
+        canvas.drawOval(rect, highlightPaint)
+        // Cheek.
+        val cheekRed = pose.anger > 0.5f
+        rect.set(hx - hr * 0.35f, hy + hr * 0.22f, hx + hr * 0.05f, hy + hr * 0.42f)
+        if (cheekRed) {
+            angerPaint.alpha = (200 * alpha / 255f).roundToInt()
+            canvas.drawOval(rect, angerPaint)
+        } else {
             canvas.drawOval(rect, cheekPaint)
         }
 
-        if (pose.eyesShut) drawShutEyes(canvas, cx, cy, bw, bh) else drawEyes(canvas, cx, cy, bw, bh, pose)
-        if (pose.mood != Mood.NONE) drawBrows(canvas, cx, cy, bw, bh, pose.mood)
-        // The mouth sits beside the trunk, on the side away from where it swings.
-        val mouthX = cx - pose.facing * bw * 0.20f
-        if (pose.mood != Mood.NONE && !pose.speaking) {
-            drawMoodMouth(canvas, mouthX, cy, bw, bh, pose.mood)
+        if (pose.eyesShut) drawShutEyes(canvas, hx, hy, hr) else drawEyes(canvas, hx, hy, hr, pose)
+        drawBrows(canvas, hx, hy, hr, pose.mood)
+        val mx = hx - hr * 0.08f
+        val my = hy + hr * 0.62f
+        if (pose.speaking || pose.chatter > 0.05f || pose.yawn > 0.05f) {
+            drawOpenMouth(canvas, mx, my, hr, pose)
         } else {
-            drawMouth(canvas, mouthX, cy, bw, bh, pose)
+            drawMoodMouth(canvas, mx, my, hr, pose.mood)
         }
+        drawTrunk(canvas, hx + hr * 0.55f, hy + hr * 0.30f, u, pose)
+        drawBow(canvas, hx - hr * 0.35f, hy - hr * 0.88f, hr)
+        canvas.restore()
 
-        drawTrunk(canvas, cx, cy, bw, bh, nominal, pose)
-        drawBow(canvas, cx, cy, bw, bh)
-        if (pose.mood == Mood.HORRIFIED) drawSweatDrop(canvas, cx, cy, bw, bh)
+        if (pose.mood == Mood.HORRIFIED) drawSweatDrop(canvas, hx + hr * 0.75f, hy - hr * 0.9f, hr)
+        if (pose.anger > 0.3f) drawSteam(canvas, hx, hy - hr * 1.05f, hr, pose)
+        if (pose.proud > 0.3f) drawSparkles(canvas, bodyX, bodyY, bodyRx, bodyRy, pose)
+        if (pose.eyesShut) drawZs(canvas, hx + hr * 0.6f, hy - hr * 1.0f, hr, pose.phase)
+        canvas.restore()
     }
 
-    /** Two big round ears behind the head. [flap] lifts them out and up. */
-    private fun drawEars(canvas: Canvas, cx: Float, cy: Float, bw: Float, bh: Float, flap: Float) {
-        for (side in SIDES) {
-            val ex = cx + side * bw * (0.36f + 0.04f * flap)
-            val ey = cy - bh * (0.04f + 0.06f * flap)
-            canvas.save()
-            canvas.rotate(side * (-12f - 18f * flap), ex, ey)
-            rect.set(ex - bw * 0.25f, ey - bh * 0.32f, ex + bw * 0.25f, ey + bh * 0.30f)
-            earPath.reset()
-            earPath.addOval(rect, Path.Direction.CW)
-            canvas.drawPath(earPath, bodyPaint)
-            canvas.drawPath(earPath, rimPaint)
-            val inset = bw * 0.07f
-            rect.set(rect.left + inset + (if (side > 0) inset * 0.6f else 0f), rect.top + inset, rect.right - inset - (if (side < 0) inset * 0.6f else 0f), rect.bottom - inset)
-            canvas.drawOval(rect, innerEarPaint)
-            canvas.restore()
+    /**
+     * An elephant's walk: one leg at a time (back, front, back, front), so two or three feet are always on
+     * the ground. Each leg swings forward and back; the swing is a little faster than the stance, like a
+     * real stride.
+     */
+    private fun legSwing(pose: BlobPose, offset: Float): Float {
+        if (!pose.walking) return 0f
+        val p = ((pose.walkPhase + offset) % 1f + 1f) % 1f
+        return sin(p * 2f * PI.toFloat()) * 18f
+    }
+
+    /** A sturdy leg from [hipY] down to the ground, swung by [swing] degrees about the hip, with toenails. */
+    private fun drawLeg(canvas: Canvas, x: Float, hipY: Float, ground: Float, u: Float, swing: Float, far: Boolean) {
+        val w = u * 0.13f
+        // A foot in the air shortens the leg a touch, so it lifts rather than slides.
+        val lift = if (swing > 0f) u * 0.012f * (swing / 18f) else 0f
+        val bottom = ground - lift
+        canvas.save()
+        canvas.rotate(swing, x, hipY)
+        rect.set(x - w / 2f, hipY - w * 0.6f, x + w / 2f, bottom)
+        canvas.drawRoundRect(rect, w * 0.45f, w * 0.45f, if (far) farPaint else bodyPaint)
+        canvas.drawRoundRect(rect, w * 0.45f, w * 0.45f, rimPaint)
+        if (!far) {
+            for (k in 0 until 3) {
+                val nx = x - w * 0.28f + k * w * 0.28f
+                rect.set(nx - w * 0.11f, bottom - w * 0.24f, nx + w * 0.11f, bottom - w * 0.04f)
+                canvas.drawOval(rect, nailPaint)
+            }
+        }
+        canvas.restore()
+    }
+
+    private fun drawTail(canvas: Canvas, x: Float, y: Float, u: Float, pose: BlobPose) {
+        val sway = if (pose.walking) sin(pose.walkPhase * 4f * PI.toFloat()) * u * 0.02f else 0f
+        path.reset()
+        path.moveTo(x, y)
+        path.quadTo(x - u * 0.07f, y + u * 0.03f, x - u * 0.06f + sway, y + u * 0.13f)
+        canvas.drawPath(path, rimPaint)
+        rect.set(x - u * 0.085f + sway, y + u * 0.12f, x - u * 0.035f + sway, y + u * 0.17f)
+        canvas.drawOval(rect, bowKnotPaint)
+    }
+
+    /** The big ear, behind the head. [flap] lifts it out. */
+    private fun drawEar(canvas: Canvas, x: Float, y: Float, hr: Float, flap: Float) {
+        canvas.save()
+        canvas.rotate(-12f - 22f * flap, x + hr * 0.4f, y - hr * 0.3f)
+        rect.set(x - hr * 0.90f, y - hr * 0.80f, x + hr * 0.50f, y + hr * 0.95f)
+        canvas.drawOval(rect, bodyPaint)
+        canvas.drawOval(rect, rimPaint)
+        rect.set(x - hr * 0.70f, y - hr * 0.58f, x + hr * 0.25f, y + hr * 0.75f)
+        canvas.drawOval(rect, innerEarPaint)
+        canvas.restore()
+    }
+
+    private fun drawEyes(canvas: Canvas, hx: Float, hy: Float, hr: Float, pose: BlobPose) {
+        val openness = (pose.blink * (1f + 0.28f * pose.wideEyes) * (1f - 0.85f * pose.yawn)).coerceIn(0.05f, 1.6f)
+        val rx = hr * 0.16f * (1f + 0.10f * pose.wideEyes)
+        val ry = hr * 0.21f * openness
+        for ((i, ex) in floatArrayOf(hx - hr * 0.30f, hx + hr * 0.22f).withIndex()) {
+            val ey = hy - hr * 0.08f
+            if (pose.wideEyes > 0.3f || pose.mood == Mood.HORRIFIED) {
+                rect.set(ex - rx * 1.4f, ey - ry * 1.35f, ex + rx * 1.4f, ey + ry * 1.35f)
+                canvas.drawOval(rect, scleraPaint)
+            }
+            val scale = if (pose.mood == Mood.HORRIFIED) 0.6f else 1f
+            val px = ex + pose.gazeX * rx * 0.3f
+            val py = ey + pose.gazeY * ry * 0.3f
+            rect.set(px - rx * scale, py - ry * scale, px + rx * scale, py + ry * scale)
+            canvas.drawOval(rect, pupilPaint)
+            if (ry > rx * 0.4f) canvas.drawCircle(px + rx * 0.35f, py - ry * 0.35f, rx * 0.35f, scleraPaint)
+            // Lashes on the outer corner of each eye.
+            val side = if (i == 0) -1f else 1f
+            val lx = ex + side * rx * 0.8f
+            val ly = ey - ry * 0.55f
+            canvas.drawLine(lx, ly, lx + side * rx * 0.7f, ly - rx * 0.4f, lashPaint)
+            canvas.drawLine(lx - side * rx * 0.2f, ly - ry * 0.3f, lx + side * rx * 0.35f, ly - ry * 0.3f - rx * 0.7f, lashPaint)
+            // Roast faces bring the lid down.
+            val lid = moodLid(pose.mood)
+            if (lid > 0f && ry > 1f) {
+                val top = ey - ry * 1.1f
+                val edge = ey - ry + 2f * ry * lid
+                canvas.drawRect(ex - rx * 1.2f, top, ex + rx * 1.2f, edge, bodyPaint)
+                canvas.drawLine(ex - rx * 1.05f, edge, ex + rx * 1.05f, edge, lashPaint)
+            }
+        }
+    }
+
+    private fun drawShutEyes(canvas: Canvas, hx: Float, hy: Float, hr: Float) {
+        for (ex in floatArrayOf(hx - hr * 0.30f, hx + hr * 0.22f)) {
+            val ey = hy - hr * 0.05f
+            path.reset()
+            path.moveTo(ex - hr * 0.15f, ey)
+            path.quadTo(ex, ey + hr * 0.14f, ex + hr * 0.15f, ey)
+            canvas.drawPath(path, inkStrokePaint)
+        }
+    }
+
+    /** Brows: one per eye; [mood] decides inner end, outer end and arch, in head radii (positive is down). */
+    private fun drawBrows(canvas: Canvas, hx: Float, hy: Float, hr: Float, mood: Mood) {
+        val sets: Array<FloatArray> = when (mood) {
+            Mood.SMUG -> arrayOf(floatArrayOf(0.02f, 0.02f, 0f), floatArrayOf(-0.08f, -0.04f, -0.1f))
+            Mood.BORED -> arrayOf(floatArrayOf(0.06f, 0.06f, 0f), floatArrayOf(0.06f, 0.06f, 0f))
+            Mood.DISAPPOINTED -> arrayOf(floatArrayOf(-0.09f, 0.05f, 0f), floatArrayOf(-0.09f, 0.05f, 0f))
+            Mood.HORRIFIED -> arrayOf(floatArrayOf(-0.13f, -0.07f, -0.1f), floatArrayOf(-0.13f, -0.07f, -0.1f))
+            Mood.ANGRY -> arrayOf(floatArrayOf(0.12f, -0.08f, 0f), floatArrayOf(0.12f, -0.08f, 0f))
+            Mood.PROUD -> arrayOf(floatArrayOf(-0.04f, -0.04f, -0.08f), floatArrayOf(-0.04f, -0.04f, -0.08f))
+            Mood.NONE -> return
+        }
+        val base = hy - hr * 0.42f
+        for ((i, ex) in floatArrayOf(hx - hr * 0.30f, hx + hr * 0.22f).withIndex()) {
+            val (inner, outer, arch) = sets[i].let { Triple(it[0], it[1], it[2]) }
+            val side = if (i == 0) -1f else 1f
+            val ix = ex - side * hr * 0.16f
+            val ox = ex + side * hr * 0.16f
+            path.reset()
+            path.moveTo(ix, base + inner * hr)
+            path.quadTo(ex, base + (inner + outer) / 2f * hr + arch * hr, ox, base + outer * hr)
+            canvas.drawPath(path, inkStrokePaint)
+        }
+    }
+
+    private fun drawOpenMouth(canvas: Canvas, mx: Float, my: Float, hr: Float, pose: BlobPose) {
+        val open = (0.25f + 0.55f * pose.chatter + 0.8f * pose.yawn).coerceIn(0f, 1f)
+        rect.set(mx - hr * 0.12f, my - hr * 0.06f * open, mx + hr * 0.12f, my + hr * 0.16f * open)
+        canvas.drawOval(rect, mouthPaint)
+    }
+
+    private fun drawMoodMouth(canvas: Canvas, mx: Float, my: Float, hr: Float, mood: Mood) {
+        path.reset()
+        when (mood) {
+            Mood.SMUG -> {
+                path.moveTo(mx - hr * 0.12f, my)
+                path.quadTo(mx, my + hr * 0.08f, mx + hr * 0.14f, my - hr * 0.05f)
+                canvas.drawPath(path, inkStrokePaint)
+            }
+            Mood.BORED -> canvas.drawLine(mx - hr * 0.1f, my + hr * 0.02f, mx + hr * 0.1f, my + hr * 0.02f, inkStrokePaint)
+            Mood.DISAPPOINTED, Mood.ANGRY -> {
+                path.moveTo(mx - hr * 0.12f, my + hr * 0.07f)
+                path.quadTo(mx, my - hr * 0.05f, mx + hr * 0.12f, my + hr * 0.07f)
+                canvas.drawPath(path, inkStrokePaint)
+            }
+            Mood.HORRIFIED -> {
+                rect.set(mx - hr * 0.08f, my - hr * 0.06f, mx + hr * 0.08f, my + hr * 0.16f)
+                canvas.drawOval(rect, mouthPaint)
+                rect.set(mx - hr * 0.05f, my + hr * 0.06f, mx + hr * 0.05f, my + hr * 0.14f)
+                canvas.drawOval(rect, tonguePaint)
+            }
+            Mood.PROUD -> {
+                // A big open grin.
+                path.moveTo(mx - hr * 0.15f, my - hr * 0.02f)
+                path.quadTo(mx, my + hr * 0.24f, mx + hr * 0.15f, my - hr * 0.02f)
+                path.close()
+                canvas.drawPath(path, mouthPaint)
+                rect.set(mx - hr * 0.06f, my + hr * 0.07f, mx + hr * 0.06f, my + hr * 0.13f)
+                canvas.drawOval(rect, tonguePaint)
+            }
+            Mood.NONE -> {
+                path.moveTo(mx - hr * 0.11f, my - hr * 0.02f)
+                path.quadTo(mx, my + hr * 0.09f, mx + hr * 0.11f, my - hr * 0.02f)
+                canvas.drawPath(path, inkStrokePaint)
+            }
         }
     }
 
     /**
-     * The trunk: a thick curve from between the eyes. It leaves the face heading down, then bends towards
-     * [BlobPose.trunkAngle], so raising the angle sweeps it out in front of the face and up, the way a real
-     * trunk lifts. A small hook at the tip ([BlobPose.trunkCurl]) curls back towards the face.
+     * The trunk: a thick curve from the front of the face. It leaves the face heading down, then bends towards
+     * [BlobPose.trunkAngle]: 0 hangs down, 90 points forward, 180 points up (trumpeting). A small hook at the
+     * tip curls back.
      */
-    private fun drawTrunk(canvas: Canvas, cx: Float, cy: Float, bw: Float, bh: Float, nominal: Float, pose: BlobPose) {
-        val f = if (pose.facing < 0) -1f else 1f
+    private fun drawTrunk(canvas: Canvas, bx: Float, by: Float, u: Float, pose: BlobPose) {
         val angle = pose.trunkAngle.coerceIn(-40f, 200f)
-        val length = nominal * 0.56f
-        val bx = cx
-        val by = cy - bh * 0.03f
+        val length = u * 0.27f
         val a1 = Math.toRadians((angle / 3f).toDouble())
         val a3 = Math.toRadians(angle.toDouble())
-        val p1x = bx + f * length * 0.40f * sin(a1).toFloat()
+        val p1x = bx + length * 0.40f * sin(a1).toFloat()
         val p1y = by + length * 0.40f * cos(a1).toFloat()
-        // Past pointing forward the tip keeps out to the side, so a raised trunk goes up beside the face,
-        // not across the eyes.
-        val high = ((angle - 90f) / 90f).coerceIn(0f, 1f)
-        val lateral = sin(a3).toFloat() * 0.92f + 0.62f * high * high * (3f - 2f * high)
-        val tipX = bx + f * length * lateral
+        val tipX = bx + length * sin(a3).toFloat() * 0.95f
         val tipY = by + length * 0.35f * cos(a1).toFloat() + length * 0.75f * cos(a3).toFloat()
         val a2 = Math.toRadians((angle * 0.8f).toDouble())
-        val p2x = tipX - f * length * 0.35f * sin(a2).toFloat()
+        val p2x = tipX - length * 0.35f * sin(a2).toFloat()
         val p2y = tipY - length * 0.35f * cos(a2).toFloat()
         trunkPath.reset()
         trunkPath.moveTo(bx, by)
         trunkPath.cubicTo(p1x, p1y, p2x, p2y, tipX, tipY)
-        // The hook: a short turn back towards the face at the tip.
         val curl = pose.trunkCurl.coerceIn(0f, 1f)
         if (curl > 0.01f) {
             val dirX = tipX - p2x
@@ -292,261 +491,142 @@ class BlobPainter {
             val ux = dirX / d
             val uy = dirY / d
             val hook = length * 0.16f * curl
-            // Turn back: perpendicular towards the face side.
-            val nx = -uy * f
-            val ny = ux * f
-            trunkPath.quadTo(tipX + ux * hook, tipY + uy * hook, tipX + ux * hook * 0.6f - nx * hook, tipY + uy * hook * 0.6f - ny * hook)
+            trunkPath.quadTo(tipX + ux * hook, tipY + uy * hook, tipX + ux * hook * 0.6f + uy * hook, tipY + uy * hook * 0.6f - ux * hook)
         }
         canvas.drawPath(trunkPath, trunkOutlinePaint)
         canvas.drawPath(trunkPath, trunkPaint)
-        // Two wrinkles across the trunk, a third of the way down.
-        for (k in 1..2) {
-            val t = 0.22f + 0.14f * k
+        for (k in 1..3) {
+            val t = 0.2f + 0.15f * k
             val x = cubic(bx, p1x, p2x, tipX, t)
             val y = cubic(by, p1y, p2y, tipY, t)
             val tx = cubicD(bx, p1x, p2x, tipX, t)
             val ty = cubicD(by, p1y, p2y, tipY, t)
             val tl = sqrt(tx * tx + ty * ty).coerceAtLeast(1f)
-            val half = trunkPaint.strokeWidth * 0.30f
+            val half = trunkPaint.strokeWidth * 0.35f
             canvas.drawLine(x - ty / tl * half, y + tx / tl * half, x + ty / tl * half, y - tx / tl * half, wrinklePaint)
         }
     }
 
-    /** A bow on top of the head, tilted to one side. */
-    private fun drawBow(canvas: Canvas, cx: Float, cy: Float, bw: Float, bh: Float) {
-        val x = cx - bw * 0.22f
-        val y = cy - bh * 0.40f
-        val s = bw * 0.13f
+    private fun drawBow(canvas: Canvas, x: Float, y: Float, hr: Float) {
+        val s = hr * 0.26f
         canvas.save()
         canvas.rotate(-18f, x, y)
-        for (side in SIDES) {
-            moodPath.reset()
-            moodPath.moveTo(x, y)
-            moodPath.lineTo(x + side * s * 1.5f, y - s * 0.9f)
-            moodPath.quadTo(x + side * s * 2.0f, y, x + side * s * 1.5f, y + s * 0.9f)
-            moodPath.close()
-            canvas.drawPath(moodPath, bowPaint)
-            canvas.drawPath(moodPath, rimPaint)
+        for (side in floatArrayOf(-1f, 1f)) {
+            path.reset()
+            path.moveTo(x, y)
+            path.lineTo(x + side * s * 1.5f, y - s * 0.9f)
+            path.quadTo(x + side * s * 2.0f, y, x + side * s * 1.5f, y + s * 0.9f)
+            path.close()
+            canvas.drawPath(path, bowPaint)
+            canvas.drawPath(path, rimPaint)
         }
         canvas.drawCircle(x, y, s * 0.45f, bowKnotPaint)
         canvas.drawCircle(x, y, s * 0.45f, rimPaint)
         canvas.restore()
     }
 
-    private fun drawListeningRings(canvas: Canvas, cx: Float, cy: Float, bw: Float, bh: Float, phase: Float) {
-        val maxRadius = min(bw, bh) * 0.92f
-        val minRadius = min(bw, bh) * 0.52f
-        for (i in 0 until 2) {
-            val p = (phase + i * 0.5f) % 1f
-            val radius = minRadius + (maxRadius - minRadius) * p
-            ringPaint.color = COLOR_SKIN_DARK
-            ringPaint.alpha = ((1f - p) * 140f * alpha / 255f).roundToInt().coerceIn(0, 255)
-            canvas.drawCircle(cx, cy, radius, ringPaint)
+    private fun drawSweatDrop(canvas: Canvas, x: Float, top: Float, hr: Float) {
+        val size = hr * 0.18f
+        path.reset()
+        path.moveTo(x, top)
+        path.quadTo(x + size, top + size * 1.4f, x, top + size * 1.9f)
+        path.quadTo(x - size, top + size * 1.4f, x, top)
+        path.close()
+        canvas.drawPath(path, sweatPaint)
+    }
+
+    /** Two little puffs rising from her head when she is cross. */
+    private fun drawSteam(canvas: Canvas, x: Float, y: Float, hr: Float, pose: BlobPose) {
+        steamPaint.alpha = (200 * pose.anger * alpha / 255f).roundToInt()
+        for (k in 0 until 2) {
+            val p = (pose.phase + k * 0.5f) % 1f
+            val px = x + (if (k == 0) -hr * 0.5f else hr * 0.4f)
+            val py = y - p * hr * 0.9f
+            val r = hr * (0.12f + 0.12f * p)
+            canvas.drawCircle(px, py, r, steamPaint)
+            canvas.drawCircle(px + r * 0.8f, py + r * 0.2f, r * 0.75f, steamPaint)
         }
     }
 
-    private fun drawThinkingDots(canvas: Canvas, cx: Float, cy: Float, bh: Float, phase: Float) {
-        val dotRadius = bh * 0.045f
-        val spacing = dotRadius * 3.2f
-        val baseY = cy - bh * 0.62f
-        for (i in 0 until 3) {
-            val p = ((phase - i * 0.16f) % 1f + 1f) % 1f
-            val lift = sin(p * PI.toFloat()).coerceAtLeast(0f)
-            dotPaint.alpha = ((110 + 145 * lift) * alpha / 255f).roundToInt().coerceIn(0, 255)
-            canvas.drawCircle(cx + (i - 1) * spacing, baseY - dotRadius * 1.4f * lift, dotRadius, dotPaint)
-        }
-        dotPaint.alpha = alpha
-    }
-
-    private fun drawEyes(canvas: Canvas, cx: Float, cy: Float, bw: Float, bh: Float, pose: BlobPose) {
-        val eyeOffsetX = bw * 0.19f
-        val eyeCenterY = cy - bh * 0.12f
-        val eyeRx = bw * 0.085f * (1f + 0.10f * pose.wideEyes)
-        val openness = (pose.blink * (1f + 0.28f * pose.wideEyes) * (1f - 0.85f * pose.yawn)).coerceIn(0.04f, 1.6f)
-        val eyeRy = bw * 0.105f * openness
-
-        for (side in SIDES) {
-            val ex = cx + side * eyeOffsetX
-            // Big dark eyes with a white sparkle: the cute look. A white rim only when wide open.
-            eyeRect.set(ex - eyeRx, eyeCenterY - eyeRy, ex + eyeRx, eyeCenterY + eyeRy)
-            if (pose.wideEyes > 0.3f || pose.mood == Mood.HORRIFIED) {
-                val grow = eyeRx * 0.35f
-                rect.set(eyeRect.left - grow, eyeRect.top - grow, eyeRect.right + grow, eyeRect.bottom + grow)
-                canvas.drawOval(rect, scleraPaint)
-            }
-            val pupilScale = if (pose.mood == Mood.HORRIFIED) 0.55f else 1f
-            rect.set(
-                ex + pose.gazeX * eyeRx * 0.25f - eyeRx * pupilScale,
-                eyeCenterY + pose.gazeY * eyeRy * 0.25f - eyeRy * pupilScale,
-                ex + pose.gazeX * eyeRx * 0.25f + eyeRx * pupilScale,
-                eyeCenterY + pose.gazeY * eyeRy * 0.25f + eyeRy * pupilScale,
-            )
-            canvas.drawOval(rect, pupilPaint)
-            if (eyeRy > eyeRx * 0.4f) {
-                canvas.drawCircle(rect.centerX() + eyeRx * 0.32f, rect.centerY() - eyeRy * 0.35f, eyeRx * 0.32f, scleraPaint)
-            }
-            // Two lashes at the outer corner.
-            val lx = ex + side * eyeRx * 0.75f
-            val ly = eyeCenterY - eyeRy * 0.6f
-            canvas.drawLine(lx, ly, lx + side * eyeRx * 0.6f, ly - eyeRx * 0.35f, lashPaint)
-            canvas.drawLine(lx - side * eyeRx * 0.15f, ly - eyeRy * 0.25f, lx + side * eyeRx * 0.35f, ly - eyeRy * 0.25f - eyeRx * 0.6f, lashPaint)
-
-            // Roast faces bring the upper lid down with the skin's own gradient and a thin lid line.
-            val lid = moodLid(pose.mood)
-            if (lid > 0f && eyeRy > 1f) {
-                val edge = eyeRect.top + eyeRect.height() * lid
-                canvas.drawRect(eyeRect.left - 2f, eyeRect.top - eyeRy, eyeRect.right + 2f, edge, bodyPaint)
-                val dy = (edge - eyeCenterY) / eyeRy
-                val half = eyeRx * sqrt((1f - dy * dy).coerceAtLeast(0f))
-                canvas.drawLine(ex - half, edge, ex + half, edge, lidLinePaint)
-            }
+    /** Sparkles around her when she is proud of you. */
+    private fun drawSparkles(canvas: Canvas, bx: Float, by: Float, rx: Float, ry: Float, pose: BlobPose) {
+        for (k in 0 until 3) {
+            val p = (pose.phase + k / 3f) % 1f
+            val a = (k * 2.1f + 0.6f)
+            val sx = bx + cos(a) * rx * 1.35f
+            val sy = by - ry * 0.4f + sin(a) * ry * 1.6f
+            val s = rx * 0.10f * (0.4f + 0.6f * sin(p * PI.toFloat()))
+            path.reset()
+            path.moveTo(sx, sy - s * 2f)
+            path.lineTo(sx + s * 0.5f, sy - s * 0.5f)
+            path.lineTo(sx + s * 2f, sy)
+            path.lineTo(sx + s * 0.5f, sy + s * 0.5f)
+            path.lineTo(sx, sy + s * 2f)
+            path.lineTo(sx - s * 0.5f, sy + s * 0.5f)
+            path.lineTo(sx - s * 2f, sy)
+            path.lineTo(sx - s * 0.5f, sy - s * 0.5f)
+            path.close()
+            canvas.drawPath(path, sparklePaint)
         }
     }
 
-    /** Sleeping: two calm arcs bowing downward, lashes still on. */
-    private fun drawShutEyes(canvas: Canvas, cx: Float, cy: Float, bw: Float, bh: Float) {
-        val eyeOffsetX = bw * 0.19f
-        val eyeCenterY = cy - bh * 0.10f
-        val half = bw * 0.09f
-        for (side in SIDES) {
-            val ex = cx + side * eyeOffsetX
-            moodPath.reset()
-            moodPath.moveTo(ex - half, eyeCenterY)
-            moodPath.quadTo(ex, eyeCenterY + bh * 0.08f, ex + half, eyeCenterY)
-            canvas.drawPath(moodPath, inkStrokePaint)
-            canvas.drawLine(ex + side * half, eyeCenterY, ex + side * half * 1.5f, eyeCenterY - half * 0.4f, lashPaint)
+    /** A little "z" floating up while she naps. */
+    private fun drawZs(canvas: Canvas, x: Float, y: Float, hr: Float, phase: Float) {
+        for (k in 0 until 2) {
+            val p = (phase + k * 0.5f) % 1f
+            val s = hr * (0.12f + 0.08f * k)
+            val zx = x + p * hr * 0.4f + k * hr * 0.25f
+            val zy = y - p * hr * 0.8f - k * hr * 0.2f
+            path.reset()
+            path.moveTo(zx, zy)
+            path.lineTo(zx + s, zy)
+            path.lineTo(zx, zy + s)
+            path.lineTo(zx + s, zy + s)
+            canvas.drawPath(path, zPaint)
         }
-    }
-
-    private fun drawMouth(canvas: Canvas, mx: Float, cy: Float, bw: Float, bh: Float, pose: BlobPose) {
-        val open = (0.06f + 0.55f * pose.chatter + 0.94f * pose.yawn).coerceIn(0f, 1f)
-        val mouthW = bw * (0.14f + 0.05f * open)
-        val mouthDepth = bh * (0.03f + 0.20f * open)
-        val mouthY = cy + bh * 0.19f
-        mouthPath.reset()
-        mouthPath.moveTo(mx - mouthW / 2f, mouthY)
-        mouthPath.quadTo(mx, mouthY - mouthDepth * 0.42f * open, mx + mouthW / 2f, mouthY)
-        mouthPath.quadTo(mx, mouthY + mouthDepth * 1.7f, mx - mouthW / 2f, mouthY)
-        mouthPath.close()
-        canvas.drawPath(mouthPath, mouthPaint)
-    }
-
-    /** Brows: the most expressive part of each roast face. */
-    private fun drawBrows(canvas: Canvas, cx: Float, cy: Float, bw: Float, bh: Float, mood: Mood) {
-        val eyeOffsetX = bw * 0.19f
-        val baseY = cy - bh * 0.12f - bw * 0.105f - bh * 0.07f
-        val half = bw * 0.09f
-        for (side in SIDES) {
-            val ex = cx + side * eyeOffsetX
-            val inner: Float
-            val outer: Float
-            val arch: Float
-            when (mood) {
-                Mood.SMUG -> if (side < 0) {
-                    inner = 0.01f; outer = 0.01f; arch = -0.01f
-                } else {
-                    inner = -0.04f; outer = -0.02f; arch = -0.06f
-                }
-                Mood.BORED -> {
-                    inner = 0.035f; outer = 0.035f; arch = 0f
-                }
-                Mood.DISAPPOINTED -> {
-                    inner = -0.05f; outer = 0.03f; arch = 0f
-                }
-                Mood.HORRIFIED -> {
-                    inner = -0.07f; outer = -0.04f; arch = -0.06f
-                }
-                Mood.NONE -> return
-            }
-            val innerX = ex - side * half
-            val outerX = ex + side * half
-            moodPath.reset()
-            moodPath.moveTo(innerX, baseY + inner * bh)
-            moodPath.quadTo(ex, baseY + (inner + outer) / 2f * bh + arch * bh, outerX, baseY + outer * bh)
-            canvas.drawPath(moodPath, inkStrokePaint)
-        }
-    }
-
-    private fun drawMoodMouth(canvas: Canvas, mx: Float, cy: Float, bw: Float, bh: Float, mood: Mood) {
-        val my = cy + bh * 0.20f
-        val w = bw * 0.55f
-        moodPath.reset()
-        when (mood) {
-            Mood.SMUG -> {
-                moodPath.moveTo(mx - w * 0.16f, my + bh * 0.01f)
-                moodPath.quadTo(mx, my + bh * 0.06f, mx + w * 0.17f, my - bh * 0.03f)
-                canvas.drawPath(moodPath, inkStrokePaint)
-            }
-            Mood.BORED -> canvas.drawLine(mx - w * 0.12f, my + bh * 0.02f, mx + w * 0.12f, my + bh * 0.02f, inkStrokePaint)
-            Mood.DISAPPOINTED -> {
-                moodPath.moveTo(mx - w * 0.14f, my + bh * 0.05f)
-                moodPath.quadTo(mx, my - bh * 0.03f, mx + w * 0.14f, my + bh * 0.05f)
-                canvas.drawPath(moodPath, inkStrokePaint)
-            }
-            Mood.HORRIFIED -> {
-                val rx = bw * 0.055f
-                val ry = bh * 0.075f
-                val oy = my + bh * 0.03f
-                eyeRect.set(mx - rx, oy - ry, mx + rx, oy + ry)
-                canvas.drawOval(eyeRect, mouthPaint)
-                eyeRect.set(mx - rx * 0.6f, oy + ry * 0.2f, mx + rx * 0.6f, oy + ry * 0.9f)
-                canvas.drawOval(eyeRect, tonguePaint)
-            }
-            Mood.NONE -> Unit
-        }
-    }
-
-    private fun drawSweatDrop(canvas: Canvas, cx: Float, cy: Float, bw: Float, bh: Float) {
-        val x = cx + bw * 0.33f
-        val top = cy - bh * 0.42f
-        val size = bw * 0.08f
-        moodPath.reset()
-        moodPath.moveTo(x, top)
-        moodPath.quadTo(x + size, top + size * 1.4f, x, top + size * 1.9f)
-        moodPath.quadTo(x - size, top + size * 1.4f, x, top)
-        moodPath.close()
-        canvas.drawPath(moodPath, sweatPaint)
     }
 
     private fun cubic(a: Float, b: Float, c: Float, d: Float, t: Float): Float {
-        val u = 1f - t
-        return u * u * u * a + 3f * u * u * t * b + 3f * u * t * t * c + t * t * t * d
+        val v = 1f - t
+        return v * v * v * a + 3f * v * v * t * b + 3f * v * t * t * c + t * t * t * d
     }
 
     private fun cubicD(a: Float, b: Float, c: Float, d: Float, t: Float): Float {
-        val u = 1f - t
-        return 3f * u * u * (b - a) + 6f * u * t * (c - b) + 3f * t * t * (d - c)
+        val v = 1f - t
+        return 3f * v * v * (b - a) + 6f * v * t * (c - b) + 3f * t * t * (d - c)
     }
 
     companion object {
-        /** The floating window's head fills this share of the window; the ears and trunk use the rest. */
-        const val BODY_FILL = 0.62f
+        /** The elephant's box fills this share of the floating window, leaving room for a hop and her ear. */
+        const val BODY_FILL = 0.86f
 
-        private const val HEAD_RX = 0.42f
-        private const val HEAD_RY = 0.46f
         private const val CHEEK_ALPHA = 150
         private const val HIGHLIGHT_ALPHA = 0x88
-
-        private val SIDES = intArrayOf(-1, 1)
 
         val COLOR_SKIN_LIGHT = 0xFFFFD0E4.toInt()
         val COLOR_SKIN_MID = 0xFFF8B2D1.toInt()
         val COLOR_SKIN_DARK = 0xFFEE8DB9.toInt()
+        val COLOR_SKIN_FAR = 0xFFE07FAA.toInt()
         val COLOR_INNER_EAR = 0xFFFF9EC4.toInt()
         val COLOR_RIM = 0xFF9C3D6E.toInt()
+        val COLOR_NAIL = 0xFFFFF4F8.toInt()
         val COLOR_SCLERA = 0xFFFFFFFF.toInt()
         val COLOR_INK = 0xFF3A1530.toInt()
         val COLOR_CHEEK = 0x96FF6F9F.toInt()
         val COLOR_BOW = 0xFFFF5C8A.toInt()
         val COLOR_BOW_KNOT = 0xFFFF7FA3.toInt()
+        val COLOR_ANGER = 0xFFFF3B3B.toInt()
+        val COLOR_STEAM = 0xFFC9C9D3.toInt()
+        val COLOR_SPARKLE = 0xFFFFC93C.toInt()
         val COLOR_SWEAT = 0xFF7EC8F0.toInt()
         val COLOR_TONGUE = 0xFFFF7A8A.toInt()
 
-        /** How far the upper lids come down for a roast face, 0 open to 1 shut. */
+        /** How far the upper lids come down for a face, 0 open to 1 shut. */
         fun moodLid(mood: Mood): Float = when (mood) {
             Mood.SMUG -> 0.42f
             Mood.BORED -> 0.58f
             Mood.DISAPPOINTED -> 0.26f
+            Mood.ANGRY -> 0.30f
             else -> 0f
         }
     }
