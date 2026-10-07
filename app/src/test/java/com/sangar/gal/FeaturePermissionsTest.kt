@@ -5,7 +5,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-/** Each switch asks only for its own permissions. */
+/** Each switch asks only for its own permissions, and nothing asks for the microphone any more. */
 class FeaturePermissionsTest {
 
     private fun status(
@@ -13,35 +13,39 @@ class FeaturePermissionsTest {
         overlay: Boolean = false,
         notifications: Boolean = false,
         battery: Boolean = false,
-        mic: Boolean = false,
-    ) = PermissionStatus(usage, overlay, notifications, battery, mic)
+    ) = PermissionStatus(usage, overlay, notifications, battery)
 
     @Test
-    fun roastsNeverAskForTheMicrophone() {
+    fun roastsAskForUsageOverlayAndNotifications() {
         val missing = status().missingFor(Feature.ROASTS)
         assertEquals(listOf(Need.USAGE_ACCESS, Need.OVERLAY, Need.NOTIFICATIONS), missing)
         assertTrue(status(usage = true, overlay = true, notifications = true).ready(Feature.ROASTS))
     }
 
     @Test
-    fun voiceNeverAsksForUsageAccessOrBattery() {
-        val missing = status().missingFor(Feature.VOICE)
-        assertEquals(listOf(Need.OVERLAY, Need.MICROPHONE, Need.NOTIFICATIONS), missing)
-        assertTrue(status(overlay = true, notifications = true, mic = true).ready(Feature.VOICE))
+    fun sidekickNeedsOnlyTheOverlayAndNotifications() {
+        val missing = status().missingFor(Feature.SIDEKICK)
+        assertEquals(listOf(Need.OVERLAY, Need.NOTIFICATIONS), missing)
+        assertTrue(status(overlay = true, notifications = true).ready(Feature.SIDEKICK))
     }
 
     @Test
     fun batteryIsOfferedToRoastsButNeverRequired() {
         assertTrue(Need.BATTERY in Need.forFeature(Feature.ROASTS))
-        assertFalse(Need.BATTERY in Need.forFeature(Feature.VOICE))
+        assertFalse(Need.BATTERY in Need.forFeature(Feature.SIDEKICK))
         assertTrue(status(usage = true, overlay = true, notifications = true, battery = false).ready(Feature.ROASTS))
     }
 
     @Test
     fun oneFeatureReadyDoesNotMakeTheOtherReady() {
-        val voiceOnly = status(overlay = true, notifications = true, mic = true)
-        assertTrue(voiceOnly.ready(Feature.VOICE))
-        assertFalse(voiceOnly.ready(Feature.ROASTS))
-        assertEquals(listOf("usage access"), voiceOnly.missing)
+        val sidekickOnly = status(overlay = true, notifications = true)
+        assertTrue(sidekickOnly.ready(Feature.SIDEKICK))
+        assertFalse(sidekickOnly.ready(Feature.ROASTS))
+        assertEquals(listOf("usage access"), sidekickOnly.missing)
+    }
+
+    @Test
+    fun noFeatureEverAsksForTheMicrophone() {
+        assertFalse(Need.entries.any { it.label.contains("Microphone", ignoreCase = true) })
     }
 }

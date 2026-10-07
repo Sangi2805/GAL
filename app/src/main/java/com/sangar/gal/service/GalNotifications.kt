@@ -16,9 +16,7 @@ import com.sangar.gal.ui.MainActivity
 /**
  * Two notifications:
  * - the quiet ongoing one that keeps [GalService] in the foreground, whatever mix of roasts and Sidekick it runs;
- * - "Tap to bring Sidekick back", posted when Sidekick should be on but is not. The microphone part of the
- *   service is never restarted by the system (see GalService), so this is how the user brings it back, and a
- *   tap on a notification is one of the few ways Android lets an app open the microphone from the background.
+ * - "Tap to bring Sidekick back", posted when Sidekick should be on but is not, so the user can bring it back.
  */
 object GalNotifications {
     const val CHANNEL_ID = "gal_running"
@@ -48,7 +46,7 @@ object GalNotifications {
 
     /**
      * [roastStatus] is the screen timer's line, or null when roasts are not running. [sidekickOn] adds the
-     * Sidekick line and a button that switches Voice Sidekick off.
+     * Sidekick line and a button that switches Floating Sidekick off.
      */
     fun build(context: Context, roastStatus: String?, sidekickOn: Boolean): Notification {
         val open = PendingIntent.getActivity(
@@ -100,14 +98,13 @@ object GalNotifications {
     }
 
     /**
-     * "Tap to bring Sidekick back". The tap starts [GalService] directly as a foreground service: starting it
-     * from a notification tap is what lets the microphone type be granted while GAL is in the background.
+     * "Tap to bring Sidekick back". The tap starts [GalService] directly as a foreground service.
      */
     fun postBringBack(context: Context) {
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return
         // A tap could not bring Sidekick back without these; the home screen explains what is missing instead.
-        if (!Permissions.canDrawOverlays(context) || !Permissions.hasMicrophone(context)) return
+        if (!Permissions.canDrawOverlays(context)) return
         val bringBack = PendingIntent.getForegroundService(
             context,
             2,

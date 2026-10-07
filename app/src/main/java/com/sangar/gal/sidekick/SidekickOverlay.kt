@@ -1,55 +1,36 @@
 package com.sangar.gal.sidekick
 
-import android.Manifest
-import android.content.BroadcastReceiver
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.graphics.PixelFormat
 import android.graphics.Point
 import android.graphics.Rect
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.view.Gravity
 import android.view.WindowInsets
 import android.view.WindowManager
-import android.widget.Toast
+import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
-import androidx.core.graphics.drawable.toBitmap
-import com.sangar.gal.BuildConfig
 import com.sangar.gal.Permissions
-import com.sangar.gal.R
 import com.sangar.gal.container
-import com.sangar.gal.data.Settings
 import com.sangar.gal.overlay.CardEvents
-import com.sangar.gal.overlay.QuietRules
 import com.sangar.gal.service.NagLog
-import com.sangar.gal.sidekick.scene.AfterSceneAndSpeech
-import com.sangar.gal.sidekick.scene.AppHabits
-import com.sangar.gal.sidekick.scene.AppHabitsReader
-import com.sangar.gal.sidekick.scene.NormalOpenScene
-import com.sangar.gal.sidekick.scene.NotFoundScene
-import com.sangar.gal.sidekick.scene.RoastOpenScene
-import com.sangar.gal.sidekick.scene.RoastRules
-import com.sangar.gal.sidekick.scene.SceneChoice
 import com.sangar.gal.sidekick.scene.SceneDirector
-import com.sangar.gal.sidekick.scene.SceneKind
-import com.sangar.gal.sidekick.scene.SceneSounds
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import kotlin.concurrent.thread
+import kotlin.math.abs
+import kotlin.math.hypot
 import kotlin.math.roundToInt
+import kotlin.random.Random
 
 /**
  * Process-wide flag so the Compose screens can show whether Sidekick is on screen. The activity and the
@@ -57,58 +38,40 @@ import kotlin.math.roundToInt
  */
 object SidekickStatus {
     var running: Boolean by mutableStateOf(false)
-
-    /** Debug builds only: feeds a command to the Sidekick on screen as if it heard it. Null while none is up. */
-    var debugHear: ((spoken: String, forceRoast: Boolean) -> Unit)? = null
 }
 
 /**
- * Voice Sidekick: the floating blob, its voice engine and the app index. This is Pocket Sidekick's service
- * logic, hosted by GalService instead of owning a service of its own. Main thread only.
+ * Floating Sidekick: the pink elephant in a small window over every app, hosted by GalService. Drag her
+ * anywhere and she snaps to an edge; tap her and she hops. While a roast card is on screen she wears the card's
+ * face ([CardEvents]), so the roast visibly comes from her.
  *
- * While a roast card is on screen the blob wears the card's face ([CardEvents]), so the roast visibly comes
- * from Sidekick.
+ * She does not just stand there: every few seconds she picks something to do: stroll along the edge, now and
+ * then walk across to the other side, hop, look around, or take a nap. She keeps still while a finger is on
+ * her, while a card is up and while the screen is off. Main thread only.
  *
- * "Open X" plays a scene on the stage ([SceneDirector]): a plain open, or for a social app used a lot a roast
- * and three trunk smacks ([AppHabits]). The line is spoken while the scene plays, and the app opens from inside the
- * scene while the stage is still on screen. Quick open, the phone's "Remove animations" setting or a stage
- * that cannot be shown all fall back to the old way: say it, then open.
+ * (She used to listen for "open X" with the microphone. Voice was dropped because speech recognition did not
+ * work reliably on real phones; the app-opening scenes remain in sidekick/scene for the debug tools.)
  */
 class SidekickOverlay(
     private val context: Context,
     private val scope: CoroutineScope,
-) : SidekickHost, VoiceEngine.Listener {
+) : SidekickHost {
 
     private val windowManager: WindowManager = context.getSystemService()!!
-    private val voice = VoiceEngine(context, this)
-    private val resolver = AppResolver(context)
-    private val habits = AppHabitsReader(context)
+    private val power: PowerManager? = context.getSystemService()
     private val main = Handler(Looper.getMainLooper())
+    private val density = context.resources.displayMetrics.density
 
     private var view: SidekickView? = null
     private var params: WindowManager.LayoutParams? = null
     private var moodJob: Job? = null
     private var settingsJob: Job? = null
-    private var openJob: Job? = null
-    private var sounds: SceneSounds? = null
-
-    /** The latest settings, kept current while Sidekick is on screen. */
-    private var settings = Settings()
-
-    /** Debug builds: the next command roasts whatever it opens, without the usage rules or the history. */
-    private var forceRoastOnce = false
-    private val debugHear: (String, Boolean) -> Unit = { spoken, forceRoast -> hearForDebug(spoken, forceRoast) }
-
-    /** True from tap until the character finishes talking. Blocks re-entry. */
-    private var busy = false
-
-    /** Set once by [release]. Late callbacks check it before speaking or opening anything. */
+    private var walkAnimator: ValueAnimator? = null
+    private var wanders = true
     private var released = false
 
-    /** Keeps the index fresh when the user installs or removes something. */
-    private val packageWatcher = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent?) = refreshAppsAsync()
-    }
+    private val wanderRunnable = Runnable { wanderStep() }
+    private val wakeRunnable = Runnable { view?.napping = false }
 
     /** Returns false when the window could not be added, typically because the overlay permission is gone. */
     fun show(): Boolean {
@@ -118,7 +81,7 @@ class SidekickOverlay(
             return false
         }
 
-        val size = (SIZE_DP * context.resources.displayMetrics.density).roundToInt()
+        val size = (SIZE_DP * density).roundToInt()
         val bounds = overlayBounds()
         val layoutParams = WindowManager.LayoutParams(
             size,
@@ -146,39 +109,37 @@ class SidekickOverlay(
         view = sidekick
         params = layoutParams
 
-        ContextCompat.registerReceiver(
-            context,
-            packageWatcher,
-            IntentFilter().apply {
-                addAction(Intent.ACTION_PACKAGE_ADDED)
-                addAction(Intent.ACTION_PACKAGE_REMOVED)
-                addAction(Intent.ACTION_PACKAGE_REPLACED)
-                addDataScheme("package")
-            },
-            ContextCompat.RECEIVER_NOT_EXPORTED,
-        )
-        refreshAppsAsync()
         moodJob = scope.launch {
             CardEvents.face.collect { face ->
                 val mood = face?.mood ?: Mood.NONE
                 NagLog.d(C, "wearing face $mood")
-                view?.mood = mood
+                view?.let { v ->
+                    // A card wakes her up and stops her in her tracks.
+                    if (mood != Mood.NONE) {
+                        stopWalking()
+                        v.napping = false
+                    }
+                    v.mood = mood
+                }
             }
         }
         settingsJob = scope.launch {
             context.container.settings.settings.collect { latest ->
-                settings = latest
-                applySceneSettings(latest)
+                wanders = latest.sidekickWanders
+                if (!wanders) {
+                    stopWalking()
+                    view?.napping = false
+                }
             }
         }
         SceneDirector.floatingBlob = floatingBlob
-        if (BuildConfig.DEBUG) SidekickStatus.debugHear = debugHear
         SidekickStatus.running = true
+        scheduleWander(FIRST_WANDER_MS)
         NagLog.i(C, "Sidekick is on screen")
         return true
     }
 
-    /** Lets the stage blob take the floating blob's place for a scene, so it reads as the same character. */
+    /** Lets the stage elephant take the floating one's place for a debug scene. */
     private val floatingBlob = object : SceneDirector.FloatingBlob {
         override fun centerOnScreen(out: IntArray): Boolean {
             val v = view ?: return false
@@ -196,7 +157,6 @@ class SidekickOverlay(
 
     fun release() {
         released = true
-        if (SidekickStatus.debugHear === debugHear) SidekickStatus.debugHear = null
         if (SceneDirector.floatingBlob === floatingBlob) {
             SceneDirector.cancel()
             SceneDirector.floatingBlob = null
@@ -205,18 +165,12 @@ class SidekickOverlay(
         moodJob = null
         settingsJob?.cancel()
         settingsJob = null
-        openJob?.cancel()
-        openJob = null
-        if (SceneDirector.sounds === sounds) SceneDirector.sounds = null
-        sounds?.release()
-        sounds = null
-        if (view != null) runCatching { context.unregisterReceiver(packageWatcher) }
+        walkAnimator?.cancel()
+        walkAnimator = null
         main.removeCallbacksAndMessages(null)
-        voice.release()
         view?.let { v -> runCatching { windowManager.removeView(v) } }
         view = null
         params = null
-        busy = false
         SidekickStatus.running = false
     }
 
@@ -224,6 +178,7 @@ class SidekickOverlay(
     fun onConfigurationChanged() {
         val p = params ?: return
         val v = view ?: return
+        stopWalking()
         val bounds = overlayBounds()
         moveOverlay(
             p.x.coerceIn(bounds.left, maxOf(bounds.left, bounds.right - v.width)),
@@ -231,7 +186,110 @@ class SidekickOverlay(
         )
     }
 
-    // ---- SidekickHost -----------------------------------------------------
+    // ---- Wandering -----------------------------------------------------------
+
+    private fun scheduleWander(delayMs: Long) {
+        main.removeCallbacks(wanderRunnable)
+        if (!released) main.postDelayed(wanderRunnable, delayMs)
+    }
+
+    /** Picks the next little thing to do, then schedules the one after. */
+    private fun wanderStep() {
+        val v = view ?: return
+        val busy = !wanders || v.isHeld || v.mood != Mood.NONE || walkAnimator != null || v.napping ||
+            power?.isInteractive == false
+        if (!busy) {
+            val roll = Random.nextFloat()
+            when {
+                roll < 0.45f -> strollAlongEdge()
+                roll < 0.57f -> crossToOtherSide()
+                roll < 0.72f -> v.hop()
+                roll < 0.90f -> v.lookAround()
+                else -> nap()
+            }
+        }
+        scheduleWander(Random.nextLong(REST_MIN_MS, REST_MAX_MS))
+    }
+
+    /** Walks up or down the side she is on, to a new spot. */
+    private fun strollAlongEdge() {
+        val v = view ?: return
+        val p = params ?: return
+        val bounds = overlayBounds()
+        val top = bounds.top
+        val bottom = maxOf(top, bounds.bottom - v.height)
+        if (bottom - top < v.height) return
+        val minStep = (MIN_STROLL_DP * density).roundToInt()
+        var target = Random.nextInt(top, bottom + 1)
+        if (abs(target - p.y) < minStep) {
+            target = if (p.y - top > bottom - p.y) p.y - minStep else p.y + minStep
+        }
+        walkTo(p.x, target.coerceIn(top, bottom), STROLL_DP_PER_S, facing = 0)
+    }
+
+    /** Now and then: walks straight across the screen to the other edge. */
+    private fun crossToOtherSide() {
+        val v = view ?: return
+        val p = params ?: return
+        val bounds = overlayBounds()
+        val right = maxOf(bounds.left, bounds.right - v.width)
+        val onLeft = p.x + v.width / 2 < bounds.centerX()
+        val target = if (onLeft) right else bounds.left
+        walkTo(target, p.y, CROSS_DP_PER_S, facing = if (onLeft) 1 else -1)
+    }
+
+    private fun nap() {
+        val v = view ?: return
+        v.napping = true
+        main.removeCallbacks(wakeRunnable)
+        main.postDelayed(wakeRunnable, Random.nextLong(NAP_MIN_MS, NAP_MAX_MS))
+    }
+
+    private fun walkTo(x: Int, y: Int, dpPerSecond: Float, facing: Int) {
+        val v = view ?: return
+        val p = params ?: return
+        val fromX = p.x
+        val fromY = p.y
+        val distance = hypot((x - fromX).toFloat(), (y - fromY).toFloat())
+        if (distance < 2f) return
+        val ms = (distance / (dpPerSecond * density) * 1000f).toLong().coerceIn(600L, 6000L)
+        walkAnimator?.cancel()
+        v.walkFacing = facing
+        v.walking = true
+        walkAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = ms
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener {
+                // Stop at once if she is grabbed or a card needs her face.
+                val now = view
+                if (now == null || now.isHeld || now.mood != Mood.NONE) {
+                    cancel()
+                    return@addUpdateListener
+                }
+                val t = it.animatedValue as Float
+                moveOverlay((fromX + (x - fromX) * t).roundToInt(), (fromY + (y - fromY) * t).roundToInt())
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) = arrived()
+            })
+            start()
+        }
+    }
+
+    /** onAnimationEnd also runs after a cancel, so this is the one place a walk ends. */
+    private fun arrived() {
+        walkAnimator = null
+        view?.walking = false
+        view?.walkFacing = 0
+    }
+
+    private fun stopWalking() {
+        val walk = walkAnimator ?: return
+        walk.cancel()
+        arrived()
+    }
+
+    // ---- SidekickHost ------------------------------------------------------
 
     override fun overlayX(): Int = params?.x ?: 0
 
@@ -269,221 +327,29 @@ class SidekickOverlay(
         }
     }
 
+    /** A tap wakes her up and makes her hop. She has no voice any more, so that is the whole reply. */
     override fun onSidekickTapped() {
-        if (busy) return
-        // Tapping Sidekick mid-roast drops the roast face; it is listening now.
-        view?.mood = Mood.NONE
-
-        if (!hasMicPermission()) {
-            busy = true
-            voice.speak(context.getString(R.string.voice_need_mic)) { finishInteraction() }
-            return
-        }
-
-        busy = true
-        view?.state = SidekickState.LISTENING
-        voice.startListening()
-    }
-
-    // ---- VoiceEngine.Listener ---------------------------------------------
-
-    override fun onListeningStarted() {
-        view?.state = SidekickState.LISTENING
-    }
-
-    override fun onHeard(candidates: List<String>) {
-        view?.state = SidekickState.THINKING
-        // What was said is private: debug builds only, like every other NAG line that names an app.
-        NagLog.d(C, "heard: $candidates")
-        val forceRoast = forceRoastOnce
-        forceRoastOnce = false
-
-        val match = resolver.resolve(candidates)
-        if (match == null) {
-            // Maybe the app was installed after the last index build.
-            refreshAppsAsync()
-            notFound(voice.randomConfusedLine())
-            return
-        }
-
-        val entry = match.entry
-        NagLog.d(C, "matched '${entry.label}' (${NagLog.app(entry.packageName)}) score=${"%.2f".format(match.score)}")
-
-        // Usage numbers and the icon come off the main thread; a busy day's events take a moment to read.
-        val now = settings
-        openJob = scope.launch {
-            val plan = try {
-                withContext(Dispatchers.Default) { planOpen(entry, now, forceRoast) }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                // The class name only: a message could name the app, and this line reaches release logs.
-                NagLog.e(C, "planning the open failed (${e.javaClass.simpleName}); opening it plainly")
-                OpenPlan(roast = false, tier = 0, roastLine = null, icon = null, counts = false)
-            }
-            if (released) return@launch
-            open(entry, plan)
-        }
-    }
-
-    /**
-     * What opening an app will look like, worked out off the main thread. [counts] is false for a roast forced
-     * from adb, so testing does not use up the day's roasts.
-     */
-    private class OpenPlan(val roast: Boolean, val tier: Int, val roastLine: String?, val icon: Bitmap?, val counts: Boolean)
-
-    private suspend fun planOpen(entry: AppResolver.AppEntry, s: Settings, forceRoast: Boolean): OpenPlan {
-        val pkg = entry.packageName
-        val enabled = s.roastsActive && s.appRoastsEnabled
-        val social = enabled && !forceRoast && habits.isSocial(pkg, s.extraSocialApps)
-        val usage = if (social) habits.usage(pkg) else null
-        val decision = if (forceRoast) AppHabits.Decision(roast = true, tier = 2, reason = "forced from adb") else AppHabits.decide(
-            packageName = pkg,
-            enabled = enabled,
-            social = social,
-            usage = usage,
-            rules = RoastRules(minOpensToday = s.roastMinOpens, minMinutesToday = s.roastMinMinutes, minAverageMinutes = s.roastMinAverage),
-            history = habits.history(),
-            nowWall = System.currentTimeMillis(),
-            today = habits.today(),
-            inCall = QuietRules.isInCall(context),
-            quiet = pkg in s.exclusions,
-        )
-        NagLog.d(C, "open ${NagLog.app(pkg)}: ${if (decision.roast) "roast, tier ${decision.tier}" else "plain"} (${decision.reason})")
-        val line = if (decision.roast) context.container.phrases.appRoast(entry.label, decision.tier) else null
-        val icon = if (s.scenesEnabled) appIcon(pkg) else null
-        return OpenPlan(decision.roast, decision.tier, line, icon, counts = decision.roast && !forceRoast)
-    }
-
-    private fun open(entry: AppResolver.AppEntry, plan: OpenPlan) {
-        val line = plan.roastLine ?: voice.randomAcknowledgement()
-        if (plan.counts) habits.recordRoast(entry.packageName)
-        val kind = SceneChoice.choose(found = true, roast = plan.roast, scenesEnabled = settings.scenesEnabled, animationsOff = SceneDirector.animationsOff(context))
-        if (kind != null && playScene(kind, entry, plan.icon, line, AppHabits.moodFor(plan.tier))) return
-        // Quick open, no animations, or no stage: say it, then open.
-        voice.speak(line) { finishAfterLaunch(launched = resolver.launch(entry)) }
-    }
-
-    private fun notFound(line: String) {
-        val kind = SceneChoice.choose(found = false, roast = false, scenesEnabled = settings.scenesEnabled, animationsOff = SceneDirector.animationsOff(context))
-        if (kind != null && playScene(kind, null, null, line, Mood.DISAPPOINTED)) return
-        voice.speak(line) { finishInteraction() }
-    }
-
-    /**
-     * Plays [kind] with [line] in its bubble and in Sidekick's voice at the same time. [entry] opens from inside
-     * the scene, while the stage is still on screen, which is what lets Android 15 start it from the background.
-     * A tap on the stage skips the scene, opens the app at once and cuts the line short. Returns false if the
-     * stage could not be shown; nothing has been said or opened then.
-     */
-    private fun playScene(kind: SceneKind, entry: AppResolver.AppEntry?, icon: Bitmap?, line: String, mood: Mood): Boolean {
-        var launched = entry == null
-        val after = AfterSceneAndSpeech { finishAfterLaunch(launched) }
-        val started = SceneDirector.play(
-            context,
-            icon = icon,
-            makeScene = { at ->
-                when (kind) {
-                    SceneKind.ROAST_OPEN -> RoastOpenScene(at, line, mood)
-                    SceneKind.NORMAL_OPEN -> NormalOpenScene(at)
-                    SceneKind.NOT_FOUND -> NotFoundScene(at, line)
-                }
-            },
-            callbacks = SceneDirector.Callbacks(
-                onLaunch = { if (entry != null) launched = resolver.launch(entry) },
-                onDone = { skipped ->
-                    if (skipped) voice.stopSpeaking()
-                    after.sceneDone()
-                },
-            ),
-        )
-        if (!started) {
-            NagLog.w(C, "no stage for ${kind.name}; saying it instead")
-            return false
-        }
-        voice.speak(line) { after.speechDone() }
-        return true
-    }
-
-    private fun finishAfterLaunch(launched: Boolean) {
-        if (launched || released) {
-            finishInteraction()
-        } else {
-            voice.speak(context.getString(R.string.voice_launch_failed)) { finishInteraction() }
-        }
-    }
-
-    /** Sounds and haptics follow Settings, live. */
-    private fun applySceneSettings(s: Settings) {
-        SceneDirector.hapticsEnabled = s.sceneHaptics
-        if (s.sceneSounds && sounds == null) {
-            sounds = SceneSounds(context).also { SceneDirector.sounds = it }
-        } else if (!s.sceneSounds && sounds != null) {
-            if (SceneDirector.sounds === sounds) SceneDirector.sounds = null
-            sounds?.release()
-            sounds = null
-        }
-    }
-
-    private fun appIcon(packageName: String): Bitmap? = runCatching {
-        val px = (ICON_DP * context.resources.displayMetrics.density).roundToInt()
-        context.packageManager.getApplicationIcon(packageName).toBitmap(px, px)
-    }.getOrNull()
-
-    /** Debug builds only, from adb: runs [spoken] as if Sidekick heard it. [forceRoast] skips the usage rules. */
-    private fun hearForDebug(spoken: String, forceRoast: Boolean) {
-        if (busy || released) {
-            NagLog.w(C, "debug command ignored: Sidekick is busy")
-            return
-        }
-        busy = true
-        view?.mood = Mood.NONE
-        forceRoastOnce = forceRoast
-        onHeard(listOf(spoken))
-    }
-
-    override fun onListenFailed(reason: String) {
-        NagLog.i(C, "listen failed: $reason")
-        voice.speak(reason) { finishInteraction() }
-    }
-
-    override fun onSpeakStarted() {
-        view?.state = SidekickState.SPEAKING
-    }
-
-    override fun onSpeakFinished() {
-        // Per-utterance callbacks drive the state machine; nothing to do here.
-    }
-
-    private fun finishInteraction() {
-        busy = false
-        view?.state = SidekickState.IDLE
-        // If a card is still up, go back to wearing its face.
-        view?.mood = CardEvents.face.value?.mood ?: Mood.NONE
-    }
-
-    // ---- Helpers ----------------------------------------------------------
-
-    private fun hasMicPermission(): Boolean =
-        ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
-            PackageManager.PERMISSION_GRANTED
-
-    private fun refreshAppsAsync() {
-        thread(name = "sidekick-app-index") {
-            runCatching { resolver.refresh() }
-                .onFailure { NagLog.w(C, "app index refresh failed", it) }
-        }
-    }
-
-    fun toast(message: String) {
-        main.post { Toast.makeText(context, message, Toast.LENGTH_LONG).show() }
+        val v = view ?: return
+        stopWalking()
+        main.removeCallbacks(wakeRunnable)
+        v.napping = false
+        v.hop()
+        scheduleWander(Random.nextLong(REST_MIN_MS, REST_MAX_MS))
     }
 
     private companion object {
         const val C = "Sidekick"
         const val SIZE_DP = 116f
 
-        /** Icon size on the crate. */
-        const val ICON_DP = 96f
+        const val FIRST_WANDER_MS = 4_000L
+        const val REST_MIN_MS = 5_000L
+        const val REST_MAX_MS = 12_000L
+        const val NAP_MIN_MS = 15_000L
+        const val NAP_MAX_MS = 40_000L
+
+        /** A stroll covers at least this much, so it reads as going somewhere. */
+        const val MIN_STROLL_DP = 120f
+        const val STROLL_DP_PER_S = 70f
+        const val CROSS_DP_PER_S = 120f
     }
 }

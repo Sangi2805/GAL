@@ -22,15 +22,13 @@ import kotlinx.coroutines.runBlocking
  *   a sticky restart), so this part is sticky: if Android kills the process it is restarted and picks the
  *   session back up.
  *
- * - Voice Sidekick ([SidekickOverlay]), foreground type `microphone`. Android 14 refuses that type unless
- *   RECORD_AUDIO is held, and Android 11+ only lets it open the mic if the service was started while GAL was
- *   in the foreground or from a notification tap. So this part is deliberately NOT sticky: a restart by the
- *   system would come from the background and could not use the mic. When Sidekick should be on but is not,
- *   GAL posts "Tap to bring Sidekick back" instead ([GalNotifications.postBringBack]).
+ * - Floating Sidekick ([SidekickOverlay]): the pink elephant that wanders the screen edges and wears the roast
+ *   cards' faces. It needs only "Display over other apps", so it shares the specialUse type and is sticky too.
+ *   (It used to be Voice Sidekick with the microphone type; voice was dropped because speech recognition did
+ *   not work reliably on real phones.)
  *
- * The two types are combined in one startForeground call when both run. onStartCommand returns START_STICKY
- * while roasts run (the restart brings back roasts only, and posts the bring-back notification for Sidekick)
- * and START_NOT_STICKY when only Sidekick runs.
+ * onStartCommand returns START_STICKY while anything runs. If Sidekick should be up but cannot be shown,
+ * GAL posts "Tap to bring Sidekick back" ([GalNotifications.postBringBack]).
  */
 class GalService : LifecycleService() {
 
@@ -50,29 +48,24 @@ class GalService : LifecycleService() {
             runBlocking { container.settings.setVoiceEnabled(false) }
         }
         val settings = runCatching { runBlocking { container.settings.current() } }.getOrDefault(Settings())
-        return reconcile(settings, micAllowed = action == ACTION_START_VOICE)
+        return reconcile(settings, fromForeground = action == ACTION_START_VOICE)
     }
 
     /**
-     * Brings the running parts in line with the switches. [micAllowed] is true only for starts that may open the
-     * microphone: from the app's own screens or from the bring-back notification. Anything else (boot, a sticky
-     * restart, a plain sync) keeps a Sidekick that is already up but will not start one.
+     * Brings the running parts in line with the switches. Both parts use the specialUse type and need no runtime
+     * permission beyond "Display over other apps", so either may start from the background (boot, a sticky
+     * restart). [fromForeground] is kept for the callers' sake; it no longer changes anything.
      */
-    private fun reconcile(settings: Settings, micAllowed: Boolean): Int {
+    @Suppress("UNUSED_PARAMETER")
+    private fun reconcile(settings: Settings, fromForeground: Boolean): Int {
         voiceWanted = settings.voiceActive
         val runRoasts = settings.roastsActive
-        val voiceReady = Permissions.canDrawOverlays(this) && Permissions.hasMicrophone(this)
-        var runVoice = voiceWanted && voiceReady && (micAllowed || sidekick != null)
+        var runVoice = voiceWanted && Permissions.canDrawOverlays(this)
 
         if (!enterForeground(runRoasts, runVoice)) {
-            // Most likely the microphone type was refused from the background. Keep roasts going without it.
-            if (runVoice && enterForeground(runRoasts, false)) {
-                runVoice = false
-            } else {
-                NagLog.e(C, "could not enter the foreground at all; stopping")
-                stopEverything()
-                return START_NOT_STICKY
-            }
+            NagLog.e(C, "could not enter the foreground at all; stopping")
+            stopEverything()
+            return START_NOT_STICKY
         }
 
         if (runRoasts) {
@@ -109,7 +102,7 @@ class GalService : LifecycleService() {
         enterForeground(runRoasts, runVoice)
         refreshNotification()
         NagLog.i(C, "running roasts=$runRoasts sidekick=$runVoice")
-        return if (runRoasts) START_STICKY else START_NOT_STICKY
+        return START_STICKY
     }
 
     /** Calls startForeground only when the type set changes, since each call re-checks the mic rules. */
@@ -118,8 +111,8 @@ class GalService : LifecycleService() {
         if (roasts && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
         }
-        if (voice && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
+        if (voice && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
         }
         // Started with startForegroundService but about to stop: Android still wants one startForeground call.
         if (types == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -137,8 +130,7 @@ class GalService : LifecycleService() {
             NagLog.i(C, "foreground types=0x${Integer.toHexString(types)}")
             true
         } catch (e: RuntimeException) {
-            // ForegroundServiceStartNotAllowedException, a SecurityException for the microphone type, or a
-            // missing FGS permission.
+            // ForegroundServiceStartNotAllowedException or a missing FGS permission.
             NagLog.e(C, "startForeground refused for types=0x${Integer.toHexString(types)}", e)
             false
         }

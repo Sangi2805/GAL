@@ -69,14 +69,18 @@ private fun AppNavigation() {
     val startDest = Routes.startDestination(settings.hasSeenLandingPage, done)
     NavHost(navController = nav, startDestination = startDest) {
         composable(Routes.LANDING) {
-            LandingScreen(onContinue = {
-                // Written as the user leaves, never on arrival, so a crash on this screen cannot skip it
-                // permanently. appScope so the write survives the screen going away underneath it.
-                context.container.appScope.launch { context.container.settings.setHasSeenLandingPage() }
-                nav.navigate(if (done) Routes.HOME else Routes.SETUP) {
-                    popUpTo(Routes.LANDING) { inclusive = true }
-                }
-            })
+            LandingScreen(
+                showQuip = !settings.introQuipShown,
+                onQuipDone = { context.container.appScope.launch { context.container.settings.markIntroQuipShown() } },
+                onContinue = {
+                    // Written as the user leaves, never on arrival, so a crash on this screen cannot skip it
+                    // permanently. appScope so the write survives the screen going away underneath it.
+                    context.container.appScope.launch { context.container.settings.setHasSeenLandingPage() }
+                    nav.navigate(if (done) Routes.HOME else Routes.SETUP) {
+                        popUpTo(Routes.LANDING) { inclusive = true }
+                    }
+                },
+            )
         }
         composable(Routes.PRIVACY) { PrivacyScreen(onBack = { nav.popBackStack() }) }
         composable(Routes.SETUP) {

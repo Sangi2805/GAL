@@ -17,7 +17,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.getSystemService
 
 /** The two things GAL can do. Each asks only for its own permissions, and only when switched on. */
-enum class Feature { ROASTS, VOICE }
+enum class Feature { ROASTS, SIDEKICK }
 
 /** One permission, as the setup screen shows it. */
 enum class Need(val label: String, val explanation: String, val grantedInSettings: Boolean, val optional: Boolean = false) {
@@ -36,11 +36,6 @@ enum class Need(val label: String, val explanation: String, val grantedInSetting
         "Android needs a small ongoing notification to keep GAL running in the background.",
         grantedInSettings = false,
     ),
-    MICROPHONE(
-        "Microphone",
-        "Used only after you tap Sidekick, to hear which app you asked for.",
-        grantedInSettings = false,
-    ),
     BATTERY(
         "Battery (recommended)",
         "Some phones kill background apps aggressively. Exempting GAL keeps the screen timer honest.",
@@ -52,7 +47,7 @@ enum class Need(val label: String, val explanation: String, val grantedInSetting
     companion object {
         fun forFeature(feature: Feature): List<Need> = when (feature) {
             Feature.ROASTS -> listOf(USAGE_ACCESS, OVERLAY, NOTIFICATIONS, BATTERY)
-            Feature.VOICE -> listOf(OVERLAY, MICROPHONE, NOTIFICATIONS)
+            Feature.SIDEKICK -> listOf(OVERLAY, NOTIFICATIONS)
         }
     }
 }
@@ -62,7 +57,6 @@ data class PermissionStatus(
     val overlay: Boolean,
     val notifications: Boolean,
     val batteryUnrestricted: Boolean,
-    val microphone: Boolean = false,
 ) {
     /** Everything Screen Time Roasts needs. Battery exemption is requested once but never required. */
     val allRequired: Boolean get() = missingFor(Feature.ROASTS).isEmpty()
@@ -74,7 +68,6 @@ data class PermissionStatus(
         Need.USAGE_ACCESS -> usageAccess
         Need.OVERLAY -> overlay
         Need.NOTIFICATIONS -> notifications
-        Need.MICROPHONE -> microphone
         Need.BATTERY -> batteryUnrestricted
     }
 
@@ -95,7 +88,6 @@ object Permissions {
         overlay = canDrawOverlays(context),
         notifications = notificationsEnabled(context),
         batteryUnrestricted = isIgnoringBatteryOptimizations(context),
-        microphone = hasMicrophone(context),
     )
 
     fun hasUsageAccess(context: Context): Boolean {
@@ -117,8 +109,6 @@ object Permissions {
 
     fun canDrawOverlays(context: Context): Boolean = runCatching { Settings.canDrawOverlays(context) }.getOrDefault(false)
 
-    fun hasMicrophone(context: Context): Boolean =
-        ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
 
     fun notificationsEnabled(context: Context): Boolean {
         val runtimeGranted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
@@ -155,27 +145,6 @@ object Permissions {
 
     /** Where a runtime permission denied twice can still be switched on. */
     fun openAppDetails(context: Context) = context.startFirst(
-        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri(context)),
-    )
-
-    /**
-     * Xiaomi, Redmi and POCO phones have their own switch, "Display pop-up windows while running in the
-     * background", and without it Android's usual overlay exemption is not enough to open an app from Sidekick.
-     * It cannot be read reliably, so setup just points at it on these phones.
-     */
-    val isXiaomiFamily: Boolean
-        get() = listOf(Build.MANUFACTURER, Build.BRAND).any { it.orEmpty().lowercase() in XIAOMI_FAMILY }
-
-    private val XIAOMI_FAMILY = setOf("xiaomi", "redmi", "poco")
-
-    /** Xiaomi's own permission page for GAL ("Other permissions"), or the app's info page where it is missing. */
-    fun openXiaomiOtherPermissions(context: Context) = context.startFirst(
-        Intent("miui.intent.action.APP_PERM_EDITOR")
-            .setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.PermissionsEditorActivity")
-            .putExtra("extra_pkgname", context.packageName),
-        Intent("miui.intent.action.APP_PERM_EDITOR")
-            .setClassName("com.miui.securitycenter", "com.miui.permcenter.permissions.AppPermissionsEditorActivity")
-            .putExtra("extra_pkgname", context.packageName),
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, packageUri(context)),
     )
 

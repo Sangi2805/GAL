@@ -6,7 +6,6 @@ import android.content.Intent
 import android.util.Log
 import com.sangar.gal.debug.StageDebug
 import com.sangar.gal.overlay.TestCard
-import com.sangar.gal.sidekick.SidekickStatus
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -22,11 +21,6 @@ import kotlinx.coroutines.withContext
  *       -a com.sangar.gal.debug.PLAYGROUND
  *   adb shell am broadcast -n com.sangar.gal/.DebugCommandReceiver
  *       -a com.sangar.gal.debug.DEMO_SCENE --es kind roast      (normal, roast or notfound)
- *   adb shell am broadcast -n com.sangar.gal/.DebugCommandReceiver
- *       -a com.sangar.gal.debug.HEAR --es spoken "instagram" --ez roast true
- *
- * HEAR runs a command through Voice Sidekick as if it had heard it: the real app, scene and launch. Sidekick
- * must be on screen. "roast true" forces the roast scene without the usage rules and is not counted.
  */
 class DebugCommandReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
@@ -51,18 +45,6 @@ class DebugCommandReceiver : BroadcastReceiver() {
                     "com.sangar.gal.debug.DEMO_SCENE" -> withContext(Dispatchers.Main) {
                         val kind = intent.getStringExtra("kind") ?: "normal"
                         Log.i(TAG, "demo scene $kind: ${StageDebug.demo(context, kind)}")
-                    }
-                    "com.sangar.gal.debug.HEAR" -> withContext(Dispatchers.Main) {
-                        val spoken = intent.getStringExtra("spoken").orEmpty()
-                        val hear = SidekickStatus.debugHear
-                        when {
-                            spoken.isBlank() -> Log.w(TAG, "hear: pass --es spoken \"app name\"")
-                            hear == null -> Log.w(TAG, "hear: Voice Sidekick is not on screen")
-                            else -> {
-                                hear(spoken, intent.getBooleanExtra("roast", false))
-                                Log.i(TAG, "hear: sent")
-                            }
-                        }
                     }
                 }
             } finally {

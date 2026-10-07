@@ -69,12 +69,11 @@ fun HomeScreen(
     val current = settings ?: return
     val live = today.second
     val roastsReady = permissions.ready(Feature.ROASTS)
-    val voiceReady = permissions.ready(Feature.VOICE)
+    val voiceReady = permissions.ready(Feature.SIDEKICK)
     val sidekickUp = SidekickStatus.running
 
     // Measuring never stops once roasts are set up, whether cards are on or off, and Sidekick should be on screen
-    // whenever its switch is on. If either is missing (killed, updated, refused at boot), bring it back. This
-    // screen is in the foreground, so it may bring Sidekick's microphone back too.
+    // whenever its switch is on. If either is missing (killed, updated, refused at boot), bring it back.
     LaunchedEffect(current.roastsActive, current.voiceActive, live.serviceRunning, sidekickUp, voiceReady) {
         val roastsDown = current.roastsActive && !live.serviceRunning
         val voiceDown = current.voiceActive && voiceReady && !sidekickUp
@@ -108,7 +107,7 @@ fun HomeScreen(
         if (current.voiceActive) {
             if (!voiceReady) {
                 WarningCard(
-                    message = "Voice Sidekick is missing: ${permissions.missingFor(Feature.VOICE).joinToString { it.label.lowercase() }}. " +
+                    message = "Floating Sidekick is missing: ${permissions.missingFor(Feature.SIDEKICK).joinToString { it.label.lowercase() }}. " +
                         "Sidekick stays off until it is back.",
                     actionLabel = "Fix in setup",
                     onAction = onOpenSetup,
@@ -172,7 +171,7 @@ private fun FeaturesCard(settings: Settings, onOpenSetup: () -> Unit) {
     SectionCard {
         Text("Sidekick's jobs", style = MaterialTheme.typography.titleMedium)
         FeatureLine("Screen Time Roasts", settings.roastsEnabled)
-        FeatureLine("Voice Sidekick", settings.voiceEnabled)
+        FeatureLine("Floating Sidekick", settings.voiceEnabled)
         OutlinedButton(onClick = onOpenSetup, modifier = Modifier.align(Alignment.End)) { Text("Change") }
     }
 }
@@ -207,7 +206,7 @@ private fun SidekickCard(onScreen: Boolean, ready: Boolean, onBringBack: () -> U
                 )
                 Text(
                     if (onScreen) {
-                        "Tap Sidekick, then say something like “open Maps”. Drag it anywhere; it snaps to the nearest edge."
+                        "She wanders the edge of your screen, naps and hops. Tap her to wake her up, drag her anywhere."
                     } else {
                         "Android stopped Sidekick. Bring it back here or from its notification."
                     },

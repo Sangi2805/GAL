@@ -20,9 +20,8 @@ object GalServiceStarter {
     private const val C = "Starter"
 
     /**
-     * From GAL's own screens, which are in the foreground: starts or updates [GalService] with permission to
-     * open the microphone, so a wanted Sidekick comes up (or comes back). Stops the service when both
-     * switches are off.
+     * From GAL's own screens: starts or updates [GalService] so it matches the switches, and stops it when both
+     * are off.
      */
     fun syncFromForeground(context: Context, settings: Settings) {
         SidekickWatchdog.update(context, settings.voiceActive)
@@ -35,15 +34,13 @@ object GalServiceStarter {
     }
 
     /**
-     * From the background (boot, app update). Roasts may start from here; Sidekick may not open the microphone
-     * from the background, so if it is wanted the user gets "Tap to bring Sidekick back" instead.
+     * From the background (boot, app update). Both parts may start from here. If Android refuses the start,
+     * a wanted Sidekick gets "Tap to bring Sidekick back".
      */
     fun syncFromBackground(context: Context, settings: Settings) {
         SidekickWatchdog.update(context, settings.voiceActive)
-        when {
-            settings.roastsActive -> start(context, GalService.ACTION_SYNC)
-            settings.voiceActive -> GalNotifications.postBringBack(context)
-        }
+        if (!settings.roastsActive && !settings.voiceActive) return
+        if (!start(context, GalService.ACTION_SYNC) && settings.voiceActive) GalNotifications.postBringBack(context)
     }
 
     /** Returns false if Android refused the start, which can happen when called from the background. */
@@ -80,9 +77,8 @@ class BootReceiver : BroadcastReceiver() {
 }
 
 /**
- * The microphone part of the service is not sticky, so when Android kills a Sidekick-only GAL nothing restarts
- * it and nothing runs to say so. This job looks every half hour while Voice Sidekick is switched on, and posts
- * "Tap to bring Sidekick back" if Sidekick is gone. It never starts the microphone itself.
+ * A safety net for phones that kill background apps and never restart them: every half hour while Floating
+ * Sidekick is switched on, posts "Tap to bring Sidekick back" if Sidekick is gone.
  */
 class SidekickWatchdog(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
 

@@ -15,6 +15,7 @@ import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
 import com.sangar.gal.R
 import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -107,6 +108,55 @@ class SidekickView(context: Context) : View(context) {
     private var gazeX = 0f
     private var gazeY = 0f
 
+    /** 0..1 looping phase of the walk cycle; only advances while [walking]. */
+    private var walkPhase = 0f
+
+    /** 0..1 height of a hop. */
+    private var hopLift = 0f
+
+    // ---- Wandering (driven by SidekickOverlay) -----------------------------
+
+    /** Walking: a bouncy step, ears flapping, trunk swinging. */
+    var walking = false
+        set(value) {
+            if (field == value) return
+            field = value
+            if (value) {
+                if (isAttachedToWindow && !walkAnimator.isStarted) walkAnimator.start()
+            } else {
+                walkAnimator.cancel()
+                walkPhase = 0f
+            }
+            invalidate()
+        }
+
+    /** Which way she faces: 1 right, -1 left, 0 towards the middle of the screen. */
+    var walkFacing = 0
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /** A nap: eyes shut, trunk drooping, no blinks or yawns. */
+    var napping = false
+        set(value) {
+            if (field == value) return
+            field = value
+            if (value) {
+                removeCallbacks(blinkRunnable)
+                removeCallbacks(yawnRunnable)
+            } else {
+                scheduleBlink()
+                scheduleYawn()
+            }
+            invalidate()
+        }
+
+    /** True while a finger is on her, so nothing moves her out from under it. */
+    val isHeld: Boolean get() = fingerDown
+
+    private var fingerDown = false
+
     // ---- Animators --------------------------------------------------------
 
     private val breatheAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
@@ -149,6 +199,18 @@ class SidekickView(context: Context) : View(context) {
     private var gazeAnimator: ValueAnimator? = null
     private var pokeAnimator: ValueAnimator? = null
     private var snapAnimator: ValueAnimator? = null
+    private var hopAnimator: ValueAnimator? = null
+    private var lookAnimator: ValueAnimator? = null
+
+    private val walkAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+        duration = 700L
+        repeatCount = ValueAnimator.INFINITE
+        interpolator = LinearInterpolator()
+        addUpdateListener {
+            walkPhase = it.animatedValue as Float
+            invalidate()
+        }
+    }
 
     private val blinkRunnable = Runnable { playBlink() }
     private val yawnRunnable = Runnable { playYawn() }
@@ -188,6 +250,9 @@ class SidekickView(context: Context) : View(context) {
         gazeAnimator?.cancel()
         pokeAnimator?.cancel()
         snapAnimator?.cancel()
+        hopAnimator?.cancel()
+        lookAnimator?.cancel()
+        walkAnimator.cancel()
         super.onDetachedFromWindow()
     }
 
@@ -288,6 +353,7 @@ class SidekickView(context: Context) : View(context) {
     }
 
     private fun playBlink() {
+        if (napping) return
         if (state == SidekickState.LISTENING || yawn > 0f) {
             scheduleBlink()
             return
@@ -320,6 +386,7 @@ class SidekickView(context: Context) : View(context) {
     }
 
     private fun playYawn() {
+        if (napping) return
         if (state != SidekickState.IDLE || mood != Mood.NONE) {
             scheduleYawn()
             return
@@ -385,6 +452,48 @@ class SidekickView(context: Context) : View(context) {
         }
     }
 
+    /** A little hop on the spot, squashing on landing. */
+    fun hop() {
+        hopAnimator?.cancel()
+        hopAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 420L
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                hopLift = sin((it.animatedValue as Float) * PI.toFloat())
+                invalidate()
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    hopLift = 0f
+                    playPoke()
+                }
+            })
+            start()
+        }
+    }
+
+    /** Looks one way, then the other, then back at you. */
+    fun lookAround() {
+        if (napping) return
+        lookAnimator?.cancel()
+        lookAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 1800L
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                val p = it.animatedValue as Float
+                gazeX = when {
+                    p < 0.15f -> -0.9f * (p / 0.15f)
+                    p < 0.45f -> -0.9f
+                    p < 0.6f -> -0.9f + 1.8f * ((p - 0.45f) / 0.15f)
+                    p < 0.85f -> 0.9f
+                    else -> 0.9f * (1f - (p - 0.85f) / 0.15f)
+                }
+                invalidate()
+            }
+            start()
+        }
+    }
+
     // ---- Touch: drag, tap, snap to edge -----------------------------------
 
     @SuppressLint("ClickableViewAccessibility") // performClick() is called below.
@@ -392,6 +501,7 @@ class SidekickView(context: Context) : View(context) {
         val h = host ?: return false
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
+                fingerDown = true
                 snapAnimator?.cancel()
                 downRawX = event.rawX
                 downRawY = event.rawY
@@ -417,12 +527,14 @@ class SidekickView(context: Context) : View(context) {
             }
 
             MotionEvent.ACTION_UP -> {
+                fingerDown = false
                 if (dragging) snapToNearestEdge() else performClick()
                 dragging = false
                 return true
             }
 
             MotionEvent.ACTION_CANCEL -> {
+                fingerDown = false
                 if (dragging) snapToNearestEdge()
                 dragging = false
                 return true
@@ -468,9 +580,11 @@ class SidekickView(context: Context) : View(context) {
         val hgt = height.toFloat()
         if (w <= 0f || hgt <= 0f) return
 
-        val cx = w / 2f
-        val cy = hgt / 2f
         val base = min(w, hgt) * BlobPainter.BODY_FILL
+        val cx = w / 2f
+        // Walking bounces her on each step; a hop lifts her clear of the spot.
+        val step = if (walking) abs(sin(walkPhase * 2f * PI.toFloat())) else 0f
+        val cy = hgt / 2f - base * (0.06f * step + 0.16f * hopLift)
 
         // Breathing: a slow sine. Volume is conserved-ish, so the elephant widens as
         // it flattens, which reads as squash-and-stretch rather than a zoom.
@@ -507,15 +621,19 @@ class SidekickView(context: Context) : View(context) {
         pose.phase = phase
         // The trunk is never quite still: a slow sway with the breath, a wiggle while talking, lifted while
         // listening, and it always swings towards the middle of the screen.
-        pose.facing = facingTowardsScreenMiddle()
+        pose.facing = if (walkFacing != 0) walkFacing else facingTowardsScreenMiddle()
+        pose.eyesShut = napping
         pose.trunkAngle = BlobPose.REST_TRUNK + 9f * breathSine +
             when (state) {
                 SidekickState.LISTENING -> 38f + 8f * sin(phase * 2f * PI.toFloat())
                 SidekickState.SPEAKING -> 22f * chatter
                 SidekickState.THINKING -> 20f
                 else -> 0f
-            }
-        pose.earFlap = (poke * 2f + 0.5f * wideEyes).coerceIn(0f, 1f)
+            } +
+            (if (walking) 18f * sin(walkPhase * 4f * PI.toFloat()) else 0f) +
+            (if (napping) -30f else 0f) +
+            70f * hopLift
+        pose.earFlap = (poke * 2f + 0.5f * wideEyes + (if (walking) 0.5f * step else 0f) + hopLift).coerceIn(0f, 1f)
         painter.draw(canvas, cx, cy, base * scaleX, base * scaleY, base, pose)
     }
 

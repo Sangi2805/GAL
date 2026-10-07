@@ -4,19 +4,6 @@
     <string name="overlay_fine">Fine</string>
     <string name="overlay_snooze">Snooze 10 min</string>
 
-    <string name="sidekick_content_description">Sidekick. Double tap to give a voice command.</string>
+    <string name="sidekick_content_description">Sidekick, the pink elephant. Double tap to make her hop.</string>
 
-    <!-- Spoken lines and errors -->
-    <string name="voice_need_mic">I need microphone access first, boss.</string>
-    <string name="voice_no_recognizer">Speech recognition is not available on this phone.</string>
-    <string name="voice_heard_nothing">I did not catch that.</string>
-    <string name="voice_timeout">I gave up waiting, boss.</string>
-    <string name="voice_launch_failed">I found it but it would not open.</string>
-    <string name="voice_err_audio">Something is wrong with the microphone.</string>
-    <string name="voice_err_permission">I am not allowed to use the microphone.</string>
-    <string name="voice_err_network">I only listen offline. Download your language for offline speech in your phone\'s settings.</string>
-    <string name="voice_downloading_pack">Downloading the offline speech pack for your language. Try me again in a minute.</string>
-    <string name="voice_err_language">No offline speech pack for this language yet. Download it in your phone\'s speech settings.</string>
-    <string name="voice_err_busy">Give me a second, I am still busy.</string>
-    <string name="voice_err_generic">That did not work. Try again.</string>
 </resources>

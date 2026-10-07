@@ -20,19 +20,15 @@
     <!-- Lets us show the one-time "don't optimise this app" system dialog directly. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
 
-    <!-- Voice Sidekick. Runtime permission, asked for only when the Voice Sidekick switch goes on. -->
-    <uses-permission android:name="android.permission.RECORD_AUDIO" />
-
     <!-- Both: the roast card and Sidekick are drawn over other apps, from one foreground service. -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <!-- Package visibility, without QUERY_ALL_PACKAGES. -->
     <queries>
-        <!-- Every app with a launcher icon: Sidekick's app index, the exclusion picker and per-app stats. -->
+        <!-- Every app with a launcher icon: the exclusion picker and per-app stats. -->
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LAUNCHER" />
@@ -52,13 +48,6 @@
         </intent>
         <intent>
             <action android:name="android.intent.action.SHOW_ALARMS" />
-        </intent>
-        <!-- Sidekick's ears and mouth: the speech recogniser and the text-to-speech engine. -->
-        <intent>
-            <action android:name="android.speech.RecognitionService" />
-        </intent>
-        <intent>
-            <action android:name="android.intent.action.TTS_SERVICE" />
         </intent>
     </queries>
 
@@ -84,16 +73,16 @@
         </activity>
 
         <!--
-          One foreground service for both features. specialUse for Screen Time Roasts (sticky, may start from
-          the background), microphone for Voice Sidekick (never restarted by the system; see GalService).
+          One foreground service for both features, type specialUse: it measures screen time and keeps the
+          floating Sidekick on screen. Sticky, and may start from the background (boot, updates).
         -->
         <service
             android:name=".service.GalService"
             android:exported="false"
-            android:foregroundServiceType="specialUse|microphone">
+            android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Measures continuous screen-on time so the app can show an optional, dismissible reminder card. It never blocks or restricts other apps." />
+                android:value="Measures continuous screen-on time so the app can show an optional, dismissible reminder card, and keeps a small floating character on screen. It never blocks or restricts other apps." />
         </service>
 
         <receiver

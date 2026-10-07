@@ -73,7 +73,7 @@ fun rememberPermissionState(): PermissionState {
 }
 
 /**
- * The one setup screen: a switch for Screen Time Roasts and a switch for Voice Sidekick. Nothing is asked for up
+ * The one setup screen: a switch for Screen Time Roasts and a switch for Floating Sidekick. Nothing is asked for up
  * front. Turning a switch on walks through that feature's missing permissions one at a time; backing out of one
  * ends the walk, and the rows under the switch stay there to finish it by hand.
  */
@@ -119,20 +119,6 @@ fun SetupScreen(onDone: () -> Unit) {
                     false
                 }
             }
-            Need.MICROPHONE -> {
-                val canAskInline = activity != null &&
-                    (!settings.microphonePermissionRequested ||
-                        ActivityCompat.shouldShowRequestPermissionRationale(activity, Manifest.permission.RECORD_AUDIO))
-                if (canAskInline) {
-                    scope.launch { repo.markMicrophonePermissionRequested() }
-                    runtimeLauncher.launch(Manifest.permission.RECORD_AUDIO)
-                    true
-                } else {
-                    // Denied twice: Android will not show the dialog again, so send them to the app's page.
-                    Permissions.openAppDetails(context)
-                    false
-                }
-            }
         }
     }
 
@@ -140,7 +126,7 @@ fun SetupScreen(onDone: () -> Unit) {
         scope.launch {
             when (feature) {
                 Feature.ROASTS -> repo.setRoastsEnabled(on)
-                Feature.VOICE -> repo.setVoiceEnabled(on)
+                Feature.SIDEKICK -> repo.setVoiceEnabled(on)
             }
             if (on) {
                 walk.start(feature, permissions)
@@ -156,7 +142,7 @@ fun SetupScreen(onDone: () -> Unit) {
     val anyOn = settings.roastsEnabled || settings.voiceEnabled
     val missing = buildSet {
         if (settings.roastsEnabled) addAll(live.missingFor(Feature.ROASTS))
-        if (settings.voiceEnabled) addAll(live.missingFor(Feature.VOICE))
+        if (settings.voiceEnabled) addAll(live.missingFor(Feature.SIDEKICK))
     }
 
     Column(
@@ -190,18 +176,15 @@ fun SetupScreen(onDone: () -> Unit) {
             onFix = { walk.askOne(Feature.ROASTS, it) },
         )
         FeatureCard(
-            title = "Voice Sidekick",
-            body = "Sidekick floats at the edge of the screen. Tap it and say an app's name to open it. Speech is " +
-                "recognised on the phone, offline.",
+            title = "Floating Sidekick",
+            body = "A little pink elephant who wanders along the edge of your screen, naps, hops when you tap her " +
+                "and pulls a face when a roast card shows up. Drag her wherever you like.",
             checked = settings.voiceEnabled,
-            onCheckedChange = { toggle(Feature.VOICE, it) },
-            needs = Need.forFeature(Feature.VOICE),
+            onCheckedChange = { toggle(Feature.SIDEKICK, it) },
+            needs = Need.forFeature(Feature.SIDEKICK),
             granted = live::granted,
-            onFix = { walk.askOne(Feature.VOICE, it) },
+            onFix = { walk.askOne(Feature.SIDEKICK, it) },
         )
-        if (settings.voiceEnabled && Permissions.isXiaomiFamily) {
-            XiaomiPopupHint(onOpen = { Permissions.openXiaomiOtherPermissions(context) })
-        }
 
         Spacer(Modifier.height(4.dp))
         Button(
@@ -310,33 +293,6 @@ private fun FeatureCard(
                     NeedRow(need, granted(need)) { onFix(need) }
                 }
             }
-        }
-    }
-}
-
-/** Xiaomi, Redmi and POCO only: the extra switch that lets Sidekick open apps. Optional, so it never blocks setup. */
-@Composable
-private fun XiaomiPopupHint(onOpen: () -> Unit) {
-    Card(
-        shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-        modifier = Modifier.fillMaxWidth(),
-    ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(
-                "One more switch on this phone",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
-            Text(
-                "Xiaomi, Redmi and POCO phones stop apps from opening other apps unless you allow it. Open GAL's " +
-                    "permissions, find \"Other permissions\" and allow \"Display pop-up windows while running in " +
-                    "the background\". Without it Sidekick hears you, but the app may not open.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSecondaryContainer,
-            )
-            OutlinedButton(onClick = onOpen) { Text("Open GAL's permissions") }
         }
     }
 }

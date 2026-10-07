@@ -22,6 +22,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -29,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.sangar.gal.R
+import kotlinx.coroutines.delay
 
 /**
  * The landing page draws the splash icon itself (res/drawable/splash_icon.xml, the elephant) at the size Android 12+
@@ -48,11 +54,28 @@ private val LogoTrim = 48.dp
  * read as one screen where the text simply appears under the logo.
  */
 @Composable
-fun LandingScreen(onContinue: () -> Unit) {
+fun LandingScreen(onContinue: () -> Unit, showQuip: Boolean = false, onQuipDone: () -> Unit = {}) {
+    var quip by remember { mutableStateOf(showQuip) }
     LandingContent {
         Button(onClick = onContinue, modifier = Modifier.fillMaxWidth()) { Text("Let's Go") }
     }
+    // First launch only: the "describe yourself" joke, a moment after the page appears.
+    if (quip) {
+        var visible by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            delay(QUIP_DELAY_MILLIS)
+            visible = true
+        }
+        if (visible) {
+            IntroQuip(onDone = {
+                quip = false
+                onQuipDone()
+            })
+        }
+    }
 }
+
+private const val QUIP_DELAY_MILLIS = 700L
 
 /** The same message, reachable from Settings once the landing page has stopped appearing. */
 @Composable
@@ -101,7 +124,7 @@ private fun LandingContent(footer: @Composable () -> Unit) {
             Box(Modifier.fillMaxWidth().height(LandingLogoSize - LogoTrim), contentAlignment = Alignment.Center) {
                 Image(
                     painter = painterResource(R.drawable.splash_icon),
-                    contentDescription = "Sidekick peeking over the edge of a phone",
+                    contentDescription = "Sidekick, a pink elephant, smacking an app crate with her trunk",
                     modifier = Modifier.requiredSize(LandingLogoSize),
                 )
             }
@@ -124,7 +147,8 @@ private fun LandingContent(footer: @Composable () -> Unit) {
             Spacer(Modifier.height(16.dp))
 
             Text(
-                "Sidekick roasts you when you have been on your phone too long, and opens apps when you ask it to.",
+                "Sidekick, our pink elephant, roasts you when you have been on your phone too long. That is the whole " +
+                    "point: less phone, more life.",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
             )

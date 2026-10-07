@@ -1,9 +1,11 @@
 # GAL (GetALife)
 
-One offline Android app that combines **GetALife** (screen-time roast cards) and **Pocket Sidekick** (a
-floating character you tap and talk to). Sidekick, a pink elephant, is the only character: she delivers the roast
-cards, wearing GetALife's four faces (smug, bored, disappointed, horrified), and she opens apps by voice with
-her trunk. The old monkey mascot and the green blob are gone.
+GetALife's screen-time roast cards plus a floating character. Sidekick, a pink elephant, is the only
+character: she delivers the roast cards, wearing GetALife's four faces (smug, bored, disappointed, horrified),
+and she wanders the edges of your screen in between. The old monkey mascot and the green blob are gone.
+
+The app has one job: keeping you off your phone. Voice commands were dropped (speech recognition did not work
+reliably on real phones), so GAL no longer asks for the microphone at all.
 
 The original `GetALife` and `AI Assistant` folders are untouched; this project reuses their code.
 
@@ -13,15 +15,14 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
 
 ## What it does
 
-- **One setup screen, two switches.** *Screen Time Roasts* and *Voice Sidekick*. Nothing is asked for up
+- **One setup screen, two switches.** *Screen Time Roasts* and *Floating Sidekick*. Nothing is asked for up
   front. Turning a switch on walks through that feature's missing permissions one at a time:
 
-  | Permission | Screen Time Roasts | Voice Sidekick |
+  | Permission | Screen Time Roasts | Floating Sidekick |
   | --- | --- | --- |
   | Usage access | required | not asked |
   | Display over other apps | required | required |
   | Notifications | required | required |
-  | Microphone | not asked | required |
   | Battery exemption | offered once, optional | not asked |
 
 - **Screen Time Roasts** is GetALife's roast cards with simpler session rules (below): session clock,
@@ -29,10 +30,13 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
   call, excluded app). `../GetALife/README.md` still explains the phrase engine, stats and quiet rules, but
   its card cap, its 10 minute gap and its daily limit card do not apply to GAL. The card label reads
   "Sidekick · 12 min on screen" and shows the elephant's face for the tier.
-- **Voice Sidekick** is Pocket Sidekick: tap the elephant, say "open Maps", and it opens it, with a short scene
-  on top (below). Drag it anywhere and it snaps to an edge. Speech recognition asks for on-device recognition
-  (`EXTRA_PREFER_OFFLINE`). If the phone has no offline pack for the language, Sidekick says so instead of
-  going online.
+- **Floating Sidekick** is the elephant in a small window over every app. Every 5 to 12 seconds she picks
+  something to do: stroll along the screen edge, now and then walk across to the other side, hop, look around,
+  or nap for a while. She keeps still while you hold her, while a card is up and while the screen is off. Tap
+  her and she hops; drag her anywhere and she snaps to an edge. "Let her wander" in Settings turns the walking
+  off.
+- **First launch:** a box asks you to describe yourself in one word. Three seconds later, typed or not, it cuts
+  you off: "Never mind. We don't care." Nothing typed is kept.
 - **Both on:** while a roast card is up, the floating elephant wears the same face (and the sweat drop for
   horrified), then goes back to normal when the card goes.
 
@@ -52,10 +56,11 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
   (`service/NagStateStore.kt`). A service killed and restarted mid-session carries on at the same card, and a
   crash loop cannot put a card on screen after every restart.
 
-## Sidekick scenes
+## Sidekick scenes (debug only for now)
 
-When Voice Sidekick opens an app, the elephant plays a short scene on a see-through stage over whatever is on
-screen. The stage window exists only while a scene plays (Android 12+ lets a full-screen overlay swallow
+These were built for voice commands, which are gone. The engine stays for a future use, and debug builds can
+still play the scenes from adb (see Debug builds). When Voice Sidekick opened an app, the elephant played a
+short scene on a see-through stage over whatever is on screen. The stage window exists only while a scene plays (Android 12+ lets a full-screen overlay swallow
 every touch, so it must not linger), and a tap anywhere skips the scene and opens the app at once.
 
 | Scene | When | What happens | Length |
@@ -64,25 +69,12 @@ every touch, so it must not linger), and a tap anywhere skips the scene and open
 | RoastOpen | a social app you use a lot | The crate thuds down, the elephant turns to you with a roast line in a bubble (and out loud), winds her trunk up and smacks the crate open in three blows. | about 3 to 3.5 s |
 | NotFound | no app matched | The elephant drops in, looks left and right, says it has never heard of it, and leaves. | about 2 s |
 
-- The app opens from inside the scene while the stage is still up. That is what lets Android 15 start it
-  from the background, and the stage leaves a moment later.
 - The elephant moves like a platformer hero (acceleration, braking, variable jump height, heavier fall, squash
-  and stretch), all tuned in `sidekick/stage/MovementTuning.kt`. The character, the crate and every sound are
-  our own.
-- **App roasts.** A roast needs all of: Screen Time Roasts set up (for the usage numbers), a social app
-  (its declared category, a short known list, or one you added in Settings; messaging apps only if you add
-  them), heavy use (opened 8 times today, or over 45 minutes today, or over 60 minutes a day on average this
-  week; all three adjustable), no roast for that app in the last 2 hours, fewer than 5 roasts today, not in a
-  call, and the app not on the "Stay quiet" list. The 150 lines (50 per tier, `tools/phrases/app_15_roasts.txt`) have
-  `{app}` where the name goes. The tier, and the elephant's face, follow how far past the limits the usage is.
-- **Quick open** in Settings skips the scenes: Sidekick says its line and opens the app, as before. The phone's
-  "Remove animations" setting does the same. A roast line is still spoken with scenes off.
-- **Sound effects** (off by default) are made by `tools/sounds/make_sounds.py` from sine waves and noise, and
-  stay quiet in silent and vibrate mode. **Vibration** on landings and hits is on by default and follows the
-  phone's own touch vibration setting.
-- Settings has a **Try it** preview of both open scenes with GAL's own icon.
-- On Xiaomi, Redmi and POCO phones, setup points at the extra "Display pop-up windows while running in the
-  background" switch, without which Sidekick cannot open apps there.
+  and stretch), all tuned in `sidekick/stage/MovementTuning.kt`. The character, the crate and every sound
+  (`tools/sounds/make_sounds.py`) are our own.
+- The app-roast rules (`AppHabits`), their settings and the Xiaomi pop-up hint were removed with voice. The 150
+  app roast lines are still in `tools/phrases/app_15_roasts.txt` and phrases.json, unused, in case a tap-to-open
+  feature comes back.
 
 ## One foreground service, two types
 
@@ -91,22 +83,17 @@ every touch, so it must not linger), and a tap anywhere skips the scene and open
 | Part | Type | Why | Restart |
 | --- | --- | --- | --- |
 | Screen Time Roasts | `specialUse` | Measuring screen time for an optional card is not one of Android's named types; the manifest property explains the use. No runtime permission is needed, and it may start from the background (boot, update). | **Sticky.** After a kill, Android restarts it and the session is picked back up. |
-| Voice Sidekick | `microphone` | It opens the mic while you are in another app. Android 14+ refuses this type without `RECORD_AUDIO`, and Android 11+ only lets the mic work if the service was started from the foreground or from a notification tap. | **Not sticky.** A system restart comes from the background and could not use the mic, so it is never restarted automatically. |
+| Floating Sidekick | `specialUse` | Keeps the floating elephant on screen. It needs only "Display over other apps". | **Sticky**, like roasts. |
 
-When Sidekick should be on but is not (after a kill, a reboot or an update), GAL posts **"Tap to bring
-Sidekick back"**. Tapping it starts the service straight from the notification, which Android allows to
-open the mic. Opening GAL also brings Sidekick back. If only Sidekick was running when Android killed GAL,
-nothing is left running to post that notification, so a WorkManager job (`SidekickWatchdog`, every 30
-minutes while Voice Sidekick is on) checks and posts it.
-
-The service returns `START_STICKY` while roasts run and `START_NOT_STICKY` when only Sidekick runs. The
+If Sidekick should be on but is not and Android will not restart the service, GAL posts **"Tap to bring
+Sidekick back"**; a WorkManager job (`SidekickWatchdog`, every 30 minutes while Floating Sidekick is on) is
+the safety net for phones that kill apps without restarting them. Opening GAL also brings her back. The
 ongoing notification has a **Turn off Sidekick** button.
 
 ## Package visibility
 
-No `QUERY_ALL_PACKAGES`. The `<queries>` block lists `MAIN`/`LAUNCHER` (Sidekick's app index, the exclusion
-picker, per-app stats), `MAIN`/`HOME`, the camera, maps and clock intents for default exclusions, and the
-speech recogniser and TTS services.
+No `QUERY_ALL_PACKAGES`. The `<queries>` block lists `MAIN`/`LAUNCHER` (the exclusion picker and per-app
+stats), `MAIN`/`HOME`, and the camera, maps and clock intents for default exclusions.
 
 ## Branding
 
@@ -161,8 +148,7 @@ adb shell am broadcast -n com.sangar.gal/.DebugCommandReceiver -a com.sangar.gal
 
 The stage, without speaking. `PLAYGROUND` lets you drive the elephant with your fingers to tune the movement
 (hold the left or right third to run, tap the middle to jump, the top strip closes). `DEMO_SCENE` plays a
-scene with GAL's own icon (`normal`, `roast` or `notfound`). `HEAR` runs a command through Voice Sidekick as
-if it heard it, with the real app and launch; `--ez roast true` forces the roast scene and is not counted.
+scene with GAL's own icon (`normal`, `roast` or `notfound`).
 
 ```bash
 adb shell am broadcast -n com.sangar.gal/.DebugCommandReceiver -a com.sangar.gal.debug.PLAYGROUND
@@ -172,9 +158,6 @@ adb shell am broadcast -n com.sangar.gal/.DebugCommandReceiver -a com.sangar.gal
 adb shell am broadcast -n com.sangar.gal/.DebugCommandReceiver -a com.sangar.gal.debug.DEMO_SCENE --es kind roast
 ```
 
-```bash
-adb shell am broadcast -n com.sangar.gal/.DebugCommandReceiver -a com.sangar.gal.debug.HEAR --es spoken "instagram" --ez roast true
-```
 
 The **GAL diagnostics** launcher entry and the `NAG` button on home exist only in debug builds.
 
@@ -187,7 +170,7 @@ app/src/main/java/com/sangar/gal/
 ├── service/ScreenTimeTracker.kt  GetALife's session clock (was TrackerService)
 ├── service/GalNotifications.kt   ongoing + "tap to bring Sidekick back"
 ├── service/GalServiceStarter.kt  foreground/background starts, BootReceiver, SidekickWatchdog
-├── sidekick/                 SidekickOverlay, SidekickView (+ roast moods), BlobPainter, VoiceEngine, AppResolver
+├── sidekick/                 SidekickOverlay, SidekickView (+ roast moods), BlobPainter (the elephant), wandering
 ├── sidekick/stage/           stage window, frame loop, world, elephant physics, crate, props, renderer
 ├── sidekick/scene/           SceneDirector, the scenes, AppHabits (when to roast), SceneSounds
 ├── overlay/ phrases/ data/   GetALife, plus session card rules, app roast lines and scene settings
