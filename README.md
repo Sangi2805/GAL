@@ -140,6 +140,17 @@ For a release build, run `./gradlew createReleaseKeystore` once (it writes `keys
 application ID (`com.sangar.gal`) and key, so it installs next to GetALife and Pocket Sidekick. It does not
 replace them, and it does not import their history.
 
+## Versions
+
+Every APK sent to testers gets a new version in `app/build.gradle.kts`: `versionCode` goes up by one (Android
+refuses to install an APK over one with a higher or equal code from the same key), and `versionName` is what
+people see in App info. The commit it was built from gets a matching git tag, for example `v0.2.0`.
+
+| Version | Code | What changed |
+| --- | --- | --- |
+| 0.1.0 | 1 | First builds: roast cards, the green blob, then the pink elephant with voice. |
+| 0.2.0 | 2 | Voice dropped, full-body walking elephant, reactions to apps, one-button setup, audit fixes. |
+
 ## Debug builds
 
 Everything logs under one tag: `adb logcat -s NAG`. That includes `[Service]` (foreground types, what is
