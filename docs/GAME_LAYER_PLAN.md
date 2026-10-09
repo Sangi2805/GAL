@@ -1,5 +1,7 @@
 # GAL game layer plan
 
+> **Historical document.** This was written before voice was dropped and before the pink full-body elephant. It still mentions the microphone, "open X" voice commands, the green blob and hammer scenes. The README is the current description of the app.
+
 Status: approved by Sangar on 1 October 2026 (crate approach for v1, launcher mode later). Phases 0 to 3 are built and pass the unit tests; what is left needs a real phone and Android Studio. See [Build status](#build-status) and `docs/OVERNIGHT_REPORT.md`.
 
 ## Goal

@@ -50,6 +50,10 @@ class NagController(
 ) {
     private val scheduler = NagScheduler()
     private var evaluating = false
+
+    /** Card attempts that threw in a row, and how long to back off after too many (elapsed realtime). */
+    private var consecutiveErrors = 0
+    private var errorBackoffUntil = 0L
     private var lastCardElapsed: Long? = null
     private var lastCardWall = 0L
     private var snoozeUntilWall = 0L
@@ -71,7 +75,7 @@ class NagController(
     fun onTick(sessionKey: Long, activeMillis: Long, settings: Settings, settingsLoaded: Boolean, stillCounting: () -> Boolean) {
         val now = SystemClock.elapsedRealtime()
         val thresholdMillis = settings.thresholdMinutes * 60_000L
-        // The scheduler latches this when the session starts, so a mid-session change waits for the next one.
+        // The scheduler reads this when a card is shown, so a mid-session change applies from the next gap.
         val check = scheduler.check(sessionKey, activeMillis, thresholdMillis, now)
         DiagnosticsState.update {
             it.copy(
@@ -201,6 +205,7 @@ class NagController(
                         DiagnosticsState.decision("SHOWN phrase ${NagLog.phrase(phrase.id)} at ${sessionMinutes} min")
                         NagLog.i(C, "decision SHOWN")
                         listener.onNagShown(phrase, sessionMinutes, final.observed.foregroundPackage)
+                        consecutiveErrors = 0
                     }
                     ShowResult.NO_PERMISSION -> {
                         suppress("overlay permission missing at show time")
@@ -216,6 +221,14 @@ class NagController(
             } catch (e: Exception) {
                 NagLog.e(C, "nag attempt threw", e)
                 DiagnosticsState.decision("ERROR ${e.javaClass.simpleName}: ${e.message}")
+                // A one-off failure retries on the next tick. Repeated failures back off and say so on the home
+                // screen instead of failing silently every tick.
+                consecutiveErrors++
+                if (consecutiveErrors >= MAX_ERRORS_IN_A_ROW) {
+                    errorBackoffUntil = SystemClock.elapsedRealtime() + ERROR_BACKOFF_MILLIS
+                    consecutiveErrors = 0
+                    problem = PROBLEM_ERRORS
+                }
             } finally {
                 evaluating = false
             }
@@ -269,6 +282,7 @@ class NagController(
 
     private fun healthProblem(settings: Settings): String? = when {
         !settings.enabled -> null
+        SystemClock.elapsedRealtime() < errorBackoffUntil -> PROBLEM_ERRORS
         settings.overlayFailed -> PROBLEM_OVERLAY_FAILED
         !Permissions.canDrawOverlays(context) -> PROBLEM_OVERLAY_PERMISSION
         !Permissions.hasUsageAccess(context) -> PROBLEM_USAGE_ACCESS
@@ -289,5 +303,8 @@ class NagController(
         const val PROBLEM_OVERLAY_PERMISSION = "\"Display over other apps\" is off, so nagging is paused."
         const val PROBLEM_USAGE_ACCESS = "Usage access is off, so nagging is paused."
         const val PROBLEM_OVERLAY_FAILED = "The card could not be drawn, so nagging is paused."
+        const val PROBLEM_ERRORS = "Cards kept failing, so they are paused for a few minutes. GAL will try again by itself."
+        private const val MAX_ERRORS_IN_A_ROW = 3
+        private const val ERROR_BACKOFF_MILLIS = 5 * 60_000L
     }
 }

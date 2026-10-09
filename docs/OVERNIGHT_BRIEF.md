@@ -1,5 +1,7 @@
 # Brief for the overnight build
 
+> **Historical document.** This was written before voice was dropped and before the pink full-body elephant. It still mentions the microphone, "open X" voice commands, the green blob and hammer scenes. The README is the current description of the app.
+
 Paste this into a Claude Code cloud session (Fable) opened on this repo.
 
 Build GAL by following `docs/GAME_LAYER_PLAN.md`, which is approved. Read it fully first. Then read `README.md`, the code under `app/src/main/java/com/sangar/gal/`, `app/build.gradle.kts`, `gradle/libs.versions.toml`, `tools/phrases/build_phrases.py` and `app/src/test`.

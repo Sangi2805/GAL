@@ -1,5 +1,7 @@
 # Overnight build report
 
+> **Historical document.** This was written before voice was dropped and before the pink full-body elephant. It still mentions the microphone, "open X" voice commands, the green blob and hammer scenes. The README is the current description of the app.
+
 We built Phases 0 to 3 of `docs/GAME_LAYER_PLAN.md`. The code compiles against Android 37 and all 167 JVM unit
 tests pass. It has not been through Gradle or onto a phone yet, because neither machine we had could do that
 (details below). So the next step is an Android Studio build and a real-phone pass, both listed at the end.

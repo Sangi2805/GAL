@@ -11,6 +11,8 @@ import com.sangar.gal.Permissions
 import com.sangar.gal.container
 import com.sangar.gal.data.Settings
 import com.sangar.gal.sidekick.SidekickOverlay
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -47,7 +49,13 @@ class GalService : LifecycleService() {
             // The notification's button. Written before reconciling so the switch and the service agree.
             runBlocking { container.settings.setVoiceEnabled(false) }
         }
-        val settings = runCatching { runBlocking { container.settings.current() } }.getOrDefault(Settings())
+        val settings = readSettings() ?: run {
+            // Reading the switches failed (a one-off DataStore error). Do not treat that as "everything off":
+            // keep whatever is already running, satisfy the foreground rule, and try reading again shortly.
+            if (!enterForeground(roasts = tracker != null, voice = sidekick != null)) return START_NOT_STICKY
+            retrySettings(attempt = 1)
+            return START_STICKY
+        }
         return reconcile(settings, fromForeground = action == ACTION_START_VOICE)
     }
 
@@ -105,7 +113,26 @@ class GalService : LifecycleService() {
         return START_STICKY
     }
 
-    /** Calls startForeground only when the type set changes, since each call re-checks the mic rules. */
+    private fun readSettings(): Settings? =
+        runCatching { runBlocking { container.settings.current() } }
+            .onFailure { NagLog.e(C, "could not read settings", it) }
+            .getOrNull()
+
+    /** Re-reads the switches a few times, a couple of seconds apart, before giving up. */
+    private fun retrySettings(attempt: Int) {
+        lifecycleScope.launch {
+            delay(SETTINGS_RETRY_MILLIS)
+            val settings = readSettings()
+            when {
+                settings != null -> reconcile(settings, fromForeground = false)
+                attempt < SETTINGS_RETRIES -> retrySettings(attempt + 1)
+                // Still unreadable and nothing running: stop cleanly rather than sit in the foreground empty.
+                tracker == null && sidekick == null -> stopEverything()
+            }
+        }
+    }
+
+    /** Calls startForeground only when the type set changes. */
     private fun enterForeground(roasts: Boolean, voice: Boolean): Boolean {
         var types = 0
         if (roasts && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
@@ -169,14 +196,16 @@ class GalService : LifecycleService() {
 
     companion object {
         private const val C = "Service"
+        private const val SETTINGS_RETRY_MILLIS = 2_000L
+        private const val SETTINGS_RETRIES = 3
 
-        /** From the app's screens or the bring-back notification: the microphone may be opened. */
+        /** From the app's screens or the bring-back notification. (The name is from the voice days; kept so old intents still work.) */
         const val ACTION_START_VOICE = "com.sangar.gal.action.START_VOICE"
 
-        /** From boot, updates and anything else in the background: roasts yes, a new Sidekick no. */
+        /** From boot, updates and anything else in the background. Starts the same parts as ACTION_START_VOICE. */
         const val ACTION_SYNC = "com.sangar.gal.action.SYNC"
 
-        /** The ongoing notification's "Turn off Sidekick" button. */
+        /** The ongoing notification's "Hide the elephant" button. */
         const val ACTION_TURN_OFF_VOICE = "com.sangar.gal.action.TURN_OFF_VOICE"
     }
 }
