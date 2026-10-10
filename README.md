@@ -27,11 +27,17 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
   its card cap, its 10 minute gap and its daily limit card do not apply to GAL. The card label reads
   "GAL · 12 min on screen" and shows the elephant's face for the tier.
 - **The floating elephant** lives in a small window over every app. She walks like an elephant (one leg at a
-  time, a heavy bob, swinging trunk and tail). Every 5 to 12 seconds she picks something to do: stroll along
-  the screen edge, now and then walk across to the other side, hop, look around, or nap for a while. She keeps
+  time, a heavy bob, swinging trunk and tail), only ever left and right, and her steps follow the distance she
+  covers so her feet never slide. Every 5 to 12 seconds she picks something to do: a few steps in from her side
+  and back, now and then a walk across to the other side, hop, look around, or nap for a while. She keeps
   still while you hold her, while a card is up and while the screen is off. Tap her and she hops; drag her
   anywhere and she snaps to an edge. "Let her wander" in Settings turns the walking off; "Show her on screen"
-  hides her.
+  turns her off.
+- **Closing her:** while you drag her, a round X appears at the bottom of the screen. Drop her on it and a card
+  asks: *For 1 hour*, *Until tomorrow* (7 am), *Turn her off* or *Cancel*. While she hides, the home screen and
+  the ongoing notification say when she comes back and offer *Show her now*; the notification also has *Hide
+  for 1 hour* while she is out. She walks back on by herself when the time is up (`sidekick/HideFor.kt`,
+  `sidekick/HideControls.kt`).
 - **Reactions** (`sidekick/Reactions.kt`, every 1.5 s from usage access):
   - Open a social or video app (Instagram, TikTok, YouTube, X, Reddit and the like, or anything the store
     files as social or video; messaging apps do not count) and she hurries to the middle of the screen,
@@ -95,7 +101,7 @@ every touch, so it must not linger), and a tap anywhere skips the scene and open
 If the elephant should be on but is not and Android will not restart the service, GAL posts **"The elephant
 took a break. Tap to bring her back."**; a WorkManager job (`SidekickWatchdog`, every 30 minutes while she is
 on) is the safety net for phones that kill apps without restarting them. Opening GAL also brings her back. The
-ongoing notification has a **Hide the elephant** button.
+ongoing notification has a **Hide for 1 hour** button (and **Show her now** while she is hidden).
 
 ## Package visibility
 
@@ -150,6 +156,7 @@ people see in App info. The commit it was built from gets a matching git tag, fo
 | --- | --- | --- |
 | 0.1.0 | 1 | First builds: roast cards, the green blob, then the pink elephant with voice. |
 | 0.2.0 | 2 | Voice dropped, full-body walking elephant, reactions to apps, one-button setup, audit fixes. |
+| 0.3.0 | 3 | Drag her onto an X to hide her (1 hour, until tomorrow, or off). She walks left and right only, with steps that match her speed. |
 
 ## Debug builds
 

@@ -15,8 +15,8 @@ import com.sangar.gal.ui.MainActivity
 
 /**
  * Two notifications:
- * - the quiet ongoing one that keeps [GalService] in the foreground, whatever mix of roasts and Sidekick it runs;
- * - "Tap to bring Sidekick back", posted when Sidekick should be on but is not, so the user can bring it back.
+ * - the quiet ongoing one that keeps [GalService] in the foreground, whatever mix of roasts and the elephant it runs;
+ * - "The elephant took a break", posted when she should be on but is not, so the user can bring her back.
  */
 object GalNotifications {
     const val CHANNEL_ID = "gal_running"
@@ -46,9 +46,10 @@ object GalNotifications {
 
     /**
      * [roastStatus] is the screen timer's line, or null when roasts are not running. [sidekickOn] adds the
-     * Sidekick line and a button that switches Floating Sidekick off.
+     * elephant's line and a "Hide for 1 hour" button. [hiddenUntil] (wall clock, 0 for not hidden) says when a
+     * hidden elephant comes back and adds a "Show her now" button.
      */
-    fun build(context: Context, roastStatus: String?, sidekickOn: Boolean): Notification {
+    fun build(context: Context, roastStatus: String?, sidekickOn: Boolean, hiddenUntil: Long = 0L): Notification {
         val open = PendingIntent.getActivity(
             context,
             0,
@@ -60,7 +61,13 @@ object GalNotifications {
             roastStatus != null -> "GAL is watching"
             else -> "The elephant is on duty"
         }
-        val text = listOfNotNull(roastStatus, if (sidekickOn) "Tap her to make her hop." else null)
+        val hidden = !sidekickOn && hiddenUntil > System.currentTimeMillis()
+        val hiddenLine = if (hidden) {
+            "The elephant is hiding until ${android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(hiddenUntil))}."
+        } else {
+            null
+        }
+        val text = listOfNotNull(roastStatus, if (sidekickOn) "Drag her onto the X to hide her." else null, hiddenLine)
             .joinToString(" ")
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_sidekick)
@@ -75,23 +82,31 @@ object GalNotifications {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
         if (sidekickOn) {
-            val turnOff = PendingIntent.getService(
+            val hideHour = PendingIntent.getService(
                 context,
                 1,
-                Intent(context, GalService::class.java).setAction(GalService.ACTION_TURN_OFF_VOICE),
+                Intent(context, GalService::class.java).setAction(GalService.ACTION_HIDE_HOUR),
                 PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
             )
-            builder.addAction(0, "Hide the elephant", turnOff)
+            builder.addAction(0, "Hide for 1 hour", hideHour)
+        } else if (hidden) {
+            val show = PendingIntent.getService(
+                context,
+                3,
+                Intent(context, GalService::class.java).setAction(GalService.ACTION_SHOW_ELEPHANT),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+            builder.addAction(0, "Show her now", show)
         }
         return builder.build()
     }
 
     /** Silently does nothing when notifications are blocked; the service keeps running either way. */
-    fun update(context: Context, roastStatus: String?, sidekickOn: Boolean) {
+    fun update(context: Context, roastStatus: String?, sidekickOn: Boolean, hiddenUntil: Long = 0L) {
         val manager = NotificationManagerCompat.from(context)
         if (!manager.areNotificationsEnabled()) return
         try {
-            manager.notify(NOTIFICATION_ID, build(context, roastStatus, sidekickOn))
+            manager.notify(NOTIFICATION_ID, build(context, roastStatus, sidekickOn, hiddenUntil))
         } catch (_: SecurityException) {
             // POST_NOTIFICATIONS revoked between the check and the call.
         }

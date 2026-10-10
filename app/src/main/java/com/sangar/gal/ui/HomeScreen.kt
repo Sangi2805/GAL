@@ -102,6 +102,16 @@ fun HomeScreen(
             ActionIcon(R.drawable.ic_tune, "Settings", onOpenSettings)
         },
     ) {
+        @Suppress("UNUSED_EXPRESSION") clock
+        if (current.elephantHidden()) {
+            HiddenElephantCard(current.elephantHiddenUntil) {
+                scope.launch {
+                    repo.setElephantHiddenUntil(0L)
+                    GalServiceStarter.syncFromForeground(context, repo.current())
+                }
+            }
+        }
+
         if (current.roastsActive) {
             if (!roastsReady) {
                 val nagBlocking = !permissions.usageAccess || !permissions.overlay
@@ -144,6 +154,29 @@ fun HomeScreen(
                 .sumOf { it.unlockCount } + if (live.sessionOpen) live.unlockCount else 0
             TodayCard(todayMinutes, live, unlocks)
         }
+    }
+}
+
+/** She was dropped on the X: when she comes back, and a button to bring her back now. */
+@Composable
+private fun HiddenElephantCard(hiddenUntil: Long, onShowNow: () -> Unit) {
+    val context = LocalContext.current
+    val time = android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(hiddenUntil))
+    val tomorrow = java.time.Instant.ofEpochMilli(hiddenUntil).atZone(java.time.ZoneId.systemDefault()).toLocalDate() !=
+        java.time.LocalDate.now()
+    SectionCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(painterResource(R.drawable.mascot_bored), contentDescription = null, modifier = Modifier.size(52.dp))
+            Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("The elephant is hiding", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text(
+                    "She comes back ${if (tomorrow) "tomorrow at" else "at"} $time.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        Button(onClick = onShowNow, modifier = Modifier.align(Alignment.End)) { Text("Show her now") }
     }
 }
 

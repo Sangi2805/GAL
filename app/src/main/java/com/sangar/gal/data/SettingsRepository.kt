@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -42,11 +43,17 @@ data class Settings(
     val sidekickWanders: Boolean = true,
     /** The first-run "describe yourself in one word" joke has been played. */
     val introQuipShown: Boolean = false,
+    /** Wall-clock millis until which the elephant is hidden (dropped on the X). 0 when she is not hidden. */
+    val elephantHiddenUntil: Long = 0L,
 ) {
     /** Measuring runs once setup is finished with the roasts switch on, whether cards are on or off. */
     val roastsActive: Boolean get() = onboardingComplete && roastsEnabled
 
     val voiceActive: Boolean get() = onboardingComplete && voiceEnabled
+
+    /** She is switched on but hidden for a while. */
+    fun elephantHidden(nowMillis: Long = System.currentTimeMillis()): Boolean =
+        voiceActive && elephantHiddenUntil > nowMillis
 }
 
 class SettingsRepository(context: Context) {
@@ -69,6 +76,7 @@ class SettingsRepository(context: Context) {
         val PHRASE_PACK = stringPreferencesKey("phrase_pack")
         val SIDEKICK_WANDERS = booleanPreferencesKey("sidekick_wanders")
         val INTRO_QUIP_SHOWN = booleanPreferencesKey("intro_quip_shown")
+        val ELEPHANT_HIDDEN_UNTIL = longPreferencesKey("elephant_hidden_until")
     }
 
     private val preferences: Flow<Preferences> = store.data.catch { e ->
@@ -92,6 +100,7 @@ class SettingsRepository(context: Context) {
             phrasePack = PhrasePack.parse(p[Keys.PHRASE_PACK]),
             sidekickWanders = p[Keys.SIDEKICK_WANDERS] ?: true,
             introQuipShown = p[Keys.INTRO_QUIP_SHOWN] ?: false,
+            elephantHiddenUntil = p[Keys.ELEPHANT_HIDDEN_UNTIL] ?: 0L,
         )
     }.distinctUntilChanged()
 
@@ -108,7 +117,16 @@ class SettingsRepository(context: Context) {
         it[Keys.ROASTS_ENABLED] = on
     }
 
-    suspend fun setVoiceEnabled(on: Boolean) = store.edit { it[Keys.VOICE_ENABLED] = on }
+    /** Switching her on also ends any "hide for a while", so the switch always means "show her now". */
+    suspend fun setVoiceEnabled(on: Boolean) = store.edit {
+        it[Keys.VOICE_ENABLED] = on
+        if (on) it.remove(Keys.ELEPHANT_HIDDEN_UNTIL)
+    }
+
+    /** Hides the elephant until [untilMillis] (wall clock); 0 shows her again. */
+    suspend fun setElephantHiddenUntil(untilMillis: Long) = store.edit {
+        if (untilMillis <= 0L) it.remove(Keys.ELEPHANT_HIDDEN_UNTIL) else it[Keys.ELEPHANT_HIDDEN_UNTIL] = untilMillis
+    }
 
     suspend fun setThresholdMinutes(minutes: Int) = store.edit {
         // 0 means "off" and is handled by the master switch, so it never reaches storage as a threshold.

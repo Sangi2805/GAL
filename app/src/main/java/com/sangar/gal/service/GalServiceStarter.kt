@@ -86,9 +86,11 @@ class SidekickWatchdog(context: Context, params: WorkerParameters) : CoroutineWo
         val settings = applicationContext.container.settings.current()
         if (!settings.voiceActive) {
             update(applicationContext, false)
-        } else if (!SidekickStatus.running) {
+        } else if (!SidekickStatus.running && !settings.elephantHidden()) {
+            // Wanted, not hidden (or her hiding time is over), but not on screen: try to bring her back, and offer
+            // the notification if Android refuses a start from the background.
             NagLog.i("Watchdog", "Sidekick is wanted but not running")
-            GalNotifications.postBringBack(applicationContext)
+            GalServiceStarter.syncFromBackground(applicationContext, settings)
         }
         return Result.success()
     }

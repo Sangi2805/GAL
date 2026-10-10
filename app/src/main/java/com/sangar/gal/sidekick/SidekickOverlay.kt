@@ -23,6 +23,7 @@ import com.sangar.gal.Permissions
 import com.sangar.gal.container
 import com.sangar.gal.overlay.CardEvents
 import com.sangar.gal.service.ForegroundApp
+import com.sangar.gal.service.GalServiceStarter
 import com.sangar.gal.service.LiveTracker
 import com.sangar.gal.service.NagLog
 import com.sangar.gal.sidekick.scene.SceneDirector
@@ -91,6 +92,9 @@ class SidekickOverlay(
     private var reactionAnimator: ValueAnimator? = null
     private var lastPackage: String? = null
     private var lastReactionAt = 0L
+
+    private val dismissTarget = DismissTarget(context, windowManager)
+    private val hidePanel = HidePanel(context, windowManager)
 
     private val wanderRunnable = Runnable { wanderStep() }
     private val wakeRunnable = Runnable { view?.napping = false }
@@ -204,6 +208,8 @@ class SidekickOverlay(
         pollJob = null
         reactionAnimator?.cancel()
         reactionAnimator = null
+        dismissTarget.hide()
+        hidePanel.dismiss()
         walkAnimator?.cancel()
         walkAnimator = null
         main.removeCallbacksAndMessages(null)
@@ -236,11 +242,11 @@ class SidekickOverlay(
     private fun wanderStep() {
         val v = view ?: return
         val busy = !wanders || v.isHeld || cardMood != Mood.NONE || reacting || walkAnimator != null ||
-            v.napping || power?.isInteractive == false
+            v.napping || hidePanel.isShowing || power?.isInteractive == false
         if (!busy) {
             val roll = Random.nextFloat()
             when {
-                roll < 0.45f -> strollAlongEdge()
+                roll < 0.45f -> paceFromEdge()
                 roll < 0.57f -> crossToOtherSide()
                 roll < 0.72f -> v.hop()
                 roll < 0.90f -> v.lookAround()
@@ -252,20 +258,33 @@ class SidekickOverlay(
         scheduleWander(Random.nextLong(REST_MIN_MS, REST_MAX_MS))
     }
 
-    /** Walks up or down the side she is on, to a new spot. */
-    private fun strollAlongEdge() {
+    /**
+     * A short stroll: a few steps in from the side she is on, a look around, and back. She only ever walks left
+     * and right, the way she faces, because a side-on elephant moving up or down the screen looks like she is
+     * floating rather than walking.
+     */
+    private fun paceFromEdge() {
         val v = view ?: return
         val p = params ?: return
         val bounds = overlayBounds()
-        val top = bounds.top
-        val bottom = maxOf(top, bounds.bottom - v.height)
-        if (bottom - top < v.height) return
-        val minStep = (MIN_STROLL_DP * density).roundToInt()
-        var target = Random.nextInt(top, bottom + 1)
-        if (abs(target - p.y) < minStep) {
-            target = if (p.y - top > bottom - p.y) p.y - minStep else p.y + minStep
+        val right = maxOf(bounds.left, bounds.right - v.width)
+        val onLeft = p.x + v.width / 2 < bounds.centerX()
+        val inward = if (onLeft) 1 else -1
+        val distance = (Random.nextFloat() * (PACE_MAX_DP - PACE_MIN_DP) + PACE_MIN_DP) * density
+        val homeX = p.x
+        val outX = (p.x + inward * distance).roundToInt().coerceIn(bounds.left, right)
+        walkTo(outX, p.y, STROLL_DP_PER_S, facing = inward) {
+            main.postDelayed({
+                val me = view ?: return@postDelayed
+                if (me.isHeld || cardMood != Mood.NONE || reacting || hidePanel.isShowing) return@postDelayed
+                me.lookAround()
+                main.postDelayed({
+                    val again = view ?: return@postDelayed
+                    if (again.isHeld || cardMood != Mood.NONE || reacting || hidePanel.isShowing) return@postDelayed
+                    walkTo(homeX, params?.y ?: return@postDelayed, STROLL_DP_PER_S, facing = -inward)
+                }, 900L)
+            }, 400L)
         }
-        walkTo(p.x, target.coerceIn(top, bottom), STROLL_DP_PER_S, facing = 0)
     }
 
     /** Now and then: walks straight across the screen to the other edge. */
@@ -300,6 +319,7 @@ class SidekickOverlay(
         walkAnimator?.cancel()
         v.walkFacing = facing
         v.walking = true
+        v.walkDistance = 0f
         walkAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
             duration = ms
             interpolator = AccelerateDecelerateInterpolator()
@@ -312,6 +332,7 @@ class SidekickOverlay(
                 }
                 val t = it.animatedValue as Float
                 moveOverlay((fromX + (x - fromX) * t).roundToInt(), (fromY + (y - fromY) * t).roundToInt())
+                now.walkDistance = distance * t
             }
             addListener(object : AnimatorListenerAdapter() {
                 private var cancelled = false
@@ -375,8 +396,8 @@ class SidekickOverlay(
         val homeY = p.y
         val bounds = overlayBounds()
         val midX = bounds.centerX() - v.width / 2
-        val midY = bounds.top + ((bounds.height() - v.height) * 0.55f).roundToInt()
-        walkTo(midX, midY, HURRY_DP_PER_S, facing = if (midX > p.x) 1 else -1) {
+        // Straight across to the middle at the height she is at: walking, never floating.
+        walkTo(midX, homeY, HURRY_DP_PER_S, facing = if (midX > p.x) 1 else -1) {
             val me = view ?: return@walkTo
             me.mood = Mood.DISAPPOINTED
             me.walkFacing = 0
@@ -474,6 +495,51 @@ class SidekickOverlay(
         if (level >= Reactions.ANGRY_FACE_AT) v.napping = false
     }
 
+    // ---- Drag to the X to hide her -----------------------------------------------
+
+    override fun onDragStarted() {
+        endReaction()
+        stopWalking()
+        main.removeCallbacks(wakeRunnable)
+        view?.napping = false
+        dismissTarget.show(overlayBounds())
+    }
+
+    override fun onDragMoved(rawX: Float, rawY: Float) {
+        dismissTarget.track(rawX, rawY)
+    }
+
+    override fun onDragEnded(rawX: Float, rawY: Float, cancelled: Boolean): Boolean {
+        val over = !cancelled && dismissTarget.track(rawX, rawY)
+        dismissTarget.hide()
+        if (!over) return false
+        val v = view ?: return false
+        v.visibility = android.view.View.INVISIBLE
+        hidePanel.show { choice ->
+            if (choice == null) {
+                view?.let { me ->
+                    me.visibility = android.view.View.VISIBLE
+                    me.snapToNearestEdge()
+                    me.hop()
+                }
+            } else {
+                hide(choice)
+            }
+        }
+        return true
+    }
+
+    /** Saves the choice; the service then takes her off screen (and brings her back when the time is up). */
+    private fun hide(choice: HideFor) {
+        NagLog.i(C, "hidden by the user: $choice")
+        scope.launch {
+            val repo = context.container.settings
+            val until = choice.until(System.currentTimeMillis())
+            if (until == null) repo.setVoiceEnabled(false) else repo.setElephantHiddenUntil(until)
+            GalServiceStarter.syncFromForeground(context, repo.current())
+        }
+    }
+
     // ---- SidekickHost ------------------------------------------------------
 
     override fun overlayX(): Int = params?.x ?: 0
@@ -534,7 +600,8 @@ class SidekickOverlay(
         const val NAP_MAX_MS = 40_000L
 
         /** A stroll covers at least this much, so it reads as going somewhere. */
-        const val MIN_STROLL_DP = 120f
+        const val PACE_MIN_DP = 70f
+        const val PACE_MAX_DP = 150f
         const val STROLL_DP_PER_S = 70f
         const val CROSS_DP_PER_S = 120f
         const val HURRY_DP_PER_S = 260f

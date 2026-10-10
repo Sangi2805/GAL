@@ -50,6 +50,15 @@ interface SidekickHost {
     fun overlayBounds(): Rect
 
     fun onSidekickTapped()
+
+    /** A drag has started (the finger moved past touch slop). */
+    fun onDragStarted() {}
+
+    /** The finger moved during a drag, in screen coordinates. */
+    fun onDragMoved(rawX: Float, rawY: Float) {}
+
+    /** The drag ended at [rawX], [rawY]. Return true if the host took her (dropped on the X), so she does not snap. */
+    fun onDragEnded(rawX: Float, rawY: Float, cancelled: Boolean): Boolean = false
 }
 
 /**
@@ -121,13 +130,22 @@ class SidekickView(context: Context) : View(context) {
         set(value) {
             if (field == value) return
             field = value
-            if (value) {
-                if (isAttachedToWindow && !walkAnimator.isStarted) walkAnimator.start()
-            } else {
-                walkAnimator.cancel()
-                walkPhase = 0f
-            }
+            if (!value) walkPhase = 0f
             invalidate()
+        }
+
+    /**
+     * How far she has walked in this walk, in pixels. The legs follow the distance, not the clock, so her feet
+     * never slide: when the walk eases in or out, her steps slow down with it.
+     */
+    var walkDistance = 0f
+        set(value) {
+            field = value
+            if (walking) {
+                val stride = (width * STRIDE_OF_WIDTH).coerceAtLeast(1f)
+                walkPhase = (value / stride) % 1f
+                invalidate()
+            }
         }
 
     /** Which way she faces: 1 right, -1 left, 0 towards the middle of the screen. */
@@ -241,16 +259,6 @@ class SidekickView(context: Context) : View(context) {
     private var hopAnimator: ValueAnimator? = null
     private var lookAnimator: ValueAnimator? = null
 
-    private val walkAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-        duration = 700L
-        repeatCount = ValueAnimator.INFINITE
-        interpolator = LinearInterpolator()
-        addUpdateListener {
-            walkPhase = it.animatedValue as Float
-            invalidate()
-        }
-    }
-
     private val blinkRunnable = Runnable { playBlink() }
     private val yawnRunnable = Runnable { playYawn() }
 
@@ -291,7 +299,6 @@ class SidekickView(context: Context) : View(context) {
         snapAnimator?.cancel()
         hopAnimator?.cancel()
         lookAnimator?.cancel()
-        walkAnimator.cancel()
         super.onDetachedFromWindow()
     }
 
@@ -561,7 +568,10 @@ class SidekickView(context: Context) : View(context) {
             MotionEvent.ACTION_MOVE -> {
                 val dx = event.rawX - downRawX
                 val dy = event.rawY - downRawY
-                if (!dragging && hypot(dx, dy) > touchSlop) dragging = true
+                if (!dragging && hypot(dx, dy) > touchSlop) {
+                    dragging = true
+                    h.onDragStarted()
+                }
                 if (dragging) {
                     val bounds = h.overlayBounds()
                     val x = (downOverlayX + dx).roundToInt()
@@ -569,20 +579,28 @@ class SidekickView(context: Context) : View(context) {
                     val y = (downOverlayY + dy).roundToInt()
                         .coerceIn(bounds.top, maxOf(bounds.top, bounds.bottom - height))
                     h.moveOverlay(x, y)
+                    h.onDragMoved(event.rawX, event.rawY)
                 }
                 return true
             }
 
             MotionEvent.ACTION_UP -> {
                 fingerDown = false
-                if (dragging) snapToNearestEdge() else performClick()
+                if (dragging) {
+                    if (!h.onDragEnded(event.rawX, event.rawY, cancelled = false)) snapToNearestEdge()
+                } else {
+                    performClick()
+                }
                 dragging = false
                 return true
             }
 
             MotionEvent.ACTION_CANCEL -> {
                 fingerDown = false
-                if (dragging) snapToNearestEdge()
+                if (dragging) {
+                    h.onDragEnded(event.rawX, event.rawY, cancelled = true)
+                    snapToNearestEdge()
+                }
                 dragging = false
                 return true
             }
@@ -597,7 +615,8 @@ class SidekickView(context: Context) : View(context) {
         return true
     }
 
-    private fun snapToNearestEdge() {
+    /** Puts her back at the nearest side, for example after "Cancel" on the hide card. */
+    fun snapToNearestEdge() {
         val h = host ?: return
         val bounds = h.overlayBounds()
         val startX = h.overlayX()
@@ -713,6 +732,9 @@ class SidekickView(context: Context) : View(context) {
     }
 
     private companion object {
+        /** One full walk cycle (all four feet) covers this much of the window's width. */
+        const val STRIDE_OF_WIDTH = 0.45f
+
         const val BLINK_MIN_MS = 3_000L
         const val BLINK_MAX_MS = 6_000L
         const val YAWN_MIN_MS = 20_000L

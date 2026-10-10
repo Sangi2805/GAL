@@ -42,12 +42,20 @@ class GalService : LifecycleService() {
     /** What the last reconcile wanted, so onDestroy knows whether Sidekick was meant to be up. */
     private var voiceWanted = false
 
+    /** When a hidden elephant comes back (wall clock), or 0. Shown in the ongoing notification. */
+    private var hiddenUntil = 0L
+    private var unhideJob: kotlinx.coroutines.Job? = null
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
         val action = intent?.action
-        if (action == ACTION_TURN_OFF_VOICE) {
-            // The notification's button. Written before reconciling so the switch and the service agree.
-            runBlocking { container.settings.setVoiceEnabled(false) }
+        // The notification's buttons. Written before reconciling so the settings and the service agree.
+        when (action) {
+            ACTION_TURN_OFF_VOICE -> runBlocking { container.settings.setVoiceEnabled(false) }
+            ACTION_HIDE_HOUR -> runBlocking {
+                container.settings.setElephantHiddenUntil(System.currentTimeMillis() + 60 * 60_000L)
+            }
+            ACTION_SHOW_ELEPHANT -> runBlocking { container.settings.setElephantHiddenUntil(0L) }
         }
         val settings = readSettings() ?: run {
             // Reading the switches failed (a one-off DataStore error). Do not treat that as "everything off":
@@ -67,8 +75,13 @@ class GalService : LifecycleService() {
     @Suppress("UNUSED_PARAMETER")
     private fun reconcile(settings: Settings, fromForeground: Boolean): Int {
         voiceWanted = settings.voiceActive
+        val now = System.currentTimeMillis()
+        // Dropped on the X: switched on, but hidden until a time. She comes back by herself at that time.
+        val hidden = settings.elephantHidden(now)
+        hiddenUntil = if (hidden) settings.elephantHiddenUntil else 0L
+        scheduleUnhide(if (hidden) settings.elephantHiddenUntil - now else null)
         val runRoasts = settings.roastsActive
-        var runVoice = voiceWanted && Permissions.canDrawOverlays(this)
+        var runVoice = voiceWanted && !hidden && Permissions.canDrawOverlays(this)
 
         if (!enterForeground(runRoasts, runVoice)) {
             NagLog.e(C, "could not enter the foreground at all; stopping")
@@ -99,7 +112,7 @@ class GalService : LifecycleService() {
             sidekick = null
         }
 
-        if (voiceWanted && !runVoice) GalNotifications.postBringBack(this) else GalNotifications.cancelBringBack(this)
+        if (voiceWanted && !hidden && !runVoice) GalNotifications.postBringBack(this) else GalNotifications.cancelBringBack(this)
 
         if (!runRoasts && !runVoice) {
             NagLog.i(C, "nothing to run; stopping")
@@ -111,6 +124,17 @@ class GalService : LifecycleService() {
         refreshNotification()
         NagLog.i(C, "running roasts=$runRoasts sidekick=$runVoice")
         return START_STICKY
+    }
+
+    /** Wakes the service when a hidden elephant's time is up, so she walks back on by herself. */
+    private fun scheduleUnhide(delayMillis: Long?) {
+        unhideJob?.cancel()
+        unhideJob = null
+        if (delayMillis == null) return
+        unhideJob = lifecycleScope.launch {
+            delay(delayMillis.coerceAtLeast(0L) + 500L)
+            readSettings()?.let { reconcile(it, fromForeground = false) }
+        }
     }
 
     private fun readSettings(): Settings? =
@@ -150,7 +174,7 @@ class GalService : LifecycleService() {
             ServiceCompat.startForeground(
                 this,
                 GalNotifications.NOTIFICATION_ID,
-                GalNotifications.build(this, if (roasts) roastStatus else null, voice),
+                GalNotifications.build(this, if (roasts) roastStatus else null, voice, hiddenUntil),
                 types,
             )
             foregroundTypes = types
@@ -164,7 +188,7 @@ class GalService : LifecycleService() {
     }
 
     private fun refreshNotification() {
-        GalNotifications.update(this, if (tracker != null) roastStatus else null, sidekick != null)
+        GalNotifications.update(this, if (tracker != null) roastStatus else null, sidekick != null, hiddenUntil)
     }
 
     private fun stopEverything() {
@@ -205,7 +229,13 @@ class GalService : LifecycleService() {
         /** From boot, updates and anything else in the background. Starts the same parts as ACTION_START_VOICE. */
         const val ACTION_SYNC = "com.sangar.gal.action.SYNC"
 
-        /** The ongoing notification's "Hide the elephant" button. */
+        /** Turns her off completely. Old notifications may still send it. */
         const val ACTION_TURN_OFF_VOICE = "com.sangar.gal.action.TURN_OFF_VOICE"
+
+        /** The ongoing notification's "Hide for 1 hour" button. */
+        const val ACTION_HIDE_HOUR = "com.sangar.gal.action.HIDE_HOUR"
+
+        /** The ongoing notification's "Show her now" button, while she is hidden. */
+        const val ACTION_SHOW_ELEPHANT = "com.sangar.gal.action.SHOW_ELEPHANT"
     }
 }
