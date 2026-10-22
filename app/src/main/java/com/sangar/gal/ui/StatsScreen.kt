@@ -7,9 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -27,7 +25,6 @@ import com.sangar.gal.data.db.ScreenSession
 import com.sangar.gal.phrases.Trend
 import com.sangar.gal.service.LiveSession
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -37,38 +34,41 @@ import kotlin.math.roundToLong
 fun StatsScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val usage = context.container.usage
-    val today = remember { usage.today() }
-    val rows by remember { usage.observeDays(today.minusDays(30), today.minusDays(1)) }
+    // Rolls over at midnight; every query below follows it.
+    val today by rememberToday(usage::today)
+    val rows by remember(today) { usage.observeDays(today.minusDays(30), today.minusDays(1)) }
         .collectAsStateWithLifecycle(initialValue = emptyList<DailyUsage>())
-    val live by remember { usage.observeToday(today) }
+    val live by remember(today) { usage.observeToday(today) }
         .collectAsStateWithLifecycle(initialValue = emptyList<ScreenSession>() to LiveSession())
-    var tick by remember { mutableLongStateOf(0L) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(30_000)
-            tick++
-        }
-    }
+    // Only today's bar moves with the clock; it ticks while the screen is visible, not in the background.
+    val tick by rememberTicker(30_000L)
     var selected by remember { mutableStateOf<Int?>(null) }
     val trackingStart by produceState<LocalDate?>(initialValue = null, today) { value = usage.trackingStart() }
 
-    @Suppress("UNUSED_EXPRESSION") tick
-    val todayMinutes = (usage.todayScreenMillis(live.first, live.second, today) / 60_000L).toInt()
-    val snapshot = TrendCalculator.compute(rows, today, trackingStart)
-    val byDate = rows.associateBy { it.date }
+    val todayMinutes = remember(live, today, tick) {
+        (usage.todayScreenMillis(live.first, live.second, today) / 60_000L).toInt()
+    }
+    val snapshot = remember(rows, today, trackingStart) { TrendCalculator.compute(rows, today, trackingStart) }
     val locale = LocalLocale.current.platformLocale
     val dayLabel = remember(locale) { DateTimeFormatter.ofPattern("d MMM", locale) }
-    val bars = (29 downTo 0).map { back ->
-        val date = today.minusDays(back.toLong())
-        val row = byDate[date]
-        when {
-            back == 0 -> ChartBar(dayLabel.format(date), todayMinutes, isToday = true)
+    // The 29 past days only change when the stored rows do, not on every tick.
+    val pastBars = remember(rows, today, dayLabel) {
+        val byDate = rows.associateBy { it.date }
+        (29 downTo 1).map { back ->
+            val date = today.minusDays(back.toLong())
+            val row = byDate[date]
             // An untracked day is a gap, not a short bar: its minutes are only what was caught while measuring.
-            row != null && row.tracked -> ChartBar(dayLabel.format(date), row.totalScreenMinutes)
-            else -> ChartBar(dayLabel.format(date), 0, hasData = false)
+            if (row != null && row.tracked) {
+                ChartBar(dayLabel.format(date), row.totalScreenMinutes)
+            } else {
+                ChartBar(dayLabel.format(date), 0, hasData = false)
+            }
         }
     }
-    val thisMonth = rows.filter { it.tracked && it.date.year == today.year && it.date.month == today.month }
+    val bars = pastBars + ChartBar(dayLabel.format(today), todayMinutes, isToday = true)
+    val thisMonth = remember(rows, today) {
+        rows.filter { it.tracked && it.date.year == today.year && it.date.month == today.month }
+    }
 
     val topApps by produceState(initialValue = emptyList<Pair<String, Long>>(), today) {
         value = withContext(Dispatchers.IO) {

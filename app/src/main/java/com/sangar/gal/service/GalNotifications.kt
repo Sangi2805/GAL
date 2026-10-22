@@ -56,16 +56,17 @@ object GalNotifications {
             Intent(context, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
-        val title = when {
-            roastStatus != null && sidekickOn -> "GAL is watching, and so is the elephant"
-            roastStatus != null -> "GAL is watching"
-            else -> "The elephant is on duty"
-        }
         val hidden = !sidekickOn && hiddenUntil > System.currentTimeMillis()
         val hiddenLine = if (hidden) {
             "The elephant is hiding until ${android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(hiddenUntil))}."
         } else {
             null
+        }
+        val title = when {
+            roastStatus != null && sidekickOn -> "GAL is watching, and so is the elephant"
+            roastStatus != null -> "GAL is watching"
+            hidden -> "The elephant is hiding"
+            else -> "The elephant is on duty"
         }
         val text = listOfNotNull(roastStatus, if (sidekickOn) "Drag her onto the X to hide her." else null, hiddenLine)
             .joinToString(" ")

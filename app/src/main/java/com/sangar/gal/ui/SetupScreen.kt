@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -82,7 +83,8 @@ fun SetupScreen(onDone: () -> Unit) {
     val repo = context.container.settings
     val stored by repo.settings.collectAsStateWithLifecycle(initialValue = null)
     val permissions = rememberPermissionState()
-    val walk = remember { PermissionWalk() }
+    // Saveable: if the phone rotates while the user is on a Settings page, the walk carries on when they return.
+    val walk = rememberSaveable(saver = PermissionWalk.Saver) { PermissionWalk() }
 
     // Runtime dialogs report here; Settings pages report by the activity resuming.
     val runtimeLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -213,6 +215,20 @@ private class PermissionWalk {
     private var walking = false
     private var asking: Need? = null
     private var viaRuntimeDialog = false
+
+    companion object {
+        /** Keeps where the walk was across an activity restart. The lambdas are set again on every composition. */
+        val Saver = androidx.compose.runtime.saveable.Saver<PermissionWalk, List<Any>>(
+            save = { listOf(it.walking, it.asking?.name ?: "", it.viaRuntimeDialog) },
+            restore = { saved ->
+                PermissionWalk().apply {
+                    walking = saved[0] as Boolean
+                    asking = (saved[1] as String).takeIf { it.isNotEmpty() }?.let { Need.valueOf(it) }
+                    viaRuntimeDialog = saved[2] as Boolean
+                }
+            },
+        )
+    }
 
     fun start(permissions: PermissionState) {
         permissions.refresh()

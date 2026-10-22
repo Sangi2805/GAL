@@ -92,6 +92,7 @@ class SidekickOverlay(
     private var reactionAnimator: ValueAnimator? = null
     private var lastPackage: String? = null
     private var lastReactionAt = 0L
+    private var paceGen = 0
 
     private val dismissTarget = DismissTarget(context, windowManager)
     private val hidePanel = HidePanel(context, windowManager)
@@ -143,6 +144,7 @@ class SidekickOverlay(
                 view?.let { v ->
                     // A card wakes her up and stops her in her tracks.
                     if (mood != Mood.NONE) {
+                        paceGen++
                         endReaction()
                         stopWalking()
                         v.napping = false
@@ -165,7 +167,12 @@ class SidekickOverlay(
         pollJob = scope.launch {
             while (isActive) {
                 delay(POLL_MS)
-                if (power?.isInteractive == false) continue
+                // Nothing to react to with the screen off or while she is hidden behind the hide card: check
+                // back less often, and skip the usage-stats query entirely.
+                if (power?.isInteractive == false || view?.visibility != android.view.View.VISIBLE) {
+                    delay(POLL_MS * 3)
+                    continue
+                }
                 val pkg = withContext(Dispatchers.Default) { ForegroundApp.current(context) }
                 onForegroundApp(pkg)
                 applyAnger()
@@ -221,6 +228,7 @@ class SidekickOverlay(
 
     /** Rotation can leave the character parked off-screen. */
     fun onConfigurationChanged() {
+        cachedBounds = null
         val p = params ?: return
         val v = view ?: return
         stopWalking()
@@ -242,7 +250,8 @@ class SidekickOverlay(
     private fun wanderStep() {
         val v = view ?: return
         val busy = !wanders || v.isHeld || cardMood != Mood.NONE || reacting || walkAnimator != null ||
-            v.napping || hidePanel.isShowing || power?.isInteractive == false
+            v.napping || hidePanel.isShowing || v.visibility != android.view.View.VISIBLE ||
+            power?.isInteractive == false
         if (!busy) {
             val roll = Random.nextFloat()
             when {
@@ -273,14 +282,19 @@ class SidekickOverlay(
         val distance = (Random.nextFloat() * (PACE_MAX_DP - PACE_MIN_DP) + PACE_MIN_DP) * density
         val homeX = p.x
         val outX = (p.x + inward * distance).roundToInt().coerceIn(bounds.left, right)
+        // Anything that interrupts her (a drag, a tap, a reaction, a card) bumps the generation, so the delayed
+        // "look around and walk back" steps of an old stroll quietly give up instead of fighting the new move.
+        val gen = ++paceGen
         walkTo(outX, p.y, STROLL_DP_PER_S, facing = inward) {
             main.postDelayed({
                 val me = view ?: return@postDelayed
-                if (me.isHeld || cardMood != Mood.NONE || reacting || hidePanel.isShowing) return@postDelayed
+                if (gen != paceGen || me.isHeld || cardMood != Mood.NONE || reacting || hidePanel.isShowing) return@postDelayed
                 me.lookAround()
                 main.postDelayed({
                     val again = view ?: return@postDelayed
-                    if (again.isHeld || cardMood != Mood.NONE || reacting || hidePanel.isShowing) return@postDelayed
+                    if (gen != paceGen || again.isHeld || cardMood != Mood.NONE || reacting || hidePanel.isShowing) {
+                        return@postDelayed
+                    }
                     walkTo(homeX, params?.y ?: return@postDelayed, STROLL_DP_PER_S, facing = -inward)
                 }, 900L)
             }, 400L)
@@ -374,7 +388,11 @@ class SidekickOverlay(
         if (kind == AppKind.NEUTRAL) return
         val v = view ?: return
         val now = System.currentTimeMillis()
-        if (cardMood != Mood.NONE || reacting || v.isHeld || now - lastReactionAt < REACT_COOLDOWN_MS) return
+        if (cardMood != Mood.NONE || reacting || v.isHeld || hidePanel.isShowing ||
+            v.visibility != android.view.View.VISIBLE || now - lastReactionAt < REACT_COOLDOWN_MS
+        ) {
+            return
+        }
         lastReactionAt = now
         NagLog.d(C, "reacting to $pkg as $kind")
         if (kind == AppKind.SOCIAL) sayNo() else cheer()
@@ -464,6 +482,7 @@ class SidekickOverlay(
     }
 
     private fun startReaction() {
+        paceGen++
         reactionAnimator?.cancel()
         reactionAnimator = null
         reacting = true
@@ -498,6 +517,7 @@ class SidekickOverlay(
     // ---- Drag to the X to hide her -----------------------------------------------
 
     override fun onDragStarted() {
+        paceGen++
         endReaction()
         stopWalking()
         main.removeCallbacks(wakeRunnable)
@@ -555,9 +575,15 @@ class SidekickOverlay(
         runCatching { windowManager.updateViewLayout(v, p) }
     }
 
-    override fun overlayBounds(): Rect {
+    /**
+     * Cached: the view asks for this on every frame and every touch move, and working it out is a call into the
+     * window manager. It only changes with the configuration (rotation, display size), which clears it.
+     */
+    private var cachedBounds: Rect? = null
+
+    override fun overlayBounds(): Rect = cachedBounds ?: run {
         val size = usableScreenSize()
-        return Rect(0, 0, size.x, size.y)
+        Rect(0, 0, size.x, size.y).also { cachedBounds = it }
     }
 
     private fun usableScreenSize(): Point {
@@ -581,6 +607,7 @@ class SidekickOverlay(
     /** A tap wakes her up and makes her hop. She has no voice any more, so that is the whole reply. */
     override fun onSidekickTapped() {
         val v = view ?: return
+        paceGen++
         endReaction()
         stopWalking()
         main.removeCallbacks(wakeRunnable)

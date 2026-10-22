@@ -17,7 +17,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -40,7 +39,6 @@ import com.sangar.gal.data.db.ScreenSession
 import com.sangar.gal.service.GalServiceStarter
 import com.sangar.gal.service.LiveSession
 import com.sangar.gal.sidekick.SidekickStatus
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
@@ -55,16 +53,10 @@ fun HomeScreen(
     val usage = context.container.usage
     val permissions = rememberPermissionState().status
     val settings by repo.settings.collectAsStateWithLifecycle(initialValue = null)
-    val today by remember { usage.observeToday() }.collectAsStateWithLifecycle(initialValue = emptyList<ScreenSession>() to LiveSession())
-
-    // Recompose once a second so the live session and today's total keep moving between service ticks.
-    var clock by remember { mutableLongStateOf(0L) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(1_000)
-            clock++
-        }
-    }
+    // The day rolls over at midnight, and the query follows it.
+    val day by rememberToday(usage::today)
+    val today by remember(day) { usage.observeToday(day) }
+        .collectAsStateWithLifecycle(initialValue = emptyList<ScreenSession>() to LiveSession())
 
     val current = settings ?: return
     val live = today.second
@@ -102,13 +94,10 @@ fun HomeScreen(
             ActionIcon(R.drawable.ic_tune, "Settings", onOpenSettings)
         },
     ) {
-        @Suppress("UNUSED_EXPRESSION") clock
-        if (current.elephantHidden()) {
-            HiddenElephantCard(current.elephantHiddenUntil) {
-                scope.launch {
-                    repo.setElephantHiddenUntil(0L)
-                    GalServiceStarter.syncFromForeground(context, repo.current())
-                }
+        HiddenElephantSlot(current) {
+            scope.launch {
+                repo.setElephantHiddenUntil(0L)
+                GalServiceStarter.syncFromForeground(context, repo.current())
             }
         }
 
@@ -147,14 +136,37 @@ fun HomeScreen(
                 },
             )
 
-            @Suppress("UNUSED_EXPRESSION") clock
-            val todayMinutes = usage.todayScreenMillis(today.first, live) / 60_000L
-            val unlocks = today.first
-                .filterNot { live.sessionOpen && it.startEpochMillis == live.sessionStartEpochMillis }
-                .sumOf { it.unlockCount } + if (live.sessionOpen) live.unlockCount else 0
-            TodayCard(todayMinutes, live, unlocks)
+            TodayTotals(today.first, live, day, usage)
         }
     }
+}
+
+/**
+ * Today's minutes and unlocks. The only part of home that moves with the clock, so it holds the ticker itself
+ * (every 15 s, minutes are all it shows) and the rest of the screen does not recompose with it.
+ */
+@Composable
+private fun TodayTotals(
+    sessions: List<ScreenSession>,
+    live: LiveSession,
+    day: java.time.LocalDate,
+    usage: com.sangar.gal.data.UsageRepository,
+) {
+    val tick by rememberTicker(15_000L)
+    val todayMinutes = remember(sessions, live, day, tick) { usage.todayScreenMillis(sessions, live, day) / 60_000L }
+    val unlocks = remember(sessions, live) {
+        sessions.filterNot { live.sessionOpen && it.startEpochMillis == live.sessionStartEpochMillis }
+            .sumOf { it.unlockCount } + if (live.sessionOpen) live.unlockCount else 0
+    }
+    TodayCard(todayMinutes, live, unlocks, tick)
+}
+
+/** Shows [HiddenElephantCard] while she is hidden, and drops it by itself when her time is up. */
+@Composable
+private fun HiddenElephantSlot(settings: Settings, onShowNow: () -> Unit) {
+    val tick by rememberTicker(15_000L)
+    val hidden = remember(settings, tick) { settings.elephantHidden() }
+    if (hidden) HiddenElephantCard(settings.elephantHiddenUntil, onShowNow)
 }
 
 /** She was dropped on the X: when she comes back, and a button to bring her back now. */
@@ -214,7 +226,13 @@ private fun EnableCard(settings: Settings, allGranted: Boolean, onToggle: (Boole
 }
 
 @Composable
-private fun TodayCard(todayMinutes: Long, live: LiveSession, unlocks: Int) {
+private fun TodayCard(
+    todayMinutes: Long,
+    live: LiveSession,
+    unlocks: Int,
+    // Not read: a new value is what makes the card redraw its "current session" line.
+    @Suppress("UNUSED_PARAMETER") tick: Long,
+) {
     SectionCard {
         Text("Today", style = MaterialTheme.typography.titleMedium)
         Text(formatMinutes(todayMinutes), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)

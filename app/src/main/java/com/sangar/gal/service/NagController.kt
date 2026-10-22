@@ -86,7 +86,7 @@ class NagController(
                 sessionCardCapSetting = SessionCardCap.describe(settings.thresholdMinutes),
             )
         }
-        NagLog.d(
+        if (NagLog.verbose) NagLog.d(
             C,
             "compare active=${activeMillis / 1000}s threshold=${thresholdMillis / 1000}s dueAt=${check.dueAtActiveMillis / 1000}s " +
                 "untilDue=${check.millisUntilDue / 1000}s snooze=${check.snoozeRemainingMillis / 1000}s " +
@@ -109,19 +109,21 @@ class NagController(
             suppress(skip)
             return
         }
+        // The common case on almost every tick: decided right here, with no coroutine and no release-build log.
+        if (!check.due) {
+            if (NagLog.verbose) {
+                NagLog.d(
+                    C,
+                    if (check.capReached) "this session has had all ${check.cap} of its cards"
+                    else "not due, ${check.millisUntilDue / 1000}s of session time to go",
+                )
+            }
+            return
+        }
 
         evaluating = true
         scope.launch {
             try {
-                if (!check.due) {
-                    if (check.capReached) {
-                        suppress("this session has had all ${check.cap} of its cards")
-                        return@launch
-                    }
-                    suppress("not due, ${check.millisUntilDue / 1000}s of session time to go")
-                    return@launch
-                }
-
                 val verdict = withContext(Dispatchers.Default) { QuietRules.evaluate(context, settings.exclusions) }
                 DiagnosticsState.update {
                     it.copy(lastForegroundPackage = verdict.observed.foregroundPackage, lastForegroundExcluded = verdict.observed.foregroundExcluded)
@@ -202,6 +204,7 @@ class NagController(
                         lastCardWall = wallClock()
                         scheduler.onShown(sessionKey, activeMillis, thresholdMillis)
                         saveState()
+                        lastSuppressed = null
                         DiagnosticsState.decision("SHOWN phrase ${NagLog.phrase(phrase.id)} at ${sessionMinutes} min")
                         NagLog.i(C, "decision SHOWN")
                         listener.onNagShown(phrase, sessionMinutes, final.observed.foregroundPackage)
@@ -275,7 +278,12 @@ class NagController(
         }.onFailure { NagLog.w(C, "could not save the card state", it) }
     }
 
+    private var lastSuppressed: String? = null
+
+    /** Logs a skipped card. The same reason tick after tick is logged once, not every 30 seconds. */
     private fun suppress(reason: String) {
+        if (reason == lastSuppressed) return
+        lastSuppressed = reason
         NagLog.i(C, "decision SUPPRESSED: $reason")
         DiagnosticsState.decision("SUPPRESSED: $reason")
     }

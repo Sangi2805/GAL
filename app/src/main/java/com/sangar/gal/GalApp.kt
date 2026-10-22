@@ -26,9 +26,8 @@ class GalApp : Application() {
         GalNotifications.createChannels(this)
         DailyUsageWork.scheduleNightly(this)
         DailyUsageWork.runNow(this)
-        container.appScope.launch {
-            container.phrases.preload()
-        }
+        // The 850 KB phrase file is parsed the first time a card is due, not on every process start (boot,
+        // sticky restarts and WorkManager wakes would all pay for it otherwise).
         container.appScope.launch {
             container.settings.seedExclusionsIfNeeded { DefaultExclusions.resolve(this@GalApp) }
         }

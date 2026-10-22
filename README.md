@@ -157,6 +157,7 @@ people see in App info. The commit it was built from gets a matching git tag, fo
 | 0.1.0 | 1 | First builds: roast cards, the green blob, then the pink elephant with voice. |
 | 0.2.0 | 2 | Voice dropped, full-body walking elephant, reactions to apps, one-button setup, audit fixes. |
 | 0.3.0 | 3 | Drag her onto an X to hide her (1 hour, until tomorrow, or off). She walks left and right only, with steps that match her speed. |
+| 0.4.0 | 4 | Tune-up: smaller release APK (R8 on), less battery use by the elephant and the timer, a hidden elephant always comes back on time, home and stats roll over at midnight. |
 
 ## Debug builds
 

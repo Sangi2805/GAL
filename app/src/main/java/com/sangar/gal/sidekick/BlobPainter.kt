@@ -357,7 +357,8 @@ class BlobPainter {
         val openness = (pose.blink * (1f + 0.28f * pose.wideEyes) * (1f - 0.85f * pose.yawn)).coerceIn(0.05f, 1.6f)
         val rx = hr * 0.16f * (1f + 0.10f * pose.wideEyes)
         val ry = hr * 0.21f * openness
-        for ((i, ex) in floatArrayOf(hx - hr * 0.30f, hx + hr * 0.22f).withIndex()) {
+        for (i in 0..1) {
+            val ex = hx + hr * EYE_DX[i]
             val ey = hy - hr * 0.08f
             if (pose.wideEyes > 0.3f || pose.mood == Mood.HORRIFIED) {
                 rect.set(ex - rx * 1.4f, ey - ry * 1.35f, ex + rx * 1.4f, ey + ry * 1.35f)
@@ -387,7 +388,8 @@ class BlobPainter {
     }
 
     private fun drawShutEyes(canvas: Canvas, hx: Float, hy: Float, hr: Float) {
-        for (ex in floatArrayOf(hx - hr * 0.30f, hx + hr * 0.22f)) {
+        for (i in 0..1) {
+            val ex = hx + hr * EYE_DX[i]
             val ey = hy - hr * 0.05f
             path.reset()
             path.moveTo(ex - hr * 0.15f, ey)
@@ -398,18 +400,13 @@ class BlobPainter {
 
     /** Brows: one per eye; [mood] decides inner end, outer end and arch, in head radii (positive is down). */
     private fun drawBrows(canvas: Canvas, hx: Float, hy: Float, hr: Float, mood: Mood) {
-        val sets: Array<FloatArray> = when (mood) {
-            Mood.SMUG -> arrayOf(floatArrayOf(0.02f, 0.02f, 0f), floatArrayOf(-0.08f, -0.04f, -0.1f))
-            Mood.BORED -> arrayOf(floatArrayOf(0.06f, 0.06f, 0f), floatArrayOf(0.06f, 0.06f, 0f))
-            Mood.DISAPPOINTED -> arrayOf(floatArrayOf(-0.09f, 0.05f, 0f), floatArrayOf(-0.09f, 0.05f, 0f))
-            Mood.HORRIFIED -> arrayOf(floatArrayOf(-0.13f, -0.07f, -0.1f), floatArrayOf(-0.13f, -0.07f, -0.1f))
-            Mood.ANGRY -> arrayOf(floatArrayOf(0.12f, -0.08f, 0f), floatArrayOf(0.12f, -0.08f, 0f))
-            Mood.PROUD -> arrayOf(floatArrayOf(-0.04f, -0.04f, -0.08f), floatArrayOf(-0.04f, -0.04f, -0.08f))
-            Mood.NONE -> return
-        }
+        val sets = BROWS[mood] ?: return
         val base = hy - hr * 0.42f
-        for ((i, ex) in floatArrayOf(hx - hr * 0.30f, hx + hr * 0.22f).withIndex()) {
-            val (inner, outer, arch) = sets[i].let { Triple(it[0], it[1], it[2]) }
+        for (i in 0..1) {
+            val ex = hx + hr * EYE_DX[i]
+            val inner = sets[i][0]
+            val outer = sets[i][1]
+            val arch = sets[i][2]
             val side = if (i == 0) -1f else 1f
             val ix = ex - side * hr * 0.16f
             val ox = ex + side * hr * 0.16f
@@ -511,7 +508,7 @@ class BlobPainter {
         val s = hr * 0.26f
         canvas.save()
         canvas.rotate(-18f, x, y)
-        for (side in floatArrayOf(-1f, 1f)) {
+        for (side in SIDES) {
             path.reset()
             path.moveTo(x, y)
             path.lineTo(x + side * s * 1.5f, y - s * 0.9f)
@@ -599,6 +596,21 @@ class BlobPainter {
     companion object {
         /** The elephant's box fills this share of the floating window, leaving room for a hop and her ear. */
         const val BODY_FILL = 0.86f
+
+        // Made once, not on every frame.
+        /** Each eye's x offset from the head's centre, in head radii. */
+        private val EYE_DX = floatArrayOf(-0.30f, 0.22f)
+        private val SIDES = floatArrayOf(-1f, 1f)
+
+        /** Brows per mood: inner end, outer end and arch for each eye, in head radii (positive is down). */
+        private val BROWS: Map<Mood, Array<FloatArray>> = java.util.EnumMap<Mood, Array<FloatArray>>(Mood::class.java).apply {
+            put(Mood.SMUG, arrayOf(floatArrayOf(0.02f, 0.02f, 0f), floatArrayOf(-0.08f, -0.04f, -0.1f)))
+            put(Mood.BORED, arrayOf(floatArrayOf(0.06f, 0.06f, 0f), floatArrayOf(0.06f, 0.06f, 0f)))
+            put(Mood.DISAPPOINTED, arrayOf(floatArrayOf(-0.09f, 0.05f, 0f), floatArrayOf(-0.09f, 0.05f, 0f)))
+            put(Mood.HORRIFIED, arrayOf(floatArrayOf(-0.13f, -0.07f, -0.1f), floatArrayOf(-0.13f, -0.07f, -0.1f)))
+            put(Mood.ANGRY, arrayOf(floatArrayOf(0.12f, -0.08f, 0f), floatArrayOf(0.12f, -0.08f, 0f)))
+            put(Mood.PROUD, arrayOf(floatArrayOf(-0.04f, -0.04f, -0.08f), floatArrayOf(-0.04f, -0.04f, -0.08f)))
+        }
 
         private const val CHEEK_ALPHA = 150
         private const val HIGHLIGHT_ALPHA = 0x88

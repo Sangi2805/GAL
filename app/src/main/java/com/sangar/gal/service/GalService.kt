@@ -1,19 +1,23 @@
 package com.sangar.gal.service
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.content.res.Configuration
 import android.os.Build
 import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleService
 import androidx.lifecycle.lifecycleScope
 import com.sangar.gal.Permissions
 import com.sangar.gal.container
 import com.sangar.gal.data.Settings
 import com.sangar.gal.sidekick.SidekickOverlay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 /**
  * GAL's one foreground service. It hosts whichever of the two features are switched on:
@@ -37,34 +41,63 @@ class GalService : LifecycleService() {
     private var tracker: ScreenTimeTracker? = null
     private var sidekick: SidekickOverlay? = null
     private var roastStatus: String = ScreenTimeTracker.STATUS_WAITING
-    private var foregroundTypes: Int? = null
+    private var inForeground = false
 
     /** What the last reconcile wanted, so onDestroy knows whether Sidekick was meant to be up. */
     private var voiceWanted = false
 
     /** When a hidden elephant comes back (wall clock), or 0. Shown in the ongoing notification. */
     private var hiddenUntil = 0L
-    private var unhideJob: kotlinx.coroutines.Job? = null
+    private var unhideJob: Job? = null
+
+    /**
+     * The unhide timer runs on uptime, which stops while the phone sleeps. So when the screen comes back on we
+     * also check whether a hidden elephant is due back.
+     */
+    private val wakeReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            if (hiddenUntil in 1..System.currentTimeMillis()) {
+                lifecycleScope.launch { readSettings()?.let { reconcile(it, fromForeground = false) } }
+            }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        // EXPORTED for the same reason as in ScreenTimeTracker: USER_PRESENT comes from SystemUI. Both are
+        // protected broadcasts, so no other app can send them.
+        ContextCompat.registerReceiver(this, wakeReceiver, filter, ContextCompat.RECEIVER_EXPORTED)
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         super.onStartCommand(intent, flags, startId)
+        // Satisfy the startForeground rule first, before any disk access, so a slow cold start can never miss it.
+        if (!enterForeground(roasts = tracker != null, voice = sidekick != null)) return START_NOT_STICKY
         val action = intent?.action
-        // The notification's buttons. Written before reconciling so the settings and the service agree.
-        when (action) {
-            ACTION_TURN_OFF_VOICE -> runBlocking { container.settings.setVoiceEnabled(false) }
-            ACTION_HIDE_HOUR -> runBlocking {
-                container.settings.setElephantHiddenUntil(System.currentTimeMillis() + 60 * 60_000L)
+        lifecycleScope.launch {
+            // The notification's buttons. Written before reconciling so the settings and the service agree.
+            runCatching {
+                val repo = container.settings
+                when (action) {
+                    ACTION_TURN_OFF_VOICE -> repo.setVoiceEnabled(false)
+                    ACTION_HIDE_HOUR -> repo.setElephantHiddenUntil(System.currentTimeMillis() + 60 * 60_000L)
+                    ACTION_SHOW_ELEPHANT -> repo.setElephantHiddenUntil(0L)
+                }
+            }.onFailure { NagLog.e(C, "could not apply $action", it) }
+            val settings = readSettings()
+            if (settings != null) {
+                reconcile(settings, fromForeground = action == ACTION_START_VOICE)
+            } else {
+                // Reading the switches failed (a one-off DataStore error). Do not treat that as "everything
+                // off": keep whatever is already running and try reading again shortly.
+                retrySettings(attempt = 1)
             }
-            ACTION_SHOW_ELEPHANT -> runBlocking { container.settings.setElephantHiddenUntil(0L) }
         }
-        val settings = readSettings() ?: run {
-            // Reading the switches failed (a one-off DataStore error). Do not treat that as "everything off":
-            // keep whatever is already running, satisfy the foreground rule, and try reading again shortly.
-            if (!enterForeground(roasts = tracker != null, voice = sidekick != null)) return START_NOT_STICKY
-            retrySettings(attempt = 1)
-            return START_STICKY
-        }
-        return reconcile(settings, fromForeground = action == ACTION_START_VOICE)
+        return START_STICKY
     }
 
     /**
@@ -82,6 +115,9 @@ class GalService : LifecycleService() {
         scheduleUnhide(if (hidden) settings.elephantHiddenUntil - now else null)
         val runRoasts = settings.roastsActive
         var runVoice = voiceWanted && !hidden && Permissions.canDrawOverlays(this)
+        // A hidden elephant keeps the service up (with "Show her now" in the notification) so she can come
+        // back on time, even when roasts are off.
+        val waitForUnhide = voiceWanted && hidden
 
         if (!enterForeground(runRoasts, runVoice)) {
             NagLog.e(C, "could not enter the foreground at all; stopping")
@@ -114,13 +150,11 @@ class GalService : LifecycleService() {
 
         if (voiceWanted && !hidden && !runVoice) GalNotifications.postBringBack(this) else GalNotifications.cancelBringBack(this)
 
-        if (!runRoasts && !runVoice) {
+        if (!runRoasts && !runVoice && !waitForUnhide) {
             NagLog.i(C, "nothing to run; stopping")
             stopEverything()
             return START_NOT_STICKY
         }
-        // Drop a type we no longer need (for example Sidekick switched off while roasts keep running).
-        enterForeground(runRoasts, runVoice)
         refreshNotification()
         NagLog.i(C, "running roasts=$runRoasts sidekick=$runVoice")
         return START_STICKY
@@ -137,8 +171,8 @@ class GalService : LifecycleService() {
         }
     }
 
-    private fun readSettings(): Settings? =
-        runCatching { runBlocking { container.settings.current() } }
+    private suspend fun readSettings(): Settings? =
+        runCatching { container.settings.current() }
             .onFailure { NagLog.e(C, "could not read settings", it) }
             .getOrNull()
 
@@ -156,33 +190,30 @@ class GalService : LifecycleService() {
         }
     }
 
-    /** Calls startForeground only when the type set changes. */
+    /**
+     * Enters the foreground once; later changes only update the notification. Both features use the same
+     * specialUse type (and Android before 14 has no types), so the type never needs to change.
+     */
     private fun enterForeground(roasts: Boolean, voice: Boolean): Boolean {
-        var types = 0
-        if (roasts && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+        if (inForeground) return true
+        val type = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+        } else {
+            0
         }
-        if (voice && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            types = types or ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-        }
-        // Started with startForegroundService but about to stop: Android still wants one startForeground call.
-        if (types == 0 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            types = ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-        }
-        if (types == foregroundTypes) return true
         return try {
             ServiceCompat.startForeground(
                 this,
                 GalNotifications.NOTIFICATION_ID,
                 GalNotifications.build(this, if (roasts) roastStatus else null, voice, hiddenUntil),
-                types,
+                type,
             )
-            foregroundTypes = types
-            NagLog.i(C, "foreground types=0x${Integer.toHexString(types)}")
+            inForeground = true
+            NagLog.i(C, "in the foreground")
             true
         } catch (e: RuntimeException) {
             // ForegroundServiceStartNotAllowedException or a missing FGS permission.
-            NagLog.e(C, "startForeground refused for types=0x${Integer.toHexString(types)}", e)
+            NagLog.e(C, "startForeground refused", e)
             false
         }
     }
@@ -197,7 +228,7 @@ class GalService : LifecycleService() {
         sidekick?.release()
         sidekick = null
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
-        foregroundTypes = null
+        inForeground = false
         stopSelf()
     }
 
@@ -207,6 +238,7 @@ class GalService : LifecycleService() {
     }
 
     override fun onDestroy() {
+        runCatching { unregisterReceiver(wakeReceiver) }
         val sidekickWasUp = sidekick != null
         tracker?.stop()
         tracker = null

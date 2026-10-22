@@ -277,17 +277,26 @@ class SidekickView(context: Context) : View(context) {
 
     // ---- Lifecycle --------------------------------------------------------
 
+    /** False from the moment the view starts detaching, so end-listeners cannot schedule new work on it. */
+    private var alive = false
+
+    /** Whether the idle loops (breathing, steam/sparkle phase, blinks, yawns) are running right now. */
+    private var loopsRunning = false
+    private var screenOn = true
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        breatheAnimator.start()
+        alive = true
+        updateLoops()
         applyStateAnimators(state)
-        scheduleBlink()
-        scheduleYawn()
     }
 
     override fun onDetachedFromWindow() {
-        removeCallbacks(blinkRunnable)
-        removeCallbacks(yawnRunnable)
+        alive = false
+        // Cancel everything first: cancelling some animators fires end-listeners (a hop ends in a poke, a blink
+        // schedules the next blink). With alive = false those are no-ops, and the callbacks are removed last.
+        hopAnimator?.cancel()
+        pokeAnimator?.cancel()
         breatheAnimator.cancel()
         phaseAnimator.cancel()
         chatterAnimator.cancel()
@@ -295,11 +304,49 @@ class SidekickView(context: Context) : View(context) {
         blinkAnimator?.cancel()
         yawnAnimator?.cancel()
         gazeAnimator?.cancel()
-        pokeAnimator?.cancel()
         snapAnimator?.cancel()
-        hopAnimator?.cancel()
         lookAnimator?.cancel()
+        removeCallbacks(blinkRunnable)
+        removeCallbacks(yawnRunnable)
+        loopsRunning = false
         super.onDetachedFromWindow()
+    }
+
+    override fun onScreenStateChanged(screenState: Int) {
+        super.onScreenStateChanged(screenState)
+        screenOn = screenState == SCREEN_STATE_ON
+        updateLoops()
+    }
+
+    override fun onVisibilityAggregated(isVisible: Boolean) {
+        super.onVisibilityAggregated(isVisible)
+        updateLoops()
+    }
+
+    /**
+     * The idle loops redraw her every frame, so they only run while she can actually be seen: attached, shown
+     * and with the screen on. Hidden behind the hide card, during a scene or with the screen off, they pause.
+     */
+    private fun updateLoops() {
+        val run = alive && screenOn && isShown
+        if (run == loopsRunning) return
+        loopsRunning = run
+        if (run) {
+            if (breatheAnimator.isPaused) breatheAnimator.resume() else if (!breatheAnimator.isStarted) breatheAnimator.start()
+            if (phaseAnimator.isPaused) phaseAnimator.resume()
+            if (chatterAnimator.isPaused) chatterAnimator.resume()
+            updatePhaseLoop()
+            if (!napping) {
+                scheduleBlink()
+                scheduleYawn()
+            }
+        } else {
+            breatheAnimator.pause()
+            phaseAnimator.pause()
+            chatterAnimator.pause()
+            removeCallbacks(blinkRunnable)
+            removeCallbacks(yawnRunnable)
+        }
     }
 
     // ---- State transitions ------------------------------------------------
@@ -370,7 +417,7 @@ class SidekickView(context: Context) : View(context) {
 
     /** Steam, sparkles and z's all ride on [phase], so it loops whenever one of them is showing. */
     private fun updatePhaseLoop() {
-        if (!isAttachedToWindow) return
+        if (!alive || !loopsRunning) return
         val needed = state == SidekickState.LISTENING || state == SidekickState.THINKING ||
             napping || anger > 0.3f || proud > 0.3f
         if (needed) {
@@ -398,11 +445,13 @@ class SidekickView(context: Context) : View(context) {
 
     private fun scheduleBlink() {
         removeCallbacks(blinkRunnable)
+        if (!alive || !loopsRunning) return
         postDelayed(blinkRunnable, Random.nextLong(BLINK_MIN_MS, BLINK_MAX_MS))
     }
 
     private fun scheduleYawn() {
         removeCallbacks(yawnRunnable)
+        if (!alive || !loopsRunning) return
         postDelayed(yawnRunnable, Random.nextLong(YAWN_MIN_MS, YAWN_MAX_MS))
     }
 
@@ -494,6 +543,7 @@ class SidekickView(context: Context) : View(context) {
     }
 
     private fun playPoke() {
+        if (!alive) return
         pokeAnimator?.cancel()
         pokeAnimator = ValueAnimator.ofFloat(1f, 0f).apply {
             duration = 420L

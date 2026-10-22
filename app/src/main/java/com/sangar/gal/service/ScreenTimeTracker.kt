@@ -252,14 +252,17 @@ class ScreenTimeTracker(
             .onFailure { NagLog.e(C, "could not read the last session", it) }
             .getOrNull() ?: return
         val gap = wallClock() - last.endEpochMillis
-        if (gap < 0 || gap >= SessionTracker.DEFAULT_RESET_AFTER_OFF_MILLIS) {
+        // The saved end can be up to one checkpoint old, and that stretch may well have been screen-on time, so
+        // it is not held against the session.
+        val slack = TICK_MILLIS * CHECKPOINT_EVERY_TICKS
+        if (gap < 0 || gap >= SessionTracker.DEFAULT_RESET_AFTER_OFF_MILLIS + slack) {
             NagLog.i(C, "last session ended ${gap / 1000}s ago, too long to pick up; starting fresh")
             return
         }
         tracker.restore(
             now,
             SessionRecord(last.startEpochMillis, last.endEpochMillis, last.screenOnMillis, last.unlockCount),
-            gap,
+            (gap - slack).coerceAtLeast(0L),
         )
         NagLog.i(C, "restored the session that was running ${gap / 1000}s ago: ${last.screenOnMillis / 1000}s on, ${last.unlockCount} unlocks")
     }
@@ -337,7 +340,8 @@ class ScreenTimeTracker(
         const val TICK_MILLIS = 30_000L
         const val STATUS_WAITING = "Waiting for you to pick up your phone."
 
-        // Every minute: a kill loses at most that much of the open session.
-        private const val CHECKPOINT_EVERY_TICKS = 2
+        // Every tick (30 s): a kill loses at most that much of the open session, and a quick restart picks the
+        // session back up.
+        private const val CHECKPOINT_EVERY_TICKS = 1
     }
 }

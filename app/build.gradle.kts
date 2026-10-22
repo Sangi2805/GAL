@@ -30,8 +30,8 @@ android {
         applicationId = "com.sangar.gal"
         minSdk = 29
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.3.0"
+        versionCode = 4
+        versionName = "0.4.0"
     }
 
     signingConfigs {
@@ -51,7 +51,10 @@ android {
             // so the database cannot be copied off a phone without root. Backups are off in the manifest.
             isDebuggable = false
             signingConfig = signingConfigs.findByName("release")
-            isMinifyEnabled = false
+            // R8 shrinks and optimises the code and drops unused resources: a much smaller APK, and Compose's
+            // debug-only tracing calls are stripped. Smoke-test a release build after changing anything here.
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
@@ -80,7 +83,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.lifecycle.service)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.kotlinx.coroutines.android)

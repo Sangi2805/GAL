@@ -17,9 +17,16 @@ object AppInfo {
         pm.getApplicationInfo(packageName, 0).loadLabel(pm).toString()
     }.getOrDefault(packageName)
 
-    fun icon(context: Context, packageName: String, sizePx: Int): ImageBitmap? = runCatching {
-        context.packageManager.getApplicationIcon(packageName).toBitmap(sizePx, sizePx).asImageBitmap()
-    }.getOrNull()
+    /** Small cache, so scrolling the app picker up and down does not redraw every icon from scratch. */
+    private val icons = android.util.LruCache<String, ImageBitmap>(80)
+
+    fun icon(context: Context, packageName: String, sizePx: Int): ImageBitmap? {
+        val key = "$packageName@$sizePx"
+        icons.get(key)?.let { return it }
+        return runCatching {
+            context.packageManager.getApplicationIcon(packageName).toBitmap(sizePx, sizePx).asImageBitmap()
+        }.getOrNull()?.also { icons.put(key, it) }
+    }
 
     /** Apps with a launcher entry, which is what people think of as "their apps". */
     fun launchable(context: Context): List<InstalledApp> = runCatching {
