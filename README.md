@@ -188,6 +188,12 @@ adb shell am broadcast -n com.sangar.gal/.DebugCommandReceiver -a com.sangar.gal
 
 The **GAL diagnostics** launcher entry and the `NAG` button on home exist only in debug builds.
 
+## iPhone version
+
+`ios/` holds the iOS app (SwiftUI), which shares the roast lines and the elephant with this one. iOS cannot show
+an elephant over other apps, so it roasts with notifications and a "Nooo" screen in front of picked apps instead.
+See `ios/README.md`.
+
 ## Layout
 
 ```

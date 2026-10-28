@@ -1,0 +1,5 @@
+GAL.xcodeproj/
+build.log
+DerivedData/
+*.xcuserstate
+xcuserdata/
