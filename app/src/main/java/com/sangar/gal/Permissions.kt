@@ -23,22 +23,22 @@ enum class Feature { ROASTS, SIDEKICK }
 enum class Need(val label: String, val explanation: String, val grantedInSettings: Boolean, val optional: Boolean = false) {
     USAGE_ACCESS(
         "Usage access",
-        "Lets GAL see how long you have been on your phone and which app is open.",
+        "To notice long sessions. GAL sees how long, never what you do in an app.",
         grantedInSettings = true,
     ),
     OVERLAY(
         "Display over other apps",
-        "Lets GAL pop up on top of whatever you are using.",
+        "So she can appear while you use other apps.",
         grantedInSettings = true,
     ),
     NOTIFICATIONS(
         "Notifications",
-        "Android needs a small notification to keep GAL running in the background.",
+        "To check in at the right moment. Android also needs one small notification to keep GAL running.",
         grantedInSettings = false,
     ),
     BATTERY(
         "Battery (recommended)",
-        "Some phones close background apps. This keeps the timer honest.",
+        "So your phone does not put her to sleep halfway through a session.",
         grantedInSettings = true,
         optional = true,
     ),

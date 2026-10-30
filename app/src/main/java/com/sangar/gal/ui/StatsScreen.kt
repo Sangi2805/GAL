@@ -27,6 +27,7 @@ import com.sangar.gal.service.LiveSession
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import com.sangar.gal.data.Insights
 import java.time.format.DateTimeFormatter
 import kotlin.math.roundToLong
 
@@ -78,7 +79,28 @@ fun StatsScreen(onBack: () -> Unit) {
         }
     }
 
+    // A few sentences about the last week, worked out on the phone. Needs 14 days of rows for "the week before".
+    val insightRows by remember(today) { usage.observeDays(today.minusDays(15), today.minusDays(1)) }
+        .collectAsStateWithLifecycle(initialValue = emptyList<DailyUsage>())
+    val insights by produceState(initialValue = emptyList<String>(), insightRows, today) {
+        val sessions = runCatching { usage.recentSessions(7) }.getOrDefault(emptyList())
+        value = withContext(Dispatchers.Default) { Insights.weekly(sessions, insightRows, today) }
+    }
+
     ScreenScaffold(title = "Stats", onBack = onBack) {
+        if (insights.isNotEmpty()) {
+            SectionCard {
+                Text("She noticed…", style = MaterialTheme.typography.titleMedium)
+                insights.forEach { line ->
+                    Text(line, style = MaterialTheme.typography.bodyLarge)
+                }
+                Text(
+                    "Worked out on your phone. Nothing leaves it.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
         SectionCard {
             Text("Last 30 days", style = MaterialTheme.typography.titleMedium)
             val colors = MaterialTheme.colorScheme

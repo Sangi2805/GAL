@@ -1,6 +1,7 @@
 package com.sangar.gal.sidekick
 
 import android.content.pm.ApplicationInfo
+import com.sangar.gal.phrases.Tone
 
 /** What kind of app was just opened, as far as the elephant cares. */
 enum class AppKind { SOCIAL, PRODUCTIVE, NEUTRAL }
@@ -112,6 +113,46 @@ object Reactions {
         return ((ratio - 0.5f) / 1.5f).coerceIn(0f, 1f)
     }
 
-    /** From this much anger up, she wears the angry face too, not just the red tint. */
+    /** From this much anger up, she wears the angry face too, not just a worried one. */
     const val ANGRY_FACE_AT = 1f / 3f
+
+    /** Her face and how red she is, for an [anger] level. */
+    data class Feeling(val mood: Mood, val tint: Float)
+
+    /**
+     * Concerned first, stern later: up to the "nag me after" time she only looks worried. Past it she turns
+     * cross and slowly redder, and the steam only comes once you have ignored her for a good while (about a
+     * third past the threshold). Calm tone never gets past a worried look and a slight blush.
+     */
+    fun feeling(level: Float, tone: Tone): Feeling {
+        if (level <= 0f) return Feeling(Mood.NONE, 0f)
+        if (tone == Tone.CALM) return Feeling(Mood.DISAPPOINTED, (level * 0.4f).coerceAtMost(0.25f))
+        if (level < ANGRY_FACE_AT) return Feeling(Mood.DISAPPOINTED, 0f)
+        return Feeling(Mood.ANGRY, ((level - ANGRY_FACE_AT) * 1.5f).coerceIn(0f, 1f))
+    }
+
+    /**
+     * Apps where she should step back (fade and keep still) so she never sits on top of what you are watching
+     * or following: video, maps and games.
+     */
+    val STEP_BACK_PACKAGES = listOf(
+        "com.google.android.youtube",
+        "app.revanced.android.youtube",
+        "com.netflix.mediaclient",
+        "com.amazon.avod.thirdpartyclient",
+        "com.disney.disneyplus",
+        "in.startv.hotstar",
+        "tv.twitch.android",
+        "com.google.android.apps.maps",
+        "com.waze",
+        "com.google.android.apps.youtube.music",
+        "org.videolan.vlc",
+    )
+
+    fun stepsBack(packageName: String?, category: Int?): Boolean {
+        if (packageName.isNullOrBlank()) return false
+        if (STEP_BACK_PACKAGES.any { packageName.startsWith(it) }) return true
+        return category == ApplicationInfo.CATEGORY_VIDEO || category == ApplicationInfo.CATEGORY_MAPS ||
+            category == ApplicationInfo.CATEGORY_GAME
+    }
 }

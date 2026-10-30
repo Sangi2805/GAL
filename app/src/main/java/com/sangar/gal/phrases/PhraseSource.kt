@@ -13,6 +13,8 @@ data class NagRequest(
      * early never gets one.
      */
     val lastOfSession: Boolean = false,
+    /** Calm tone: never above the first tier. */
+    val maxTier: Int = 3,
 )
 
 

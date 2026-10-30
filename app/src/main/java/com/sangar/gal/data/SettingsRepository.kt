@@ -43,6 +43,10 @@ data class Settings(
     val sidekickWanders: Boolean = true,
     /** The first-run "describe yourself in one word" joke has been played. */
     val introQuipShown: Boolean = false,
+    /** Calm tone: Spicy lines, gentlest tier only. Brutal is phrasePack = CRY. See [Tone]. */
+    val calmTone: Boolean = false,
+    /** The elephant fades and keeps still while a video, map or game is on screen. */
+    val stepBack: Boolean = true,
     /** Wall-clock millis until which the elephant is hidden (dropped on the X). 0 when she is not hidden. */
     val elephantHiddenUntil: Long = 0L,
 ) {
@@ -50,6 +54,8 @@ data class Settings(
     val roastsActive: Boolean get() = onboardingComplete && roastsEnabled
 
     val voiceActive: Boolean get() = onboardingComplete && voiceEnabled
+
+    val tone: com.sangar.gal.phrases.Tone get() = com.sangar.gal.phrases.Tone.of(phrasePack, calmTone)
 
     /** She is switched on but hidden for a while. */
     fun elephantHidden(nowMillis: Long = System.currentTimeMillis()): Boolean =
@@ -77,6 +83,8 @@ class SettingsRepository(context: Context) {
         val SIDEKICK_WANDERS = booleanPreferencesKey("sidekick_wanders")
         val INTRO_QUIP_SHOWN = booleanPreferencesKey("intro_quip_shown")
         val ELEPHANT_HIDDEN_UNTIL = longPreferencesKey("elephant_hidden_until")
+        val CALM_TONE = booleanPreferencesKey("calm_tone")
+        val STEP_BACK = booleanPreferencesKey("step_back")
     }
 
     private val preferences: Flow<Preferences> = store.data.catch { e ->
@@ -101,6 +109,8 @@ class SettingsRepository(context: Context) {
             sidekickWanders = p[Keys.SIDEKICK_WANDERS] ?: true,
             introQuipShown = p[Keys.INTRO_QUIP_SHOWN] ?: false,
             elephantHiddenUntil = p[Keys.ELEPHANT_HIDDEN_UNTIL] ?: 0L,
+            calmTone = p[Keys.CALM_TONE] ?: false,
+            stepBack = p[Keys.STEP_BACK] ?: true,
         )
     }.distinctUntilChanged()
 
@@ -122,6 +132,13 @@ class SettingsRepository(context: Context) {
         it[Keys.VOICE_ENABLED] = on
         if (on) it.remove(Keys.ELEPHANT_HIDDEN_UNTIL)
     }
+
+    suspend fun setTone(tone: com.sangar.gal.phrases.Tone) = store.edit {
+        it[Keys.PHRASE_PACK] = tone.pack.key
+        it[Keys.CALM_TONE] = tone == com.sangar.gal.phrases.Tone.CALM
+    }
+
+    suspend fun setStepBack(on: Boolean) = store.edit { it[Keys.STEP_BACK] = on }
 
     /** Hides the elephant until [untilMillis] (wall clock); 0 shows her again. */
     suspend fun setElephantHiddenUntil(untilMillis: Long) = store.edit {

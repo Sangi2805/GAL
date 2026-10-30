@@ -36,6 +36,8 @@ import com.sangar.gal.R
 import com.sangar.gal.container
 import com.sangar.gal.data.Settings
 import com.sangar.gal.data.db.ScreenSession
+import com.sangar.gal.Health
+import com.sangar.gal.HealthCheck
 import com.sangar.gal.service.GalServiceStarter
 import com.sangar.gal.service.LiveSession
 import com.sangar.gal.sidekick.SidekickStatus
@@ -94,6 +96,19 @@ fun HomeScreen(
             ActionIcon(R.drawable.ic_tune, "Settings", onOpenSettings)
         },
     ) {
+        // One word for how GAL is doing, with the one tap that fixes it.
+        val health = HealthCheck.health(current, permissions, live.serviceRunning, sidekickUp)
+        HealthCard(
+            health = health,
+            onFix = when (health) {
+                Health.NEEDS_PERMISSION -> onOpenSetup
+                Health.RESTRICTED -> {
+                    { GalServiceStarter.syncFromForeground(context, current) }
+                }
+                else -> null
+            },
+        )
+
         HiddenElephantSlot(current) {
             scope.launch {
                 repo.setElephantHiddenUntil(0L)
@@ -102,15 +117,7 @@ fun HomeScreen(
         }
 
         if (current.roastsActive) {
-            if (!roastsReady) {
-                val nagBlocking = !permissions.usageAccess || !permissions.overlay
-                WarningCard(
-                    message = "GAL is missing: ${permissions.missing.joinToString()}. " +
-                        if (nagBlocking) "Cards are paused until it is back." else "The timer still runs, but Android may stop it sooner.",
-                    actionLabel = "Fix in setup",
-                    onAction = onOpenSetup,
-                )
-            } else if (current.enabled && (current.overlayFailed || live.nagProblem != null)) {
+            if (roastsReady && current.enabled && (current.overlayFailed || live.nagProblem != null)) {
                 WarningCard(
                     message = live.nagProblem ?: "The card could not be drawn, so cards are paused.",
                     actionLabel = "Try again",
@@ -123,9 +130,9 @@ fun HomeScreen(
                 scope.launch { repo.setEnabled(on) }
             }
 
-            CardStyleTabs(current.phrasePack) { pack ->
-                context.container.appScope.launch { repo.setPhrasePack(pack) }
-            }
+            ToneTabs(current.tone, onSelect = { tone ->
+                context.container.appScope.launch { repo.setTone(tone) }
+            })
 
             // App scope, so leaving the screen mid-save cannot cancel the write.
             ThresholdCard(
@@ -159,6 +166,39 @@ private fun TodayTotals(
             .sumOf { it.unlockCount } + if (live.sessionOpen) live.unlockCount else 0
     }
     TodayCard(todayMinutes, live, unlocks, tick)
+}
+
+/** GAL's state in one line: Active, Paused, Needs a permission, or Stopped by the phone. */
+@Composable
+private fun HealthCard(health: Health, onFix: (() -> Unit)?) {
+    val (label, color) = when (health) {
+        Health.ACTIVE -> "Active" to MaterialTheme.colorScheme.primary
+        Health.PAUSED -> "Paused" to MaterialTheme.colorScheme.onSurfaceVariant
+        Health.NEEDS_PERMISSION -> "Needs a permission" to MaterialTheme.colorScheme.error
+        Health.RESTRICTED -> "Stopped by your phone" to MaterialTheme.colorScheme.error
+    }
+    SectionCard {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Image(
+                painterResource(if (health == Health.ACTIVE) R.drawable.mascot_smug else R.drawable.mascot_disappointed),
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+            )
+            Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Text(label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = color)
+                Text(
+                    if (health == Health.RESTRICTED) "I stepped out for a moment. Tap to bring me back." else HealthCheck.headline(health),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (onFix != null) {
+            Button(onClick = onFix, modifier = Modifier.align(Alignment.End)) {
+                Text(if (health == Health.NEEDS_PERMISSION) "Fix it" else "Bring her back")
+            }
+        }
+    }
 }
 
 /** Shows [HiddenElephantCard] while she is hidden, and drops it by itself when her time is up. */

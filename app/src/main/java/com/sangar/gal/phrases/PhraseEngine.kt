@@ -93,8 +93,8 @@ class PhraseEngine(
     fun sizeOf(pack: PhrasePack): Int = if (pack == PhrasePack.CRY) roasts.size else usable.size
 
     /** A few random lines from a pack for the home screen, without touching the recent-id window. */
-    fun preview(pack: PhrasePack, count: Int): List<Phrase> =
-        (if (pack == PhrasePack.CRY) roasts else usable).shuffled(random).take(count)
+    fun preview(pack: PhrasePack, count: Int, maxTier: Int = 3): List<Phrase> =
+        (if (pack == PhrasePack.CRY) roasts else usable.filter { it.tier <= maxTier }).shuffled(random).take(count)
 
     /**
      * The next roast. Same recent-id window and length mix as [pick]; if the roast pool is missing (a broken

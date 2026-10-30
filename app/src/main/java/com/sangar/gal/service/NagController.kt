@@ -148,6 +148,7 @@ class NagController(
                         nagsThisSession = nagIndex,
                         foregroundPackage = foreground,
                         pack = settings.phrasePack,
+                        maxTier = settings.tone.maxTier,
                         lastOfSession = lastOfSession,
                     ),
                 )

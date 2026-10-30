@@ -60,59 +60,10 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
     val current = settings ?: return
 
     ScreenScaffold(title = "Settings", onBack = onBack) {
-        SectionCard {
-            Text("Stay quiet in these apps", style = MaterialTheme.typography.titleMedium)
-            Text(
-                "No cards while one of these is on screen. Calls are always quiet, whatever the app.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            if (current.exclusions.isEmpty()) {
-                Text("Nothing excluded.", style = MaterialTheme.typography.bodyLarge)
-            }
-            val labelled by produceState(initialValue = current.exclusions.map { it to it }, current.exclusions) {
-                value = withContext(Dispatchers.IO) {
-                    current.exclusions.map { it to AppInfo.label(context, it) }.sortedBy { it.second.lowercase() }
-                }
-            }
-            labelled.forEach { (pkg, label) ->
-                RemovableAppRow(pkg, label) {
-                    scope.launch { container.settings.setExclusions(current.exclusions - pkg) }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(onClick = { showPicker = true }) { Text("Add app") }
-                OutlinedButton(onClick = {
-                    scope.launch {
-                        val defaults = withContext(Dispatchers.Default) { DefaultExclusions.resolve(context) }
-                        container.settings.setExclusions(current.exclusions + defaults)
-                        Toast.makeText(context, "Default apps added back", Toast.LENGTH_SHORT).show()
-                    }
-                }) { Text("Restore defaults") }
-            }
-        }
-
-        // Debug builds only: a manual overlay trigger. The release source set has an empty one.
-        TestPopupCard()
+        CheckGalCard(current)
 
         SectionCard {
-            Text("How the cards work", style = MaterialTheme.typography.titleMedium)
-            Text(
-                SessionCardCap.describe(current.thresholdMinutes) + " of continuous use.",
-                style = MaterialTheme.typography.bodyLarge,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                "A card arrives each time another \"nag me after\" stretch of continuous use goes by. " +
-                    "Card ${SessionCardCap.PER_SESSION} is the last one: GAL gives up on you and stays quiet " +
-                    "until your next session. A session ends once the screen has been off for more than a minute.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
-        SectionCard {
-            Text("The elephant", style = MaterialTheme.typography.titleMedium)
+            Text("Companion", style = MaterialTheme.typography.titleMedium)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text("Show her on screen", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
@@ -149,10 +100,81 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
                     modifier = Modifier.semantics { contentDescription = "Let her wander on or off" },
                 )
             }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Step back for videos, maps and games", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "She fades and keeps still so she never covers what you are watching or following.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = current.stepBack,
+                    onCheckedChange = { on -> scope.launch { container.settings.setStepBack(on) } },
+                    modifier = Modifier.semantics { contentDescription = "Step back for videos on or off" },
+                )
+            }
         }
 
         SectionCard {
+            Text("Check-ins", style = MaterialTheme.typography.titleMedium)
+            Text(
+                SessionCardCap.describe(current.thresholdMinutes) + " of continuous use.",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+            )
+            Text(
+                "A card arrives each time another \"nag me after\" stretch of continuous use goes by. " +
+                    "Card ${SessionCardCap.PER_SESSION} is the last one: GAL gives up on you and stays quiet " +
+                    "until your next session. A session ends once the screen has been off for more than a minute.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        SectionCard {
+            Text("Focus: stay quiet in these apps", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "No cards while one of these is on screen. Calls are always quiet, whatever the app.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (current.exclusions.isEmpty()) {
+                Text("Nothing excluded.", style = MaterialTheme.typography.bodyLarge)
+            }
+            val labelled by produceState(initialValue = current.exclusions.map { it to it }, current.exclusions) {
+                value = withContext(Dispatchers.IO) {
+                    current.exclusions.map { it to AppInfo.label(context, it) }.sortedBy { it.second.lowercase() }
+                }
+            }
+            labelled.forEach { (pkg, label) ->
+                RemovableAppRow(pkg, label) {
+                    scope.launch { container.settings.setExclusions(current.exclusions - pkg) }
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Button(onClick = { showPicker = true }) { Text("Add app") }
+                OutlinedButton(onClick = {
+                    scope.launch {
+                        val defaults = withContext(Dispatchers.Default) { DefaultExclusions.resolve(context) }
+                        container.settings.setExclusions(current.exclusions + defaults)
+                        Toast.makeText(context, "Default apps added back", Toast.LENGTH_SHORT).show()
+                    }
+                }) { Text("Restore defaults") }
+            }
+        }
+
+        // Debug builds only: a manual overlay trigger. The release source set has an empty one.
+        TestPopupCard()
+
+        SectionCard {
             Text("Privacy", style = MaterialTheme.typography.titleMedium)
+            Text(
+                "No internet access. No account. No analytics. Your data stays on this phone.",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
             Text(
                 "What this app does with your data. Shown once when you first open the app, and kept here " +
                     "so it stays easy to find.",

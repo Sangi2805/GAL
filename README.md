@@ -38,6 +38,16 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
   the ongoing notification say when she comes back and offer *Show her now*; the notification also has *Hide
   for 1 hour* while she is out. She walks back on by herself when the time is up (`sidekick/HideFor.kt`,
   `sidekick/HideControls.kt`).
+- **Tone:** at the end of setup, and on home, "How honest should she be?": *Calm* (gentlest Spicy lines only,
+  she never gets cross), *Honest* (Spicy lines, sharper as the session drags on), *Brutal* (the "You may cry"
+  roasts). See `phrases/Tone.kt`.
+- **First run demo:** right after Start she shows her "Nooo" and a sample check-in, so the idea lands at once.
+- **Step back:** while a video, map or game is in front she fades to 30% and keeps still (Settings, on by default).
+- **Health:** home opens with one line, *Active*, *Paused*, *Needs a permission* or *Stopped by your phone*, with
+  the one tap that fixes it. Settings starts with **Check GAL**: a checklist, "Show a check-in" and "Show her
+  Nooo" (`HealthCheck.kt`, `overlay/DemoCard.kt`).
+- **She noticed...:** Stats opens with a few sentences about the last week, worked out on the phone
+  (`data/Insights.kt`).
 - **Reactions** (`sidekick/Reactions.kt`, every 1.5 s from usage access):
   - Open a social or video app (Instagram, TikTok, YouTube, X, Reddit and the like, or anything the store
     files as social or video; messaging apps do not count) and she hurries to the middle of the screen,
@@ -45,9 +55,9 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
   - Open something useful (Docs, Keep, Calendar, Notion, Duolingo, Kindle, chess and the like, or anything
     filed as productivity) and she puffs up, grins, raises her trunk, sparkles and hops.
   - At most one reaction every 20 seconds.
-  - The longer the phone session, the crosser she gets: calm up to half the "nag me after" time, then
-    redder, with an angry face and steam from the threshold on, fully furious at twice the threshold. Too
-    cross to nap.
+  - Concerned first, stern later: calm up to half the "nag me after" time, then a worried face up to the
+    threshold, then cross and slowly redder, with steam only about a third past it. Calm tone stops at worried.
+    The system's "Remove animations" setting keeps her still; she only changes her face.
 - **First launch:** a box asks you to describe yourself in one word. Three seconds later, typed or not, it cuts
   you off: "Never mind. We don't care." Nothing typed is kept.
 - **Both on:** while a roast card is up, the floating elephant wears the same face (and the sweat drop for
@@ -158,6 +168,7 @@ people see in App info. The commit it was built from gets a matching git tag, fo
 | 0.2.0 | 2 | Voice dropped, full-body walking elephant, reactions to apps, one-button setup, audit fixes. |
 | 0.3.0 | 3 | Drag her onto an X to hide her (1 hour, until tomorrow, or off). She walks left and right only, with steps that match her speed. |
 | 0.4.0 | 4 | Tune-up: smaller release APK (R8 on), less battery use by the elephant and the timer, a hidden elephant always comes back on time, home and stats roll over at midnight. |
+| 0.5.0 | 5 | Calm, Honest or Brutal tone; she is worried before she is cross; steps back for videos, maps and games; a first-run demo; "She noticed..." weekly insights; a health line on home and "Check GAL" in Settings; settings grouped by intent; respects "Remove animations". |
 
 ## Debug builds
 

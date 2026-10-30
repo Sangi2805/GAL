@@ -183,8 +183,13 @@ fun SetupScreen(onDone: () -> Unit) {
                 Text(if (missing.size == Need.forFeature(Feature.ROASTS).count { !it.optional }) "Allow" else "Allow the rest")
             }
         } else {
+            if (!settings.onboardingComplete) {
+                // The last choice of setup, and the only one: how honest she should be.
+                ToneTabs(settings.tone, onSelect = { tone -> scope.launch { repo.setTone(tone) } })
+            }
             Button(
                 onClick = {
+                    val firstTime = !settings.onboardingComplete
                     scope.launch {
                         // One app, everything on: the timer, the roast cards and the elephant.
                         repo.setRoastsEnabled(true)
@@ -193,6 +198,12 @@ fun SetupScreen(onDone: () -> Unit) {
                         // Permissions are back, so give the overlay another chance.
                         repo.setOverlayFailed(false)
                         GalServiceStarter.syncFromForeground(context, repo.current())
+                        // First time only: show what she does right away, instead of making people wait for
+                        // their first long session. App scope, so it survives leaving this screen.
+                        if (firstTime) {
+                            val app = context.applicationContext
+                            app.container.appScope.launch(kotlinx.coroutines.Dispatchers.Main) { playFirstRunDemo(app) }
+                        }
                         onDone()
                     }
                 },

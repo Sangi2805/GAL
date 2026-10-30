@@ -50,6 +50,18 @@ object SidekickStatus {
 }
 
 /**
+ * Lets the app ask the elephant to show off her "Nooo" once, right after setup, so a new user sees what she
+ * does without waiting for a real social app. Same process as the service, so a plain flow is enough.
+ */
+object SidekickDemo {
+    internal val requests = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    fun sayNo() {
+        requests.tryEmit(Unit)
+    }
+}
+
+/**
  * Floating Sidekick: the pink elephant in a small window over every app, hosted by GalService. Drag her
  * anywhere and she snaps to an edge; tap her and she hops. While a roast card is on screen she wears the card's
  * face ([CardEvents]), so the roast visibly comes from her.
@@ -93,6 +105,25 @@ class SidekickOverlay(
     private var lastPackage: String? = null
     private var lastReactionAt = 0L
     private var paceGen = 0
+    private var demoJob: Job? = null
+
+    /** From settings: how honest she is (Calm never gets cross) and whether she steps back for videos. */
+    private var tone = com.sangar.gal.phrases.Tone.DEFAULT
+    private var stepBackEnabled = true
+
+    /** A video, map or game is in front: she fades and keeps still. */
+    private var inStepBackApp = false
+    private var steppedBack = false
+
+    /** The system's "Remove animations" setting: she stays put and only changes her face. */
+    private val reducedMotion: Boolean
+        get() = runCatching {
+            android.provider.Settings.Global.getFloat(
+                context.contentResolver,
+                android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f,
+            ) == 0f
+        }.getOrDefault(false)
 
     private val dismissTarget = DismissTarget(context, windowManager)
     private val hidePanel = HidePanel(context, windowManager)
@@ -152,16 +183,29 @@ class SidekickOverlay(
                     } else {
                         applyAnger()
                     }
+                    updateStepBack()
                 }
             }
         }
         settingsJob = scope.launch {
             context.container.settings.settings.collect { latest ->
                 wanders = latest.sidekickWanders
+                tone = latest.tone
+                stepBackEnabled = latest.stepBack
+                updateStepBack()
+                applyAnger()
                 if (!wanders) {
                     stopWalking()
                     view?.napping = false
                 }
+            }
+        }
+        demoJob = scope.launch {
+            SidekickDemo.requests.collect {
+                val v = view ?: return@collect
+                if (cardMood != Mood.NONE || reacting || v.isHeld || hidePanel.isShowing) return@collect
+                lastReactionAt = System.currentTimeMillis()
+                sayNo()
             }
         }
         pollJob = scope.launch {
@@ -213,6 +257,8 @@ class SidekickOverlay(
         settingsJob = null
         pollJob?.cancel()
         pollJob = null
+        demoJob?.cancel()
+        demoJob = null
         reactionAnimator?.cancel()
         reactionAnimator = null
         dismissTarget.hide()
@@ -250,7 +296,7 @@ class SidekickOverlay(
     private fun wanderStep() {
         val v = view ?: return
         val busy = !wanders || v.isHeld || cardMood != Mood.NONE || reacting || walkAnimator != null ||
-            v.napping || hidePanel.isShowing || v.visibility != android.view.View.VISIBLE ||
+            v.napping || hidePanel.isShowing || v.visibility != android.view.View.VISIBLE || steppedBack || reducedMotion ||
             power?.isInteractive == false
         if (!busy) {
             val roll = Random.nextFloat()
@@ -382,8 +428,14 @@ class SidekickOverlay(
     private fun onForegroundApp(pkg: String?) {
         if (pkg == null || pkg == lastPackage) return
         lastPackage = pkg
+        val category = if (pkg == context.packageName) {
+            null
+        } else {
+            runCatching { context.packageManager.getApplicationInfo(pkg, 0).category }.getOrNull()
+        }
+        inStepBackApp = pkg != context.packageName && Reactions.stepsBack(pkg, category)
+        updateStepBack()
         if (pkg == context.packageName) return
-        val category = runCatching { context.packageManager.getApplicationInfo(pkg, 0).category }.getOrNull()
         val kind = Reactions.classify(pkg, category)
         if (kind == AppKind.NEUTRAL) return
         val v = view ?: return
@@ -410,6 +462,12 @@ class SidekickOverlay(
         v.napping = false
         v.anger = 0f
         v.mood = Mood.HORRIFIED
+        if (reducedMotion) {
+            // "Remove animations" is on: no running across the screen, just the face, then back to normal.
+            main.postDelayed({ view?.mood = Mood.DISAPPOINTED }, 600L)
+            main.postDelayed({ if (reacting) endReaction() }, NO_MS)
+            return
+        }
         val homeX = p.x
         val homeY = p.y
         val bounds = overlayBounds()
@@ -486,6 +544,8 @@ class SidekickOverlay(
         reactionAnimator?.cancel()
         reactionAnimator = null
         reacting = true
+        // A reaction is meant to be seen: full strength, even over a video.
+        updateStepBack()
     }
 
     private fun endReaction() {
@@ -501,6 +561,7 @@ class SidekickOverlay(
             if (cardMood == Mood.NONE) v.mood = Mood.NONE
         }
         applyAnger()
+        updateStepBack()
     }
 
     /** The longer this phone session, the crosser she gets. A card or a reaction wins over it. */
@@ -509,9 +570,26 @@ class SidekickOverlay(
         if (reacting || cardMood != Mood.NONE) return
         val s = LiveTracker.state.value
         val level = Reactions.anger(s.activeMillisNow(), s.thresholdMinutes, s.sessionOpen)
-        v.anger = level
-        v.mood = if (level >= Reactions.ANGRY_FACE_AT) Mood.ANGRY else Mood.NONE
-        if (level >= Reactions.ANGRY_FACE_AT) v.napping = false
+        val feeling = Reactions.feeling(level, tone)
+        v.anger = feeling.tint
+        v.mood = feeling.mood
+        if (feeling.mood == Mood.ANGRY) v.napping = false
+    }
+
+    /**
+     * Low presence: while a video, map or game is in front she fades to a ghost of herself and stops wandering,
+     * so she never covers what you are watching or following. A reaction brings her back to full strength.
+     */
+    private fun updateStepBack() {
+        val v = view ?: return
+        val back = stepBackEnabled && inStepBackApp && !reacting && cardMood == Mood.NONE
+        if (back == steppedBack) return
+        steppedBack = back
+        if (back) {
+            stopWalking()
+            v.napping = false
+        }
+        v.animate().alpha(if (back) STEP_BACK_ALPHA else 1f).setDuration(350L).start()
     }
 
     // ---- Drag to the X to hide her -----------------------------------------------
@@ -634,6 +712,7 @@ class SidekickOverlay(
         const val HURRY_DP_PER_S = 260f
 
         const val POLL_MS = 1_500L
+        const val STEP_BACK_ALPHA = 0.3f
         const val REACT_COOLDOWN_MS = 20_000L
         const val NO_MS = 3_200L
         const val NO_WAGS = 5f

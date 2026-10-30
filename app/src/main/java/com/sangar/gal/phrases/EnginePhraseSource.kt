@@ -34,7 +34,7 @@ class EnginePhraseSource(
         }
         val now = clock()
 
-        val tier = NagContext.tier(request.sessionMinutes, usage)
+        val tier = NagContext.tier(request.sessionMinutes, usage).coerceAtMost(request.maxTier.coerceIn(1, 3))
         val tags = NagContext.tags(request.sessionMinutes, request.nagsThisSession, now, usage)
         // The session's last card is a sign-off in both packs: the app announcing that it gives up on you
         // until the next session.
@@ -79,7 +79,8 @@ class EnginePhraseSource(
     /** How many lines a pack holds, for the home screen tabs. */
     suspend fun sizeOf(pack: PhrasePack): Int = engine().sizeOf(pack)
 
-    suspend fun preview(pack: PhrasePack, count: Int): List<String> = engine().preview(pack, count).map { it.text }
+    suspend fun preview(pack: PhrasePack, count: Int, maxTier: Int = 3): List<String> =
+        engine().preview(pack, count, maxTier).map { it.text }
 
     /** A one-off owl_mode reaction for a confirmed threshold over an hour. Never empty. */
     suspend fun owlLine(thresholdMinutes: Int): ChosenPhrase {

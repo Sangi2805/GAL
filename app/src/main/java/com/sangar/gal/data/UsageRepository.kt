@@ -65,6 +65,12 @@ class UsageRepository(
 
     fun observeDays(from: LocalDate, to: LocalDate): Flow<List<DailyUsage>> = db.dailyUsage().observeBetween(from, to)
 
+    /** Sessions from the last [days] days up to now, for the weekly "She noticed..." card. */
+    suspend fun recentSessions(days: Long): List<ScreenSession> = withContext(Dispatchers.IO) {
+        val day = today()
+        db.screenSessions().overlapping(startOf(day.minusDays(days)), startOf(day.plusDays(1)))
+    }
+
     fun observeNagCount(day: LocalDate = today()): Flow<Int> =
         db.nagEvents().observeCountBetween(startOf(day), startOf(day.plusDays(1)))
 
