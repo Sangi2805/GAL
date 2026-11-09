@@ -89,6 +89,8 @@ class SidekickView(context: Context) : View(context) {
     // ---- Drawing helpers ----------------------------------------------------
 
     private val painter = BlobPainter()
+    private val shadowPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF3A1530.toInt() }
+    private val shadowRect = android.graphics.RectF()
     private val pose = BlobPose()
 
     // ---- Animated state ---------------------------------------------------
@@ -757,6 +759,14 @@ class SidekickView(context: Context) : View(context) {
             (if (napping) -30f else 0f) +
             70f * hopLift
         pose.earFlap = (poke * 2f + 0.5f * wideEyes + (if (walking) 0.5f * step else 0f) + hopLift).coerceIn(0f, 1f)
+        // A soft shadow on the ground under her. It stays put and shrinks when she hops, which is what makes
+        // her look like she stands on something instead of floating.
+        val groundY = hgt / 2f + base / 2f
+        val shadowHalf = base * (0.34f - 0.10f * hopLift)
+        val shadowX = cx - base * 0.07f * pose.facing
+        shadowRect.set(shadowX - shadowHalf, groundY - base * 0.035f, shadowX + shadowHalf, groundY + base * 0.035f)
+        shadowPaint.alpha = (70 * (1f - 0.5f * hopLift)).toInt()
+        canvas.drawOval(shadowRect, shadowPaint)
         painter.draw(canvas, cx, cy, base * scaleX, base * scaleY, base, pose)
     }
 

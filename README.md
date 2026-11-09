@@ -38,6 +38,18 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
   the ongoing notification say when she comes back and offer *Show her now*; the notification also has *Hide
   for 1 hour* while she is out. She walks back on by herself when the time is up (`sidekick/HideFor.kt`,
   `sidekick/HideControls.kt`).
+- **She is GAL.** The elephant has one name, the app's.
+- **Roasts in a bubble:** when the roast timer fires, GAL says the line herself in a speech bubble above her
+  head, with *OK* and *Snooze 10 min* (`sidekick/SpeechBubble.kt`, `GalVoice`). The old card is only used when
+  she is hidden or switched off. Limits, snooze, quiet apps and the 12-a-session cap are unchanged.
+- **Football:** once a session is past half the "nag me after" time she may get a ball out. It drops in, she
+  walks to it and kicks it, it bounces off the screen edges, and the third kick sends it off the screen. Then
+  she says a line in your tone ("At least I am playing a real game."). No full-screen layer: only her window
+  and the ball's are on top, and a tap on the ball flicks it. "How lively is she?" in Settings sets the limit:
+  Quiet (never), Normal (once an hour, 6 a day), Playful (every 20 minutes, 12 a day). See `sidekick/Football.kt`.
+- **GAL's plant:** on home. Every day at or under your daily goal (3 h by default, you choose) it grows a step;
+  7 good days make a flower, which joins your garden score, and a new seed is planted. A day over the goal
+  wilts it and takes a step back; 3 in a row and it dies (`data/Garden.kt`).
 - **Tone:** at the end of setup, and on home, "How honest should she be?": *Calm* (gentlest Spicy lines only,
   she never gets cross), *Honest* (Spicy lines, sharper as the session drags on), *Brutal* (the "You may cry"
   roasts). See `phrases/Tone.kt`.
@@ -169,6 +181,7 @@ people see in App info. The commit it was built from gets a matching git tag, fo
 | 0.3.0 | 3 | Drag her onto an X to hide her (1 hour, until tomorrow, or off). She walks left and right only, with steps that match her speed. |
 | 0.4.0 | 4 | Tune-up: smaller release APK (R8 on), less battery use by the elephant and the timer, a hidden elephant always comes back on time, home and stats roll over at midnight. |
 | 0.5.0 | 5 | Calm, Honest or Brutal tone; she is worried before she is cross; steps back for videos, maps and games; a first-run demo; "She noticed..." weekly insights; a health line on home and "Check GAL" in Settings; settings grouped by intent; respects "Remove animations". |
+| 0.6.0 | 6 | Roasts come from GAL in a speech bubble (the card is only the fallback when she is hidden); football over your apps; "How lively is she?"; GAL's plant and the garden score with a daily goal; ground shadow; she is called GAL everywhere. |
 
 ## Debug builds
 

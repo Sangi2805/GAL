@@ -54,10 +54,14 @@ object SidekickStatus {
  * does without waiting for a real social app. Same process as the service, so a plain flow is enough.
  */
 object SidekickDemo {
-    internal val requests = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    internal val requests = kotlinx.coroutines.flow.MutableSharedFlow<String>(extraBufferCapacity = 1)
 
     fun sayNo() {
-        requests.tryEmit(Unit)
+        requests.tryEmit("no")
+    }
+
+    fun football() {
+        requests.tryEmit("football")
     }
 }
 
@@ -125,6 +129,14 @@ class SidekickOverlay(
             ) == 0f
         }.getOrDefault(false)
 
+    private val bubble = SpeechBubble(context, windowManager)
+    private var football: Football? = null
+    private var liveliness = com.sangar.gal.data.Liveliness.NORMAL
+
+    /** Scenes played today and when the last one was, for the limits in [com.sangar.gal.data.Liveliness]. */
+    private var scenesDay = java.time.LocalDate.MIN
+    private var scenesToday = 0
+    private var lastSceneAt = 0L
     private val dismissTarget = DismissTarget(context, windowManager)
     private val hidePanel = HidePanel(context, windowManager)
 
@@ -191,6 +203,7 @@ class SidekickOverlay(
             context.container.settings.settings.collect { latest ->
                 wanders = latest.sidekickWanders
                 tone = latest.tone
+                liveliness = latest.liveliness
                 stepBackEnabled = latest.stepBack
                 updateStepBack()
                 applyAnger()
@@ -205,7 +218,7 @@ class SidekickOverlay(
                 val v = view ?: return@collect
                 if (cardMood != Mood.NONE || reacting || v.isHeld || hidePanel.isShowing) return@collect
                 lastReactionAt = System.currentTimeMillis()
-                sayNo()
+                if (it == "football") startFootball() else sayNo()
             }
         }
         pollJob = scope.launch {
@@ -222,6 +235,8 @@ class SidekickOverlay(
                 applyAnger()
             }
         }
+        GalVoice.host = ::say
+        GalVoice.hush = { if (bubble.isRoast) bubble.dismiss() }
         SceneDirector.floatingBlob = floatingBlob
         SidekickStatus.running = true
         scheduleWander(FIRST_WANDER_MS)
@@ -261,6 +276,11 @@ class SidekickOverlay(
         demoJob = null
         reactionAnimator?.cancel()
         reactionAnimator = null
+        GalVoice.host = null
+        GalVoice.hush = null
+        football?.cancel()
+        football = null
+        bubble.dismiss()
         dismissTarget.hide()
         hidePanel.dismiss()
         walkAnimator?.cancel()
@@ -301,6 +321,8 @@ class SidekickOverlay(
         if (!busy) {
             val roll = Random.nextFloat()
             when {
+                // Once you have been on the phone a while, she may get her ball out instead.
+                v.mood != Mood.NONE && sceneAllowed() && roll < 0.35f -> startFootball()
                 roll < 0.45f -> paceFromEdge()
                 roll < 0.57f -> crossToOtherSide()
                 roll < 0.72f -> v.hop()
@@ -477,6 +499,7 @@ class SidekickOverlay(
             val me = view ?: return@walkTo
             me.mood = Mood.DISAPPOINTED
             me.walkFacing = 0
+            remark(ActivityLines.sayNo(tone))
             reactionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
                 duration = NO_MS
                 addUpdateListener {
@@ -535,8 +558,109 @@ class SidekickOverlay(
             start()
         }
         v.hop()
+        remark(ActivityLines.cheer(tone))
         main.postDelayed({ if (reacting) view?.hop() }, 700L)
         main.postDelayed({ if (reacting) view?.hop() }, 1_400L)
+    }
+
+    // ---- Speaking ---------------------------------------------------------------
+
+    /**
+     * GAL says something in a bubble. A roast (it has buttons) stops whatever she was doing and she wears its
+     * face until it goes; a quick remark just pops up. False when she cannot be seen, so the caller can fall
+     * back to the card.
+     */
+    private fun say(speech: Speech): Boolean {
+        val v = view ?: return false
+        if (v.visibility != android.view.View.VISIBLE || hidePanel.isShowing || !v.isAttachedToWindow) return false
+        if (speech.isRoast) {
+            paceGen++
+            endReaction()
+            stopWalking()
+            main.removeCallbacks(wakeRunnable)
+            v.napping = false
+        } else if (bubble.isRoast) {
+            // Never talk over a roast.
+            return false
+        }
+        val shown = bubble.show(speech, elephantRect(), overlayBounds()) {
+            if (speech.isRoast) com.sangar.gal.overlay.CardEvents.gone(this)
+        }
+        if (shown && speech.isRoast) com.sangar.gal.overlay.CardEvents.shown(this, speech.face)
+        return shown
+    }
+
+    private fun remark(text: String) {
+        say(Speech(text))
+    }
+
+    // ---- Football ---------------------------------------------------------------
+
+    /** The daily and hourly limits on scenes, from the "How lively is she?" setting. */
+    private fun sceneAllowed(): Boolean {
+        val today = java.time.LocalDate.now()
+        if (today != scenesDay) {
+            scenesDay = today
+            scenesToday = 0
+        }
+        return scenesToday < liveliness.scenesPerDay &&
+            System.currentTimeMillis() - lastSceneAt >= liveliness.minGapMinutes * 60_000L
+    }
+
+    /** A kickabout along the screen at the height she is standing. See [Football]. */
+    private fun startFootball() {
+        val v = view ?: return
+        if (reducedMotion || steppedBack || football != null) return
+        stopWalking()
+        startReaction()
+        v.napping = false
+        v.mood = Mood.NONE
+        v.anger = 0f
+        val game = Football(context, windowManager, object : Football.Host {
+            override fun elephant(): Rect = elephantRect()
+            override fun bounds(): Rect = overlayBounds()
+            override fun walk(x: Int, facing: Int, then: () -> Unit) {
+                val y = params?.y ?: return
+                walkTo(x, y, HURRY_DP_PER_S, facing, then)
+            }
+
+            override fun kickPose(facing: Int) {
+                val me = view ?: return
+                me.walkFacing = facing
+                me.hop()
+                reactionAnimator?.cancel()
+                reactionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+                    duration = 380L
+                    addUpdateListener { me.trunkBoost = 95f * sin((it.animatedValue as Float) * PI.toFloat()) }
+                    start()
+                }
+            }
+
+            override fun finished(scored: Boolean) {
+                football = null
+                val me = view
+                if (!scored || me == null) {
+                    endReaction()
+                    return
+                }
+                // Lap of honour: proud, two hops and her line.
+                me.mood = Mood.PROUD
+                me.proud = 1f
+                me.trunkBoost = 110f
+                me.hop()
+                remark(ActivityLines.football(tone))
+                main.postDelayed({ if (reacting) view?.hop() }, 600L)
+                main.postDelayed({ if (reacting && football == null) endReaction() }, 3_200L)
+            }
+        })
+        if (!game.start()) {
+            endReaction()
+            return
+        }
+        football = game
+        scenesToday++
+        lastSceneAt = System.currentTimeMillis()
+        NagLog.i(C, "football started ($scenesToday today)")
     }
 
     private fun startReaction() {
@@ -553,6 +677,8 @@ class SidekickOverlay(
         reactionAnimator?.cancel()
         reactionAnimator = null
         reacting = false
+        football?.cancel()
+        football = null
         view?.let { v ->
             v.trunkBoost = 0f
             v.headTilt = 0f
@@ -651,6 +777,15 @@ class SidekickOverlay(
         p.x = x
         p.y = y
         runCatching { windowManager.updateViewLayout(v, p) }
+        if (bubble.isShowing) bubble.follow(elephantRect(), overlayBounds())
+    }
+
+    private fun elephantRect(): Rect {
+        val p = params
+        val v = view
+        if (p == null || v == null) return Rect()
+        val size = if (v.width > 0) v.width else p.width
+        return Rect(p.x, p.y, p.x + size, p.y + size)
     }
 
     /**

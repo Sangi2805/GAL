@@ -157,7 +157,7 @@ internal class HidePanel(private val context: Context, private val windowManager
         }
         card.addView(
             TextView(context).apply {
-                text = "Hide the elephant?"
+                text = "Hide GAL?"
                 textSize = 20f
                 setTextColor(0xFF3A1530.toInt())
                 paint.isFakeBoldText = true

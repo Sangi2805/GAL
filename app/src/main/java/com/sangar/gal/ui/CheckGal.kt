@@ -75,20 +75,27 @@ fun CheckGalCard(settings: Settings) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Button(onClick = {
                 scope.launch {
-                    result = when (DemoCard.show(context, label = "GAL · test check-in")) {
-                        ShowResult.SHOWN -> "That is what a check-in looks like."
+                    result = when (DemoCard.show(context, label = "GAL · test roast")) {
+                        ShowResult.SHOWN -> "That is what a roast looks like."
                         ShowResult.NO_PERMISSION -> "GAL cannot appear over other apps yet. Fix that above."
                         ShowResult.FAILED -> "The card could not be drawn. Try again, or restart the phone."
                     }
                 }
-            }) { Text("Show a check-in") }
+            }) { Text("Roast me") }
             OutlinedButton(
                 enabled = SidekickStatus.running,
                 onClick = {
                     SidekickDemo.sayNo()
-                    result = "Watch the elephant."
+                    result = "Watch GAL."
                 },
-            ) { Text("Show her \"Nooo\"") }
+            ) { Text("\"Nooo\"") }
+            OutlinedButton(
+                enabled = SidekickStatus.running,
+                onClick = {
+                    SidekickDemo.football()
+                    result = "Watch GAL. Tap the ball to flick it."
+                },
+            ) { Text("Football") }
         }
         result?.let {
             Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -101,8 +108,8 @@ suspend fun playFirstRunDemo(context: android.content.Context) {
     // Give the service a moment to put her on screen.
     delay(2_500)
     if (SidekickStatus.running) {
-        SidekickDemo.sayNo()
-        delay(6_000)
+        SidekickDemo.football()
+        delay(14_000)
     }
-    DemoCard.show(context, label = "GAL · this is a check-in")
+    DemoCard.show(context, label = "GAL · this is a roast")
 }

@@ -119,7 +119,7 @@ fun ThresholdCard(storedMinutes: Int, onCommit: (Int) -> Unit, onSwitchOff: () -
         )
         Text(
             "of continuous use, then again every ${Threshold.describe(shownMinutes)}. " +
-                "${SessionCardCap.PER_SESSION} cards a session, and the last one gives up on you.",
+                "${SessionCardCap.PER_SESSION} roasts a session, and the last one gives up on you.",
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

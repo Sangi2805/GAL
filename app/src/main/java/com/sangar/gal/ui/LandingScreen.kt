@@ -147,7 +147,7 @@ private fun LandingContent(footer: @Composable () -> Unit) {
             Spacer(Modifier.height(16.dp))
 
             Text(
-                "Our pink elephant roasts you when you have been on your phone too long. Less phone, more life.",
+                "GAL, our pink elephant, roasts you when you have been on your phone too long. Less phone, more life.",
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
             )

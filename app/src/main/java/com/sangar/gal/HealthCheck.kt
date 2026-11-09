@@ -30,7 +30,7 @@ object HealthCheck {
 
     fun headline(health: Health): String = when (health) {
         Health.ACTIVE -> "All good. She is keeping an eye on things."
-        Health.PAUSED -> "Paused. Check-ins or the elephant are switched off for now."
+        Health.PAUSED -> "Paused. Check-ins or GAL herself are switched off for now."
         Health.NEEDS_PERMISSION -> "She needs a permission back before she can help."
         Health.RESTRICTED -> "Your phone stopped GAL in the background."
     }
@@ -48,7 +48,7 @@ object HealthCheck {
         CheckItem("Not limited by battery saving", permissions.batteryUnrestricted, "Battery"),
         CheckItem("Timer running", !settings.roastsActive || serviceRunning, "Restart"),
         CheckItem(
-            "Elephant on screen",
+            "GAL on screen",
             !settings.voiceActive || settings.elephantHidden(nowMillis) || elephantOnScreen,
             "Restart",
         ),

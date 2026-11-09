@@ -28,15 +28,15 @@ object GalNotifications {
         val manager = context.getSystemService<NotificationManager>() ?: return
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_ID, "GAL running", NotificationManager.IMPORTANCE_LOW).apply {
-                description = "The quiet ongoing notification that keeps the screen timer and the elephant alive."
+                description = "The quiet ongoing notification that keeps the screen timer and GAL alive."
                 setShowBadge(false)
                 enableVibration(false)
                 setSound(null, null)
             },
         )
         manager.createNotificationChannel(
-            NotificationChannel(BRING_BACK_CHANNEL_ID, "Bring the elephant back", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = "Shown when Android stopped the elephant. Tap it to bring her back."
+            NotificationChannel(BRING_BACK_CHANNEL_ID, "Bring GAL back", NotificationManager.IMPORTANCE_DEFAULT).apply {
+                description = "Shown when Android stopped GAL. Tap it to bring her back."
                 setShowBadge(false)
                 enableVibration(false)
                 setSound(null, null)
@@ -58,15 +58,15 @@ object GalNotifications {
         )
         val hidden = !sidekickOn && hiddenUntil > System.currentTimeMillis()
         val hiddenLine = if (hidden) {
-            "The elephant is hiding until ${android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(hiddenUntil))}."
+            "GAL is hiding until ${android.text.format.DateFormat.getTimeFormat(context).format(java.util.Date(hiddenUntil))}."
         } else {
             null
         }
         val title = when {
-            roastStatus != null && sidekickOn -> "GAL is watching, and so is the elephant"
+            roastStatus != null && sidekickOn -> "GAL is watching"
             roastStatus != null -> "GAL is watching"
-            hidden -> "The elephant is hiding"
-            else -> "The elephant is on duty"
+            hidden -> "GAL is hiding"
+            else -> "GAL is on duty"
         }
         val text = listOfNotNull(roastStatus, if (sidekickOn) "Drag her onto the X to hide her." else null, hiddenLine)
             .joinToString(" ")
@@ -129,7 +129,7 @@ object GalNotifications {
         )
         val notification = NotificationCompat.Builder(context, BRING_BACK_CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_sidekick)
-            .setContentTitle("The elephant took a break")
+            .setContentTitle("GAL took a break")
             .setContentText("Tap to bring her back.")
             .setContentIntent(bringBack)
             .setAutoCancel(true)

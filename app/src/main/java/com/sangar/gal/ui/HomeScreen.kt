@@ -34,6 +34,7 @@ import com.sangar.gal.BuildConfig
 import com.sangar.gal.Feature
 import com.sangar.gal.R
 import com.sangar.gal.container
+import com.sangar.gal.data.Garden
 import com.sangar.gal.data.Settings
 import com.sangar.gal.data.db.ScreenSession
 import com.sangar.gal.Health
@@ -119,7 +120,7 @@ fun HomeScreen(
         if (current.roastsActive) {
             if (roastsReady && current.enabled && (current.overlayFailed || live.nagProblem != null)) {
                 WarningCard(
-                    message = live.nagProblem ?: "The card could not be drawn, so cards are paused.",
+                    message = live.nagProblem ?: "GAL could not appear, so roasts are paused.",
                     actionLabel = "Try again",
                     onAction = { scope.launch { repo.setOverlayFailed(false) } },
                 )
@@ -144,6 +145,24 @@ fun HomeScreen(
             )
 
             TodayTotals(today.first, live, day, usage)
+
+            // Her plant lives on your screen time: finished days are counted whenever new ones are stored.
+            val recentDays by remember(day) { usage.observeDays(day.minusDays(40), day.minusDays(1)) }
+                .collectAsStateWithLifecycle(initialValue = null)
+            LaunchedEffect(recentDays, current.dailyGoalMinutes, day) {
+                val rows = recentDays ?: return@LaunchedEffect
+                val grown = Garden.catchUp(current.plant, rows, current.dailyGoalMinutes, day)
+                if (grown != current.plant) repo.setPlant(grown)
+            }
+            PlantCard(
+                plant = current.plant,
+                goalMinutes = current.dailyGoalMinutes,
+                sessions = today.first,
+                live = live,
+                day = day,
+                usage = usage,
+                onGoal = { minutes -> context.container.appScope.launch { repo.setDailyGoalMinutes(minutes) } },
+            )
         }
     }
 }
@@ -220,7 +239,7 @@ private fun HiddenElephantCard(hiddenUntil: Long, onShowNow: () -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Image(painterResource(R.drawable.mascot_bored), contentDescription = null, modifier = Modifier.size(52.dp))
             Column(Modifier.weight(1f).padding(start = 12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("The elephant is hiding", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                Text("GAL is hiding", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Text(
                     "She comes back ${if (tomorrow) "tomorrow at" else "at"} $time.",
                     style = MaterialTheme.typography.bodyMedium,
@@ -244,8 +263,8 @@ private fun EnableCard(settings: Settings, allGranted: Boolean, onToggle: (Boole
                 )
                 Text(
                     when {
-                        settings.enabled -> "Roast cards will appear after ${formatMinutes(settings.thresholdMinutes.toLong())} of continuous use."
-                        allGranted -> "Roast cards are off. Screen time is still being measured."
+                        settings.enabled -> "GAL roasts you after ${formatMinutes(settings.thresholdMinutes.toLong())} of continuous use."
+                        allGranted -> "Roasts are off. Screen time is still being measured."
                         else -> "Grant the missing permissions before switching on."
                     },
                     style = MaterialTheme.typography.bodyMedium,
@@ -259,7 +278,7 @@ private fun EnableCard(settings: Settings, allGranted: Boolean, onToggle: (Boole
                 onCheckedChange = onToggle,
                 modifier = Modifier
                     .scale(1.35f)
-                    .semantics { contentDescription = "Roast cards on or off" },
+                    .semantics { contentDescription = "Roasts on or off" },
             )
         }
     }

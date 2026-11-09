@@ -82,7 +82,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
                             com.sangar.gal.service.GalServiceStarter.syncFromForeground(context, container.settings.current())
                         }
                     },
-                    modifier = Modifier.semantics { contentDescription = "Show the elephant on or off" },
+                    modifier = Modifier.semantics { contentDescription = "Show GAL on or off" },
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -98,6 +98,27 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
                     checked = current.sidekickWanders,
                     onCheckedChange = { on -> scope.launch { container.settings.setSidekickWanders(on) } },
                     modifier = Modifier.semantics { contentDescription = "Let her wander on or off" },
+                )
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text("How lively is she?", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    com.sangar.gal.data.Liveliness.entries.forEach { option ->
+                        if (option == current.liveliness) {
+                            Button(onClick = {}) { Text(option.title) }
+                        } else {
+                            OutlinedButton(onClick = { scope.launch { container.settings.setLiveliness(option) } }) { Text(option.title) }
+                        }
+                    }
+                }
+                Text(
+                    when (current.liveliness) {
+                        com.sangar.gal.data.Liveliness.QUIET -> "She walks, naps and roasts you, but never gets her football out."
+                        com.sangar.gal.data.Liveliness.NORMAL -> "A kickabout at most once an hour, up to 6 a day."
+                        com.sangar.gal.data.Liveliness.PLAYFUL -> "A kickabout up to every 20 minutes, 12 a day."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -125,8 +146,8 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                "A card arrives each time another \"nag me after\" stretch of continuous use goes by. " +
-                    "Card ${SessionCardCap.PER_SESSION} is the last one: GAL gives up on you and stays quiet " +
+                "GAL roasts you each time another \"nag me after\" stretch of continuous use goes by. " +
+                    "Roast ${SessionCardCap.PER_SESSION} is the last one: she gives up on you and stays quiet " +
                     "until your next session. A session ends once the screen has been off for more than a minute.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -136,7 +157,7 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
         SectionCard {
             Text("Focus: stay quiet in these apps", style = MaterialTheme.typography.titleMedium)
             Text(
-                "No cards while one of these is on screen. Calls are always quiet, whatever the app.",
+                "No roasts while one of these is on screen. Calls are always quiet, whatever the app.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

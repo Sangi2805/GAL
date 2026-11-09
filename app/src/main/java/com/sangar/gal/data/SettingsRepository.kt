@@ -21,6 +21,18 @@ import java.io.IOException
 
 private val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
+/** "How lively is she?": how often GAL may play a scene such as football on top of your apps. */
+enum class Liveliness(val title: String, val scenesPerDay: Int, val minGapMinutes: Int) {
+    QUIET("Quiet", 0, 0),
+    NORMAL("Normal", 6, 60),
+    PLAYFUL("Playful", 12, 20),
+    ;
+
+    companion object {
+        fun parse(value: String?): Liveliness = entries.firstOrNull { it.name == value } ?: NORMAL
+    }
+}
+
 data class Settings(
     /** Setup switch: measure screen time and let Sidekick deliver roast cards. */
     val roastsEnabled: Boolean = false,
@@ -47,6 +59,10 @@ data class Settings(
     val calmTone: Boolean = false,
     /** The elephant fades and keeps still while a video, map or game is on screen. */
     val stepBack: Boolean = true,
+    val liveliness: Liveliness = Liveliness.NORMAL,
+    /** The daily screen time goal GAL's plant grows by. */
+    val dailyGoalMinutes: Int = Garden.DEFAULT_GOAL_MINUTES,
+    val plant: Plant = Plant(),
     /** Wall-clock millis until which the elephant is hidden (dropped on the X). 0 when she is not hidden. */
     val elephantHiddenUntil: Long = 0L,
 ) {
@@ -84,6 +100,13 @@ class SettingsRepository(context: Context) {
         val INTRO_QUIP_SHOWN = booleanPreferencesKey("intro_quip_shown")
         val ELEPHANT_HIDDEN_UNTIL = longPreferencesKey("elephant_hidden_until")
         val CALM_TONE = booleanPreferencesKey("calm_tone")
+        val LIVELINESS = stringPreferencesKey("liveliness")
+        val DAILY_GOAL = intPreferencesKey("daily_goal_minutes")
+        val PLANT_GROWTH = intPreferencesKey("plant_growth")
+        val PLANT_WILT = intPreferencesKey("plant_wilt")
+        val PLANT_FLOWERS = intPreferencesKey("garden_flowers")
+        val PLANT_LOST = intPreferencesKey("plants_lost")
+        val PLANT_LAST_DAY = stringPreferencesKey("plant_last_day")
         val STEP_BACK = booleanPreferencesKey("step_back")
     }
 
@@ -110,6 +133,15 @@ class SettingsRepository(context: Context) {
             introQuipShown = p[Keys.INTRO_QUIP_SHOWN] ?: false,
             elephantHiddenUntil = p[Keys.ELEPHANT_HIDDEN_UNTIL] ?: 0L,
             calmTone = p[Keys.CALM_TONE] ?: false,
+            liveliness = Liveliness.parse(p[Keys.LIVELINESS]),
+            dailyGoalMinutes = Garden.clampGoal(p[Keys.DAILY_GOAL] ?: Garden.DEFAULT_GOAL_MINUTES),
+            plant = Plant(
+                growth = p[Keys.PLANT_GROWTH] ?: 0,
+                wilt = p[Keys.PLANT_WILT] ?: 0,
+                flowers = p[Keys.PLANT_FLOWERS] ?: 0,
+                lost = p[Keys.PLANT_LOST] ?: 0,
+                lastDay = p[Keys.PLANT_LAST_DAY]?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() },
+            ),
             stepBack = p[Keys.STEP_BACK] ?: true,
         )
     }.distinctUntilChanged()
@@ -136,6 +168,18 @@ class SettingsRepository(context: Context) {
     suspend fun setTone(tone: com.sangar.gal.phrases.Tone) = store.edit {
         it[Keys.PHRASE_PACK] = tone.pack.key
         it[Keys.CALM_TONE] = tone == com.sangar.gal.phrases.Tone.CALM
+    }
+
+    suspend fun setLiveliness(value: Liveliness) = store.edit { it[Keys.LIVELINESS] = value.name }
+
+    suspend fun setDailyGoalMinutes(minutes: Int) = store.edit { it[Keys.DAILY_GOAL] = Garden.clampGoal(minutes) }
+
+    suspend fun setPlant(plant: Plant) = store.edit {
+        it[Keys.PLANT_GROWTH] = plant.growth
+        it[Keys.PLANT_WILT] = plant.wilt
+        it[Keys.PLANT_FLOWERS] = plant.flowers
+        it[Keys.PLANT_LOST] = plant.lost
+        plant.lastDay?.let { day -> it[Keys.PLANT_LAST_DAY] = day.toString() }
     }
 
     suspend fun setStepBack(on: Boolean) = store.edit { it[Keys.STEP_BACK] = on }

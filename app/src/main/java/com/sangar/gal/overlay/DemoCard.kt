@@ -45,6 +45,17 @@ object DemoCard {
         val phrase = context.container.phrases.sample(tone.maxTier.coerceAtMost(2), nagsThisSession = 0, pack = tone.pack)
         val mascot = Mascot.forNag(phrase.tier, 0, phrase.tags)
         return withContext(Dispatchers.Main) {
+            // In a bubble from GAL herself when she is on screen, as the real ones are.
+            val spoken = com.sangar.gal.sidekick.GalVoice.say(
+                com.sangar.gal.sidekick.Speech(
+                    text = phrase.text,
+                    label = label,
+                    face = mascot,
+                    onOk = {},
+                    stayMillis = com.sangar.gal.sidekick.Speech.ROAST_MILLIS,
+                ),
+            )
+            if (spoken) return@withContext ShowResult.SHOWN
             armScreenOffDismissal(context)
             overlay(context).show(NagCard(phrase.text, mascot.drawable, mascot.description, label = label, face = mascot))
         }

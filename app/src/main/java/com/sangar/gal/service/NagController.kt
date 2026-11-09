@@ -13,6 +13,8 @@ import com.sangar.gal.overlay.QuietRules
 import com.sangar.gal.overlay.ShowResult
 import com.sangar.gal.phrases.ChosenPhrase
 import com.sangar.gal.phrases.NagRequest
+import com.sangar.gal.sidekick.GalVoice
+import com.sangar.gal.sidekick.Speech
 import com.sangar.gal.phrases.PhraseSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -183,22 +185,40 @@ class NagController(
                         "phrase=${NagLog.phrase(phrase.id)} mascot=${mascot.description} textLength=${phrase.text.length} " +
                         "fg=${NagLog.app(final.observed.foregroundPackage)}",
                 )
-                val result = overlay.show(
-                    NagCard(
+                val onFine = { NagLog.i(C, "user tapped OK") }
+                val onSnooze = {
+                    NagLog.i(C, "user tapped Snooze, silent for ${NagScheduler.SNOOZE_MILLIS / 60_000} min")
+                    scheduler.onSnoozed(SystemClock.elapsedRealtime())
+                    snoozeUntilWall = wallClock() + NagScheduler.SNOOZE_MILLIS
+                    saveState()
+                }
+                // GAL says it herself, in a bubble, whenever she is on screen. The card is only the fallback
+                // for when she is hidden or switched off.
+                val spoken = GalVoice.say(
+                    Speech(
                         text = phrase.text,
-                        mascot = mascot.drawable,
-                        mascotDescription = mascot.description,
                         label = label,
                         face = mascot,
+                        onOk = onFine,
+                        onSnooze = onSnooze,
+                        stayMillis = Speech.ROAST_MILLIS,
                     ),
-                    onFine = { NagLog.i(C, "user tapped Fine") },
-                    onSnooze = {
-                        NagLog.i(C, "user tapped Snooze, silent for ${NagScheduler.SNOOZE_MILLIS / 60_000} min")
-                        scheduler.onSnoozed(SystemClock.elapsedRealtime())
-                        snoozeUntilWall = wallClock() + NagScheduler.SNOOZE_MILLIS
-                        saveState()
-                    },
                 )
+                val result = if (spoken) {
+                    ShowResult.SHOWN
+                } else {
+                    overlay.show(
+                        NagCard(
+                            text = phrase.text,
+                            mascot = mascot.drawable,
+                            mascotDescription = mascot.description,
+                            label = label,
+                            face = mascot,
+                        ),
+                        onFine = onFine,
+                        onSnooze = onSnooze,
+                    )
+                }
                 when (result) {
                     ShowResult.SHOWN -> {
                         lastCardElapsed = SystemClock.elapsedRealtime()
@@ -239,9 +259,15 @@ class NagController(
         }
     }
 
-    fun onScreenOff() = overlay.dismiss("screen off")
+    fun onScreenOff() {
+        GalVoice.hush("screen off")
+        overlay.dismiss("screen off")
+    }
 
-    fun release() = overlay.dismiss("service stopped")
+    fun release() {
+        GalVoice.hush("service stopped")
+        overlay.dismiss("service stopped")
+    }
 
     /** Picks up where a killed or crashed service left off. See [NagStateStore]. */
     private fun restoreSavedState() {
@@ -311,8 +337,8 @@ class NagController(
         const val MIN_GAP_MILLIS = 1 * 60_000L
         const val PROBLEM_OVERLAY_PERMISSION = "\"Display over other apps\" is off, so nagging is paused."
         const val PROBLEM_USAGE_ACCESS = "Usage access is off, so nagging is paused."
-        const val PROBLEM_OVERLAY_FAILED = "The card could not be drawn, so nagging is paused."
-        const val PROBLEM_ERRORS = "Cards kept failing, so they are paused for a few minutes. GAL will try again by itself."
+        const val PROBLEM_OVERLAY_FAILED = "GAL could not appear, so roasts are paused."
+        const val PROBLEM_ERRORS = "Roasts kept failing, so they are paused for a few minutes. GAL will try again by itself."
         private const val MAX_ERRORS_IN_A_ROW = 3
         private const val ERROR_BACKOFF_MILLIS = 5 * 60_000L
     }

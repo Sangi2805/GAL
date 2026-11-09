@@ -217,7 +217,7 @@ class ScreenTimeTracker(
         val minute = activeMillis / 60_000L
         if (minute != lastNotifiedMinute && nagController?.problem == null) {
             lastNotifiedMinute = minute
-            onStatus(if (settings.enabled) "Current session: $minute min." else "Cards off. Current session: $minute min.")
+            onStatus(if (settings.enabled) "Current session: $minute min." else "Roasts off. Current session: $minute min.")
         }
         // The session's wall-clock start is its key: unlike the elapsed start, it is the same after the service
         // is killed and the session restored, so the saved card count still belongs to it.
