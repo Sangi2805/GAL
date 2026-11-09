@@ -50,8 +50,13 @@ class BallPhysics(
         if (y > floor - radius) {
             y = floor - radius
             // Small bounces die out instead of buzzing on the floor for ever.
-            vy = if (abs(vy) < gravity * 0.06f) 0f else -vy * FLOOR_BOUNCE
-            vx *= FLOOR_GRIP
+            if (abs(vy) < gravity * 0.06f) {
+                vy = 0f
+            } else {
+                // A real bounce: some height and some pace are lost. Rolling is handled below.
+                vy = -vy * FLOOR_BOUNCE
+                vx *= FLOOR_GRIP
+            }
         }
         if (onFloor(floor)) vx *= (1f - ROLL_FRICTION * dt).coerceAtLeast(0f)
         if (walls) {

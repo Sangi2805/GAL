@@ -185,8 +185,8 @@ class NagController(
                         "phrase=${NagLog.phrase(phrase.id)} mascot=${mascot.description} textLength=${phrase.text.length} " +
                         "fg=${NagLog.app(final.observed.foregroundPackage)}",
                 )
-                val onFine = { NagLog.i(C, "user tapped OK") }
-                val onSnooze = {
+                val onFine: () -> Unit = { NagLog.i(C, "user tapped OK") }
+                val onSnooze: () -> Unit = {
                     NagLog.i(C, "user tapped Snooze, silent for ${NagScheduler.SNOOZE_MILLIS / 60_000} min")
                     scheduler.onSnoozed(SystemClock.elapsedRealtime())
                     snoozeUntilWall = wallClock() + NagScheduler.SNOOZE_MILLIS
