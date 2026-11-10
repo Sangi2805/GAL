@@ -109,7 +109,14 @@ suspend fun playFirstRunDemo(context: android.content.Context) {
     delay(2_500)
     if (SidekickStatus.running) {
         SidekickDemo.football()
-        delay(14_000)
+        // Wait for the game to really finish (it takes 10 to 25 seconds), then give her line time to be read.
+        delay(1_500)
+        var waited = 0
+        while (SidekickStatus.busy && waited < 40) {
+            delay(1_000)
+            waited++
+        }
+        delay(3_500)
     }
     DemoCard.show(context, label = "GAL · this is a roast")
 }

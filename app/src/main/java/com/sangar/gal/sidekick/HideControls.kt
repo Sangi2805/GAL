@@ -53,8 +53,10 @@ internal class DismissTarget(private val context: Context, private val windowMan
         params = p
         centerX = p.x + sizePx / 2f
         centerY = p.y + sizePx / 2f
-        v.alpha = 0f
-        v.animate().alpha(1f).setDuration(150L).start()
+        // No fade from invisible: the target must be there even if a phone skips the animation.
+        v.scaleX = 0.8f
+        v.scaleY = 0.8f
+        v.animate().scaleX(1f).scaleY(1f).setDuration(150L).start()
     }
 
     /** Lights the target up when [x], [y] (the finger, in screen coordinates) is over it. Returns whether it is. */
@@ -189,10 +191,9 @@ internal class HidePanel(private val context: Context, private val windowManager
         }
         if (runCatching { windowManager.addView(card, p) }.isSuccess) {
             root = card
-            card.alpha = 0f
             card.scaleX = 0.92f
             card.scaleY = 0.92f
-            card.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(160L).start()
+            card.animate().scaleX(1f).scaleY(1f).setDuration(160L).start()
         } else {
             onChoice(null)
         }

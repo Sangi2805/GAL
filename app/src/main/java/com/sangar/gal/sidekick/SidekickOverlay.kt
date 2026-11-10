@@ -47,6 +47,10 @@ import kotlin.random.Random
  */
 object SidekickStatus {
     var running: Boolean by mutableStateOf(false)
+
+    /** True while she is in the middle of a scene or reaction (football, "Nooo", cheering). */
+    @Volatile
+    var busy: Boolean = false
 }
 
 /**
@@ -131,6 +135,7 @@ class SidekickOverlay(
 
     private val bubble = SpeechBubble(context, windowManager)
     private var football: Football? = null
+    private var pendingRoast: Speech? = null
     private var liveliness = com.sangar.gal.data.Liveliness.NORMAL
 
     /** Scenes played today and when the last one was, for the limits in [com.sangar.gal.data.Liveliness]. */
@@ -236,7 +241,10 @@ class SidekickOverlay(
             }
         }
         GalVoice.host = ::say
-        GalVoice.hush = { if (bubble.isRoast) bubble.dismiss() }
+        GalVoice.hush = {
+            pendingRoast = null
+            if (bubble.isRoast) bubble.dismiss()
+        }
         SceneDirector.floatingBlob = floatingBlob
         SidekickStatus.running = true
         scheduleWander(FIRST_WANDER_MS)
@@ -278,6 +286,8 @@ class SidekickOverlay(
         reactionAnimator = null
         GalVoice.host = null
         GalVoice.hush = null
+        pendingRoast = null
+        SidekickStatus.busy = false
         football?.cancel()
         football = null
         bubble.dismiss()
@@ -573,6 +583,11 @@ class SidekickOverlay(
     private fun say(speech: Speech): Boolean {
         val v = view ?: return false
         if (v.visibility != android.view.View.VISIBLE || hidePanel.isShowing || !v.isAttachedToWindow) return false
+        if (speech.isRoast && football != null) {
+            // Mid-game: let her finish (a game lasts a few seconds), then roast. Counted as shown.
+            pendingRoast = speech
+            return true
+        }
         if (speech.isRoast) {
             paceGen++
             endReaction()
@@ -668,6 +683,7 @@ class SidekickOverlay(
         reactionAnimator?.cancel()
         reactionAnimator = null
         reacting = true
+        SidekickStatus.busy = true
         // A reaction is meant to be seen: full strength, even over a video.
         updateStepBack()
     }
@@ -677,6 +693,7 @@ class SidekickOverlay(
         reactionAnimator?.cancel()
         reactionAnimator = null
         reacting = false
+        SidekickStatus.busy = false
         football?.cancel()
         football = null
         view?.let { v ->
@@ -688,6 +705,11 @@ class SidekickOverlay(
         }
         applyAnger()
         updateStepBack()
+        // A roast that came due during a game was held back so it would not cut the game off: say it now.
+        pendingRoast?.let { held ->
+            pendingRoast = null
+            main.post { if (!say(held)) held.onOk?.invoke() }
+        }
     }
 
     /** The longer this phone session, the crosser she gets. A card or a reaction wins over it. */

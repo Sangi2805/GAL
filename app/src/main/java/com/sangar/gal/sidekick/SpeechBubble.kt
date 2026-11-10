@@ -145,10 +145,11 @@ internal class SpeechBubble(private val context: Context, private val windowMana
         size = intArrayOf(card.measuredWidth, card.measuredHeight)
         onGone = gone
         isRoast = speech.isRoast
-        card.alpha = 0f
+        // Only a small pop, never a fade from invisible: if a phone skips or stalls the animation, the bubble
+        // must still be there to read.
         card.scaleX = 0.9f
         card.scaleY = 0.9f
-        card.animate().alpha(1f).scaleX(1f).scaleY(1f).setDuration(160L).start()
+        card.animate().scaleX(1f).scaleY(1f).setDuration(160L).start()
         handler.postDelayed(timeout, speech.stayMillis)
         return true
     }

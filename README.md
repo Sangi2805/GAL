@@ -182,6 +182,7 @@ people see in App info. The commit it was built from gets a matching git tag, fo
 | 0.4.0 | 4 | Tune-up: smaller release APK (R8 on), less battery use by the elephant and the timer, a hidden elephant always comes back on time, home and stats roll over at midnight. |
 | 0.5.0 | 5 | Calm, Honest or Brutal tone; she is worried before she is cross; steps back for videos, maps and games; a first-run demo; "She noticed..." weekly insights; a health line on home and "Check GAL" in Settings; settings grouped by intent; respects "Remove animations". |
 | 0.6.0 | 6 | Roasts come from GAL in a speech bubble (the card is only the fallback when she is hidden); football over your apps; "How lively is she?"; GAL's plant and the garden score with a daily goal; ground shadow; she is called GAL everywhere. |
+| 0.6.1 | 7 | A roast no longer cuts a football game short (it waits for the final whistle); the first-run demo waits for the game too; bubbles and the hide X no longer fade in from invisible. |
 
 ## Debug builds
 
