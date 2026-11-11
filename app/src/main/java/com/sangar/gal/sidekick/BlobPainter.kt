@@ -536,7 +536,7 @@ class BlobPainter {
         val controlY = bodyY - (if (c > 0f) c * bh * 1.05f else c * bh * 0.80f)
         ropePaint.strokeWidth = u * 0.018f
         path.reset()
-        path.moveTo(bodyX + bodyRx * 1.55f, bodyY - bh * 0.02f)
+        path.moveTo(bodyX + bodyRx * 2.0f, bodyY - bh * 0.08f)
         path.quadTo(bodyX + bodyRx * 0.2f, controlY, bodyX - bodyRx * 1.15f, bodyY)
         canvas.drawPath(path, ropePaint)
     }
