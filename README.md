@@ -47,6 +47,9 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
   she says a line in your tone ("At least I am playing a real game."). No full-screen layer: only her window
   and the ball's are on top, and a tap on the ball flicks it. "How lively is she?" in Settings sets the limit:
   Quiet (never), Normal (once an hour, 6 a day), Playful (every 20 minutes, 12 a day). See `sidekick/Football.kt`.
+- **Her day:** at most every 30 minutes she does something that fits the hour, where she stands: skips rope
+  (5 to 11 in the morning), reads a book (8 to 11 in the evening) or yawns, says goodnight and sleeps in a
+  nightcap (from 11 at night). Each ends with a short line in your tone (`sidekick/ActivityLines.kt`).
 - **GAL's plant:** on home. Every day at or under your daily goal (3 h by default, you choose) it grows a step;
   7 good days make a flower, which joins your garden score, and a new seed is planted. A day over the goal
   wilts it and takes a step back; 3 in a row and it dies (`data/Garden.kt`).
@@ -183,6 +186,7 @@ people see in App info. The commit it was built from gets a matching git tag, fo
 | 0.5.0 | 5 | Calm, Honest or Brutal tone; she is worried before she is cross; steps back for videos, maps and games; a first-run demo; "She noticed..." weekly insights; a health line on home and "Check GAL" in Settings; settings grouped by intent; respects "Remove animations". |
 | 0.6.0 | 6 | Roasts come from GAL in a speech bubble (the card is only the fallback when she is hidden); football over your apps; "How lively is she?"; GAL's plant and the garden score with a daily goal; ground shadow; she is called GAL everywhere. |
 | 0.6.1 | 7 | A roast no longer cuts a football game short (it waits for the final whistle); the first-run demo waits for the game too; bubbles and the hide X no longer fade in from invisible. |
+| 0.7.0 | 8 | A day in her life: skipping rope in the morning, a book in the evening, a nightcap and bed late at night, each with a line in your tone. Feel: a crouch before every hop, a smooth turn, eyes on the ball, a tick you can feel when the ball lands. |
 
 ## Debug builds
 

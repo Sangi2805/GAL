@@ -19,7 +19,17 @@ import kotlin.math.sqrt
  * allocates. The floating Sidekick ([SidekickView]) and the stage both fill one of these and hand it to a
  * [BlobPainter], which is what keeps the two looking identical.
  */
+/** Something she holds or wears for an activity. */
+enum class Prop { NONE, BOOK, ROPE }
+
 class BlobPose {
+    /** What she is holding right now, and a 0..1 loop for it (one turn of the skipping rope). */
+    var prop = Prop.NONE
+    var propPhase = 0f
+
+    /** A nightcap, for when she has gone to bed. */
+    var nightcap = false
+
     /** 1 = eyes open, 0 = shut. Multiplied into the eye height. */
     var blink = 1f
 
@@ -77,6 +87,9 @@ class BlobPose {
     var headTilt = 0f
 
     fun reset() {
+        prop = Prop.NONE
+        propPhase = 0f
+        nightcap = false
         blink = 1f
         wideEyes = 0f
         yawn = 0f
@@ -179,6 +192,13 @@ class BlobPainter {
         strokeJoin = Paint.Join.ROUND
     }
 
+    private val ropePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.STROKE
+        color = 0xFF8A5A2B.toInt()
+        strokeCap = Paint.Cap.ROUND
+    }
+    private val capPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF7C9CF5.toInt() }
+
     private val rect = RectF()
     private val path = Path()
     private val trunkPath = Path()
@@ -232,6 +252,8 @@ class BlobPainter {
         val bodyRx = u * 0.31f * puff
         val bodyRy = bh * 0.225f * puff
         val hipY = bodyY + bodyRy * 0.30f
+
+        if (pose.prop == Prop.ROPE) drawRope(canvas, bodyX, bodyY, bodyRx, bh, u, pose.propPhase)
 
         // Far legs first, in a darker pink, then the tail, the body and the near legs.
         drawLeg(canvas, bodyX - bodyRx * 0.48f, hipY, ground, u, legSwing(pose, 0.50f), far = true)
@@ -289,7 +311,8 @@ class BlobPainter {
             drawMoodMouth(canvas, mx, my, hr, pose.mood)
         }
         drawTrunk(canvas, hx + hr * 0.55f, hy + hr * 0.30f, u, pose)
-        drawBow(canvas, hx - hr * 0.35f, hy - hr * 0.88f, hr)
+        if (pose.prop == Prop.BOOK) drawBook(canvas, hx + hr * 0.95f, hy + hr * 0.95f, hr)
+        if (pose.nightcap) drawNightcap(canvas, hx, hy, hr) else drawBow(canvas, hx - hr * 0.35f, hy - hr * 0.88f, hr)
         canvas.restore()
 
         if (pose.mood == Mood.HORRIFIED) drawSweatDrop(canvas, hx + hr * 0.75f, hy - hr * 0.9f, hr)
@@ -502,6 +525,56 @@ class BlobPainter {
             val half = trunkPaint.strokeWidth * 0.35f
             canvas.drawLine(x - ty / tl * half, y + tx / tl * half, x + ty / tl * half, y - tx / tl * half, wrinklePaint)
         }
+    }
+
+    /**
+     * The skipping rope: from her trunk round to her tail, swinging over her head and under her feet once per
+     * [phase]. Drawn behind her.
+     */
+    private fun drawRope(canvas: Canvas, bodyX: Float, bodyY: Float, bodyRx: Float, bh: Float, u: Float, phase: Float) {
+        val c = cos(phase * 2f * PI.toFloat())
+        val controlY = bodyY - (if (c > 0f) c * bh * 1.05f else c * bh * 0.80f)
+        ropePaint.strokeWidth = u * 0.018f
+        path.reset()
+        path.moveTo(bodyX + bodyRx * 1.55f, bodyY - bh * 0.02f)
+        path.quadTo(bodyX + bodyRx * 0.2f, controlY, bodyX - bodyRx * 1.15f, bodyY)
+        canvas.drawPath(path, ropePaint)
+    }
+
+    /** A little open book held in front of her, below her eyes. */
+    private fun drawBook(canvas: Canvas, x: Float, y: Float, hr: Float) {
+        val w = hr * 0.52f
+        val h = hr * 0.62f
+        canvas.save()
+        canvas.rotate(-10f, x, y)
+        rect.set(x - w - hr * 0.04f, y - h / 2f - hr * 0.04f, x + w + hr * 0.04f, y + h / 2f + hr * 0.04f)
+        canvas.drawRoundRect(rect, hr * 0.06f, hr * 0.06f, bowPaint)
+        rect.set(x - w, y - h / 2f, x, y + h / 2f)
+        canvas.drawRect(rect, scleraPaint)
+        canvas.drawRect(rect, rimPaint)
+        rect.set(x, y - h / 2f, x + w, y + h / 2f)
+        canvas.drawRect(rect, scleraPaint)
+        canvas.drawRect(rect, rimPaint)
+        for (k in 1..3) {
+            val ly = y - h / 2f + h * k / 4f
+            canvas.drawLine(x - w * 0.8f, ly, x - w * 0.2f, ly, wrinklePaint)
+            canvas.drawLine(x + w * 0.2f, ly, x + w * 0.8f, ly, wrinklePaint)
+        }
+        canvas.restore()
+    }
+
+    /** A soft nightcap flopping back over her ear, with a bobble. */
+    private fun drawNightcap(canvas: Canvas, hx: Float, hy: Float, hr: Float) {
+        path.reset()
+        path.moveTo(hx - hr * 0.75f, hy - hr * 0.62f)
+        path.quadTo(hx - hr * 0.1f, hy - hr * 1.25f, hx + hr * 0.55f, hy - hr * 0.78f)
+        path.quadTo(hx - hr * 0.2f, hy - hr * 1.9f, hx - hr * 1.25f, hy - hr * 1.05f)
+        path.quadTo(hx - hr * 0.9f, hy - hr * 0.95f, hx - hr * 0.75f, hy - hr * 0.62f)
+        path.close()
+        canvas.drawPath(path, capPaint)
+        canvas.drawPath(path, rimPaint)
+        canvas.drawCircle(hx - hr * 1.28f, hy - hr * 1.02f, hr * 0.16f, scleraPaint)
+        canvas.drawCircle(hx - hr * 1.28f, hy - hr * 1.02f, hr * 0.16f, rimPaint)
     }
 
     private fun drawBow(canvas: Canvas, x: Float, y: Float, hr: Float) {

@@ -125,6 +125,52 @@ class SidekickView(context: Context) : View(context) {
     /** 0..1 height of a hop. */
     private var hopLift = 0f
 
+    /** 0..1 squash just before a hop. */
+    private var crouch = 0f
+
+    /** Which way she is drawn right now, easing from -1 to 1 through a turn instead of flipping at once. */
+    private var shownFacing = 0f
+
+    // ---- Activities (driven by SidekickOverlay) -----------------------------
+
+    /** What she is holding, and the 0..1 loop that drives it. */
+    var prop = Prop.NONE
+        set(value) {
+            field = value
+            invalidate()
+        }
+    var propPhase = 0f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /** 0..1 extra lift for rhythmic jumps (skipping), on top of [hop]. */
+    var jump = 0f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /** A nightcap for a bedtime nap. It comes off when she wakes. */
+    var nightcap = false
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /** Points her eyes: -1..1 on each axis, in screen directions (right and down are positive). */
+    fun lookAt(x: Float, y: Float) {
+        gazeAnimator?.cancel()
+        val facing = if (shownFacing < 0f) -1f else 1f
+        gazeX = (x * facing).coerceIn(-1f, 1f)
+        gazeY = y.coerceIn(-1f, 1f)
+        invalidate()
+    }
+
+    /** A yawn on request, for bedtime. */
+    fun yawnNow() = playYawn()
+
     // ---- Wandering (driven by SidekickOverlay) -----------------------------
 
     /** Walking: a bouncy step, ears flapping, trunk swinging. */
@@ -204,6 +250,7 @@ class SidekickView(context: Context) : View(context) {
                 removeCallbacks(blinkRunnable)
                 removeCallbacks(yawnRunnable)
             } else {
+                nightcap = false
                 scheduleBlink()
                 scheduleYawn()
             }
@@ -562,15 +609,24 @@ class SidekickView(context: Context) : View(context) {
     fun hop() {
         hopAnimator?.cancel()
         hopAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
-            duration = 420L
+            duration = 520L
             interpolator = LinearInterpolator()
             addUpdateListener {
-                hopLift = sin((it.animatedValue as Float) * PI.toFloat())
+                // Anticipation: a quick crouch first, then the jump. It is what gives the hop weight.
+                val t = it.animatedValue as Float
+                if (t < CROUCH_PART) {
+                    crouch = sin(t / CROUCH_PART * PI.toFloat())
+                    hopLift = 0f
+                } else {
+                    crouch = 0f
+                    hopLift = sin((t - CROUCH_PART) / (1f - CROUCH_PART) * PI.toFloat())
+                }
                 invalidate()
             }
             addListener(object : AnimatorListenerAdapter() {
                 override fun onAnimationEnd(animation: Animator) {
                     hopLift = 0f
+                    crouch = 0f
                     playPoke()
                 }
             })
@@ -703,7 +759,8 @@ class SidekickView(context: Context) : View(context) {
         // Walking bounces her on each step; a hop lifts her clear of the spot.
         // The painter does the walking bob itself; we only lift her for a hop.
         val step = if (walking) abs(sin(walkPhase * 2f * PI.toFloat())) else 0f
-        val cy = hgt / 2f - base * 0.16f * hopLift
+        val lift = maxOf(hopLift, jump)
+        val cy = hgt / 2f - base * 0.16f * lift
 
         // Breathing: a slow sine. Volume is conserved-ish, so the elephant widens as
         // it flattens, which reads as squash-and-stretch rather than a zoom.
@@ -726,6 +783,8 @@ class SidekickView(context: Context) : View(context) {
         // Tap squash: wide and short, springing back.
         scaleX += 0.10f * poke
         scaleY -= 0.10f * poke
+        scaleX += 0.07f * crouch
+        scaleY -= 0.11f * crouch
 
         pose.blink = blink
         pose.wideEyes = wideEyes
@@ -740,7 +799,15 @@ class SidekickView(context: Context) : View(context) {
         pose.phase = phase
         // The trunk is never quite still: a slow sway with the breath, a wiggle while talking, lifted while
         // listening, and it always swings towards the middle of the screen.
-        pose.facing = if (walkFacing != 0) walkFacing else facingTowardsScreenMiddle()
+        // The painter always draws her facing right; the turn is done here so it can be eased.
+        val targetFacing = (if (walkFacing != 0) walkFacing else facingTowardsScreenMiddle()).toFloat()
+        if (shownFacing == 0f) shownFacing = targetFacing
+        shownFacing += (targetFacing - shownFacing) * TURN_EASE
+        if (abs(targetFacing - shownFacing) < 0.04f) shownFacing = targetFacing
+        pose.facing = 1
+        pose.prop = prop
+        pose.propPhase = propPhase
+        pose.nightcap = nightcap && napping
         pose.eyesShut = napping
         pose.walking = walking
         pose.walkPhase = walkPhase
@@ -758,16 +825,21 @@ class SidekickView(context: Context) : View(context) {
             trunkBoost +
             (if (napping) -30f else 0f) +
             70f * hopLift
-        pose.earFlap = (poke * 2f + 0.5f * wideEyes + (if (walking) 0.5f * step else 0f) + hopLift).coerceIn(0f, 1f)
+        pose.earFlap = (poke * 2f + 0.5f * wideEyes + (if (walking) 0.5f * step else 0f) + lift).coerceIn(0f, 1f)
         // A soft shadow on the ground under her. It stays put and shrinks when she hops, which is what makes
         // her look like she stands on something instead of floating.
         val groundY = hgt / 2f + base / 2f
-        val shadowHalf = base * (0.34f - 0.10f * hopLift)
-        val shadowX = cx - base * 0.07f * pose.facing
+        val shadowHalf = base * (0.34f - 0.10f * lift + 0.03f * crouch)
+        val shadowX = cx - base * 0.07f * shownFacing
         shadowRect.set(shadowX - shadowHalf, groundY - base * 0.035f, shadowX + shadowHalf, groundY + base * 0.035f)
-        shadowPaint.alpha = (70 * (1f - 0.5f * hopLift)).toInt()
+        shadowPaint.alpha = (70 * (1f - 0.5f * lift)).toInt()
         canvas.drawOval(shadowRect, shadowPaint)
+        // Mid-turn she is drawn narrow, never paper-thin.
+        val turn = if (abs(shownFacing) < 0.12f) (if (shownFacing < 0f) -0.12f else 0.12f) else shownFacing
+        canvas.save()
+        canvas.scale(turn, 1f, cx, cy)
         painter.draw(canvas, cx, cy, base * scaleX, base * scaleY, base, pose)
+        canvas.restore()
     }
 
     private fun facingTowardsScreenMiddle(): Int {
@@ -794,6 +866,10 @@ class SidekickView(context: Context) : View(context) {
     private companion object {
         /** One full walk cycle (all four feet) covers this much of the window's width. */
         const val STRIDE_OF_WIDTH = 0.45f
+
+        /** The share of a hop spent crouching first, and how fast a turn eases per frame. */
+        const val CROUCH_PART = 0.22f
+        const val TURN_EASE = 0.3f
 
         const val BLINK_MIN_MS = 3_000L
         const val BLINK_MAX_MS = 6_000L

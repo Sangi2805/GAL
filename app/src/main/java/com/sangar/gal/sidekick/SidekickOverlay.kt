@@ -136,6 +136,7 @@ class SidekickOverlay(
     private val bubble = SpeechBubble(context, windowManager)
     private var football: Football? = null
     private var pendingRoast: Speech? = null
+    private var lastActivityAt = 0L
     private var liveliness = com.sangar.gal.data.Liveliness.NORMAL
 
     /** Scenes played today and when the last one was, for the limits in [com.sangar.gal.data.Liveliness]. */
@@ -331,6 +332,8 @@ class SidekickOverlay(
         if (!busy) {
             val roll = Random.nextFloat()
             when {
+                // Something that fits the hour: skipping in the morning, a book in the evening, bed at night.
+                roll < 0.30f && startDailyActivity() -> Unit
                 // Once you have been on the phone a while, she may get her ball out instead.
                 v.mood != Mood.NONE && sceneAllowed() && roll < 0.35f -> startFootball()
                 roll < 0.45f -> paceFromEdge()
@@ -609,6 +612,117 @@ class SidekickOverlay(
         say(Speech(text))
     }
 
+    // ---- Her day: small activities by the hour ----------------------------------
+
+    /**
+     * Picks what fits the time of day. These are short and stay where she stands, so they are allowed more
+     * often than football: one every [ACTIVITY_GAP_MS]. Returns false when nothing fits right now.
+     */
+    private fun startDailyActivity(): Boolean {
+        if (System.currentTimeMillis() - lastActivityAt < ACTIVITY_GAP_MS) return false
+        when (java.time.LocalTime.now().hour) {
+            in 5..10 -> skipRope()
+            in 20..22 -> readBook()
+            23, in 0..4 -> goToBed()
+            else -> return false
+        }
+        lastActivityAt = System.currentTimeMillis()
+        return true
+    }
+
+    /** Morning: eight turns of the rope, a small jump on each, then her line. */
+    private fun skipRope() {
+        val v = view ?: return
+        startReaction()
+        v.napping = false
+        v.mood = Mood.NONE
+        v.prop = Prop.ROPE
+        v.trunkBoost = 70f
+        reactionAnimator = ValueAnimator.ofFloat(0f, SKIPS.toFloat()).apply {
+            duration = SKIPS * 560L
+            interpolator = android.view.animation.LinearInterpolator()
+            addUpdateListener {
+                val turn = (it.animatedValue as Float) % 1f
+                v.propPhase = turn
+                // The rope passes under her feet half way through a turn: that is when she is in the air.
+                v.jump = (kotlin.math.cos((turn - 0.5f) * 2f * PI.toFloat())).coerceAtLeast(0f) * 0.55f
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                private var cancelled = false
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    reactionAnimator = null
+                    if (cancelled) return
+                    v.prop = Prop.NONE
+                    v.jump = 0f
+                    v.trunkBoost = 0f
+                    remark(ActivityLines.skipping(tone))
+                    main.postDelayed({ if (reacting && reactionAnimator == null && football == null) endReaction() }, 2_500L)
+                }
+            })
+            start()
+        }
+    }
+
+    /** Evening: she reads for a while, eyes down, nodding along, and says her line a few seconds in. */
+    private fun readBook() {
+        val v = view ?: return
+        startReaction()
+        v.napping = false
+        v.mood = Mood.NONE
+        v.prop = Prop.BOOK
+        v.trunkBoost = 50f
+        v.lookAt(0.5f, 0.9f)
+        var said = false
+        reactionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = READ_MS
+            interpolator = android.view.animation.LinearInterpolator()
+            addUpdateListener {
+                val t = it.animatedValue as Float
+                v.headTilt = 2.5f * sin(t * 2f * PI.toFloat() * 3f)
+                if (!said && t > 0.25f) {
+                    said = true
+                    remark(ActivityLines.reading(tone))
+                }
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                private var cancelled = false
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    reactionAnimator = null
+                    if (!cancelled) endReaction()
+                }
+            })
+            start()
+        }
+    }
+
+    /** Late night: a yawn, her line, then a nightcap and a long sleep. */
+    private fun goToBed() {
+        val v = view ?: return
+        startReaction()
+        v.napping = false
+        v.mood = Mood.NONE
+        v.yawnNow()
+        remark(ActivityLines.bedtime(tone))
+        main.postDelayed({
+            if (!reacting || football != null || reactionAnimator != null) return@postDelayed
+            endReaction()
+            val me = view ?: return@postDelayed
+            if (me.mood == Mood.ANGRY || cardMood != Mood.NONE) return@postDelayed
+            me.napping = true
+            me.nightcap = true
+            main.removeCallbacks(wakeRunnable)
+            main.postDelayed(wakeRunnable, BED_NAP_MS)
+        }, 3_000L)
+    }
+
     // ---- Football ---------------------------------------------------------------
 
     /** The daily and hourly limits on scenes, from the "How lively is she?" setting. */
@@ -649,6 +763,13 @@ class SidekickOverlay(
                     addUpdateListener { me.trunkBoost = 95f * sin((it.animatedValue as Float) * PI.toFloat()) }
                     start()
                 }
+            }
+
+            override fun watch(x: Float, y: Float) {
+                val me = view ?: return
+                val e = elephantRect()
+                val reach = overlayBounds().width() * 0.35f
+                me.lookAt((x - e.centerX()) / reach, ((y - e.centerY()) / reach).coerceIn(-1f, 1f))
             }
 
             override fun finished(scored: Boolean) {
@@ -700,6 +821,9 @@ class SidekickOverlay(
             v.trunkBoost = 0f
             v.headTilt = 0f
             v.proud = 0f
+            v.prop = Prop.NONE
+            v.jump = 0f
+            v.lookAt(0f, 0f)
             v.walkFacing = 0
             if (cardMood == Mood.NONE) v.mood = Mood.NONE
         }
@@ -869,6 +993,10 @@ class SidekickOverlay(
         const val HURRY_DP_PER_S = 260f
 
         const val POLL_MS = 1_500L
+        const val ACTIVITY_GAP_MS = 30 * 60_000L
+        const val SKIPS = 8
+        const val READ_MS = 9_000L
+        const val BED_NAP_MS = 5 * 60_000L
         const val STEP_BACK_ALPHA = 0.3f
         const val REACT_COOLDOWN_MS = 20_000L
         const val NO_MS = 3_200L

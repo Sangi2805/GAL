@@ -46,6 +46,28 @@ object ActivityLines {
         Tone.BRUTAL to listOf("A useful app? Who are you?", "Shocking. Keep going.", "Miracles happen."),
     )
 
+    private val reading = mapOf(
+        Tone.CALM to listOf("A few pages before bed. Join me?", "Books are nice at this hour.", "Quiet time. Want to try it?"),
+        Tone.HONEST to listOf("This has an ending. Your feed does not.", "Reading. It is like scrolling, but it finishes.", "Chapter three. You: video three hundred."),
+        Tone.BRUTAL to listOf("I read books. You read comments.", "A whole chapter while you watched strangers.", "Words on paper. Scary, I know."),
+    )
+
+    private val skipping = mapOf(
+        Tone.CALM to listOf("Morning stretch. Coming?", "A little skip to start the day.", "Feels good. Try a walk?"),
+        Tone.HONEST to listOf("Thirty jumps. You: zero.", "Morning exercise. One of us is doing it.", "Your thumb is the only thing moving."),
+        Tone.BRUTAL to listOf("I have moved more this morning than you will all day.", "Jumping rope. You are jumping apps.", "Up for five minutes and already on your phone."),
+    )
+
+    private val bedtime = mapOf(
+        Tone.CALM to listOf("I am off to bed. You too, soon?", "Goodnight. The phone can wait.", "Sleepy. Shall we both stop?"),
+        Tone.HONEST to listOf("I am going to bed. One of us should.", "It is late. Even I know that.", "Goodnight. Try it some time."),
+        Tone.BRUTAL to listOf("Bed. Tomorrow you will regret this hour.", "I sleep. You scroll. Guess who wins tomorrow.", "Still up? Nothing here is worth it."),
+    )
+
+    fun reading(tone: Tone, random: Random = Random.Default): String = pick(reading, tone, random)
+    fun skipping(tone: Tone, random: Random = Random.Default): String = pick(skipping, tone, random)
+    fun bedtime(tone: Tone, random: Random = Random.Default): String = pick(bedtime, tone, random)
+
     fun football(tone: Tone, random: Random = Random.Default): String = pick(football, tone, random)
     fun sayNo(tone: Tone, random: Random = Random.Default): String = pick(no, tone, random)
     fun cheer(tone: Tone, random: Random = Random.Default): String = pick(cheer, tone, random)

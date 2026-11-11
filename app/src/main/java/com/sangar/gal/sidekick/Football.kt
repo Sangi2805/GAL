@@ -35,6 +35,10 @@ class BallPhysics(
     var travelled = 0f
         private set
 
+    /** True for the step in which it hit the floor or a wall hard enough to feel. */
+    var bumped = false
+        private set
+
     /** With the walls off (the last, big kick) the ball is allowed to fly out of the screen. */
     var walls = true
 
@@ -43,6 +47,7 @@ class BallPhysics(
     fun atRest(floor: Float, slow: Float): Boolean = onFloor(floor) && abs(vy) < slow && abs(vx) < slow
 
     fun step(dt: Float, left: Float, right: Float, floor: Float) {
+        bumped = false
         vy += gravity * dt
         x += vx * dt
         y += vy * dt
@@ -54,6 +59,7 @@ class BallPhysics(
                 vy = 0f
             } else {
                 // A real bounce: some height and some pace are lost. Rolling is handled below.
+                bumped = abs(vy) > gravity * 0.2f
                 vy = -vy * FLOOR_BOUNCE
                 vx *= FLOOR_GRIP
             }
@@ -62,9 +68,11 @@ class BallPhysics(
         if (walls) {
             if (x < left + radius) {
                 x = left + radius
+                bumped = true
                 vx = abs(vx) * WALL_BOUNCE
             } else if (x > right - radius) {
                 x = right - radius
+                bumped = true
                 vx = -abs(vx) * WALL_BOUNCE
             }
         }
@@ -168,6 +176,9 @@ internal class Football(
         /** A hop and a flick of the trunk. */
         fun kickPose(facing: Int)
 
+        /** The ball is at [x], [y] on screen, so she can keep her eyes on it. */
+        fun watch(x: Float, y: Float)
+
         /** The scene is over. [scored] is false when it was cut short. */
         fun finished(scored: Boolean)
     }
@@ -237,6 +248,9 @@ internal class Football(
         val floor = floor()
         body.step(dt, bounds.left.toFloat(), bounds.right.toFloat(), floor)
         view.spin = body.travelled / (size / 2f)
+        // A light tick you can feel when the ball lands or hits the edge (follows the phone's touch-feedback setting).
+        if (body.bumped) view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
+        host.watch(body.x, body.y)
         p.x = (body.x - size / 2f).roundToInt()
         p.y = (body.y - size / 2f).roundToInt()
         runCatching { windowManager.updateViewLayout(view, p) }
