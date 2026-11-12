@@ -574,16 +574,19 @@ class BlobPainter {
         canvas.restore()
     }
 
-    /** A winter scarf: a band where her head meets her body, with one end hanging. */
+    /** A winter scarf: a band round her neck, below her chin and across her ear, with one end hanging. */
     private fun drawScarf(canvas: Canvas, hx: Float, hy: Float, hr: Float) {
-        canvas.save()
-        canvas.rotate(28f, hx - hr * 0.45f, hy + hr * 0.75f)
-        rect.set(hx - hr * 1.15f, hy + hr * 0.62f, hx + hr * 0.25f, hy + hr * 0.92f)
-        canvas.drawRoundRect(rect, hr * 0.14f, hr * 0.14f, scarfPaint)
-        canvas.drawRoundRect(rect, hr * 0.14f, hr * 0.14f, rimPaint)
-        rect.set(hx - hr * 0.95f, hy + hr * 0.82f, hx - hr * 0.65f, hy + hr * 1.45f)
+        val cx = hx - hr * 0.72f
+        val cy = hy + hr * 0.78f
+        // The hanging end first, so the band sits on top of it.
+        rect.set(hx - hr * 0.62f, hy + hr * 0.95f, hx - hr * 0.34f, hy + hr * 1.55f)
         canvas.drawRoundRect(rect, hr * 0.1f, hr * 0.1f, scarfPaint)
         canvas.drawRoundRect(rect, hr * 0.1f, hr * 0.1f, rimPaint)
+        canvas.save()
+        canvas.rotate(38f, cx, cy)
+        rect.set(cx - hr * 0.6f, cy - hr * 0.15f, cx + hr * 0.6f, cy + hr * 0.15f)
+        canvas.drawRoundRect(rect, hr * 0.15f, hr * 0.15f, scarfPaint)
+        canvas.drawRoundRect(rect, hr * 0.15f, hr * 0.15f, rimPaint)
         canvas.restore()
     }
 
