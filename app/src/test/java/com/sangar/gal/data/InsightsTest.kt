@@ -40,4 +40,12 @@ class InsightsTest {
     fun saysNothingWithoutEnoughData() {
         assertTrue(Insights.weekly(emptyList(), listOf(day(1, 60)), today, zone, Locale.ENGLISH).isEmpty())
     }
+
+    @Test
+    fun weekSummaryCountsGoodDaysAndNamesTheBest() {
+        val days = listOf(day(1, 100), day(2, 300), day(3, 50))
+        val line = Insights.weekSummary(days, 180, today, Locale.ENGLISH)!!
+        assertTrue(line, line.startsWith("This week: 2 of 3 days under your goal."))
+        assertTrue(Insights.weekSummary(listOf(day(1, 100)), 180, today, Locale.ENGLISH) == null)
+    }
 }

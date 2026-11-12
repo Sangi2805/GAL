@@ -138,8 +138,35 @@ fun SettingsScreen(onBack: () -> Unit, onOpenPrivacy: () -> Unit) {
             }
         }
 
+        ToneTabs(current.tone, onSelect = { tone ->
+            container.appScope.launch { container.settings.setTone(tone) }
+        })
+
+        // App scope, so leaving the screen mid-save cannot cancel the write.
+        ThresholdCard(
+            storedMinutes = current.thresholdMinutes,
+            onCommit = { minutes -> container.appScope.launch { container.settings.setThresholdMinutes(minutes) } },
+            onSwitchOff = { container.appScope.launch { container.settings.setEnabled(false) } },
+        )
+
         SectionCard {
             Text("Check-ins", style = MaterialTheme.typography.titleMedium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Ask how long", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        "When you open a social app, GAL asks how long you plan to stay (5, 10 or 20 minutes) " +
+                            "and tells you when the time is up.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                Switch(
+                    checked = current.askHowLong,
+                    onCheckedChange = { on -> scope.launch { container.settings.setAskHowLong(on) } },
+                    modifier = Modifier.semantics { contentDescription = "Ask how long on or off" },
+                )
+            }
             Text(
                 SessionCardCap.describe(current.thresholdMinutes) + " of continuous use.",
                 style = MaterialTheme.typography.bodyLarge,

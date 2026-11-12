@@ -64,6 +64,60 @@ object ActivityLines {
         Tone.BRUTAL to listOf("Bed. Tomorrow you will regret this hour.", "I sleep. You scroll. Guess who wins tomorrow.", "Still up? Nothing here is worth it."),
     )
 
+    private val stretching = mapOf(
+        Tone.CALM to listOf("A good stretch. Your turn?", "Your neck would like this too.", "Stand up with me for a moment?"),
+        Tone.HONEST to listOf("Your neck called. It wants this.", "Stretching. You have not moved in a while.", "Stand up. I will wait."),
+        Tone.BRUTAL to listOf("You are turning into the shape of your chair.", "Move. Something. Anything.", "Your spine sent me to complain."),
+    )
+
+    private val sweeping = mapOf(
+        Tone.CALM to listOf("Just tidying. Maybe close this one?", "A little clean-up. This app again?", "Sweeping up. Shall we move on?"),
+        Tone.HONEST to listOf("Tidying up. Starting with this app.", "Third time today. Out it goes.", "Sweeping the feed away. You are welcome."),
+        Tone.BRUTAL to listOf("Taking out the rubbish. This app first.", "Again? I am sweeping you out with it.", "Three visits. Nothing new. Out."),
+    )
+
+    private val plane = mapOf(
+        Tone.CALM to listOf("For you. Well done.", "A little reward.", "Outside is that way, later."),
+        Tone.HONEST to listOf("Have a plane. You earned it.", "Outside is that way.", "Useful app, small prize."),
+        Tone.BRUTAL to listOf("A prize. Do not get used to it.", "Rare event. Have a plane.", "Outside is that way. Try it."),
+    )
+
+    private val dropped = mapOf(
+        Tone.CALM to listOf("Oh. Hello.", "Here is fine too.", "A lift. Thank you."),
+        Tone.HONEST to listOf("Excuse me.", "I was standing there.", "Rude."),
+        Tone.BRUTAL to listOf("Hands off.", "Do you grab everyone like that?", "Put that energy into something useful."),
+    )
+
+    fun stretching(tone: Tone, random: Random = Random.Default): String = pick(stretching, tone, random)
+    fun sweeping(tone: Tone, random: Random = Random.Default): String = pick(sweeping, tone, random)
+    fun plane(tone: Tone, random: Random = Random.Default): String = pick(plane, tone, random)
+    fun dropped(tone: Tone, random: Random = Random.Default): String = pick(dropped, tone, random)
+
+    /** The question when a social app opens, the reply to an answer, and the call when the time is up. */
+    fun howLong(tone: Tone): String = when (tone) {
+        Tone.CALM -> "How long would you like here?"
+        Tone.HONEST -> "Nooo. Fine. How long this time?"
+        Tone.BRUTAL -> "This again. How long will you waste?"
+    }
+
+    fun counting(tone: Tone, minutes: Int): String = when (tone) {
+        Tone.CALM -> "$minutes minutes. I will let you know."
+        Tone.HONEST -> "$minutes minutes. I am counting."
+        Tone.BRUTAL -> "$minutes minutes. Not one more."
+    }
+
+    fun timeUp(tone: Tone, minutes: Int): String = when (tone) {
+        Tone.CALM -> "That was your $minutes minutes. Shall we stop?"
+        Tone.HONEST -> "Your $minutes minutes are up. You said so yourself."
+        Tone.BRUTAL -> "$minutes minutes, gone. Out. You promised."
+    }
+
+    fun leftEarly(tone: Tone): String = when (tone) {
+        Tone.CALM -> "You left early. Lovely."
+        Tone.HONEST -> "Out before time. Respect."
+        Tone.BRUTAL -> "Left early? Who are you?"
+    }
+
     fun reading(tone: Tone, random: Random = Random.Default): String = pick(reading, tone, random)
     fun skipping(tone: Tone, random: Random = Random.Default): String = pick(skipping, tone, random)
     fun bedtime(tone: Tone, random: Random = Random.Default): String = pick(bedtime, tone, random)

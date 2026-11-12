@@ -35,6 +35,7 @@ import com.sangar.gal.Feature
 import com.sangar.gal.R
 import com.sangar.gal.container
 import com.sangar.gal.data.Garden
+import com.sangar.gal.data.Insights
 import com.sangar.gal.data.Settings
 import com.sangar.gal.data.db.ScreenSession
 import com.sangar.gal.Health
@@ -126,24 +127,7 @@ fun HomeScreen(
                 )
             }
 
-            EnableCard(current, roastsReady) { on ->
-                // The switch only turns cards on and off; the service keeps measuring either way.
-                scope.launch { repo.setEnabled(on) }
-            }
-
-            ToneTabs(current.tone, onSelect = { tone ->
-                context.container.appScope.launch { repo.setTone(tone) }
-            })
-
-            // App scope, so leaving the screen mid-save cannot cancel the write.
-            ThresholdCard(
-                storedMinutes = current.thresholdMinutes,
-                onCommit = { minutes -> context.container.appScope.launch { repo.setThresholdMinutes(minutes) } },
-                onSwitchOff = {
-                    context.container.appScope.launch { repo.setEnabled(false) }
-                },
-            )
-
+            // Home stays calm: today, her plant and one switch. Tone, timing and the rest live in Settings.
             TodayTotals(today.first, live, day, usage)
 
             // Her plant lives on your screen time: finished days are counted whenever new ones are stored.
@@ -162,7 +146,16 @@ fun HomeScreen(
                 day = day,
                 usage = usage,
                 onGoal = { minutes -> context.container.appScope.launch { repo.setDailyGoalMinutes(minutes) } },
+                weekLine = recentDays?.let { Insights.weekSummary(it, current.dailyGoalMinutes, day) },
             )
+
+            EnableCard(current, roastsReady) { on ->
+                // The switch only turns roasts on and off; the service keeps measuring either way.
+                scope.launch { repo.setEnabled(on) }
+            }
+            OutlinedButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
+                Text("Tone, timing and more")
+            }
         }
     }
 }

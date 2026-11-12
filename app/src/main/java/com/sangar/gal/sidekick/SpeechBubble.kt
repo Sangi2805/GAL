@@ -25,8 +25,12 @@ data class Speech(
     val onOk: (() -> Unit)? = null,
     val onSnooze: (() -> Unit)? = null,
     val stayMillis: Long = QUICK_MILLIS,
+    /** A question with its own answer buttons ("5 min", "10 min"), in place of OK and Snooze. */
+    val choices: List<Pair<String, () -> Unit>> = emptyList(),
 ) {
     val isRoast: Boolean get() = onOk != null || onSnooze != null
+
+    val hasButtons: Boolean get() = isRoast || choices.isNotEmpty()
 
     companion object {
         const val QUICK_MILLIS = 3_500L
@@ -101,7 +105,20 @@ internal class SpeechBubble(private val context: Context, private val windowMana
                 setLineSpacing(0f, 1.1f)
             },
         )
-        if (speech.isRoast) {
+        if (speech.choices.isNotEmpty()) {
+            val row = LinearLayout(context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = Gravity.END
+                setPadding(0, dp(6f), 0, 0)
+            }
+            speech.choices.forEach { (label, pick) ->
+                row.addView(action(label, filled = true) {
+                    pick()
+                    dismiss()
+                })
+            }
+            card.addView(row)
+        } else if (speech.isRoast) {
             val row = LinearLayout(context).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.END
@@ -151,6 +168,8 @@ internal class SpeechBubble(private val context: Context, private val windowMana
         card.scaleY = 0.9f
         card.animate().scaleX(1f).scaleY(1f).setDuration(160L).start()
         handler.postDelayed(timeout, speech.stayMillis)
+        // Screen readers say the line out loud, since the bubble never takes focus.
+        card.announceForAccessibility(listOfNotNull(speech.label, speech.text).joinToString(". "))
         return true
     }
 

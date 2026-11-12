@@ -63,6 +63,8 @@ data class Settings(
     /** The daily screen time goal GAL's plant grows by. */
     val dailyGoalMinutes: Int = Garden.DEFAULT_GOAL_MINUTES,
     val plant: Plant = Plant(),
+    /** When you open a social app, GAL asks how long you plan to stay and holds you to it. */
+    val askHowLong: Boolean = true,
     /** Wall-clock millis until which the elephant is hidden (dropped on the X). 0 when she is not hidden. */
     val elephantHiddenUntil: Long = 0L,
 ) {
@@ -107,6 +109,8 @@ class SettingsRepository(context: Context) {
         val PLANT_FLOWERS = intPreferencesKey("garden_flowers")
         val PLANT_LOST = intPreferencesKey("plants_lost")
         val PLANT_LAST_DAY = stringPreferencesKey("plant_last_day")
+        val PLANT_BLOOMED = stringPreferencesKey("plant_bloomed_on")
+        val ASK_HOW_LONG = booleanPreferencesKey("ask_how_long")
         val STEP_BACK = booleanPreferencesKey("step_back")
     }
 
@@ -141,7 +145,9 @@ class SettingsRepository(context: Context) {
                 flowers = p[Keys.PLANT_FLOWERS] ?: 0,
                 lost = p[Keys.PLANT_LOST] ?: 0,
                 lastDay = p[Keys.PLANT_LAST_DAY]?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() },
+                bloomedOn = p[Keys.PLANT_BLOOMED]?.let { runCatching { java.time.LocalDate.parse(it) }.getOrNull() },
             ),
+            askHowLong = p[Keys.ASK_HOW_LONG] ?: true,
             stepBack = p[Keys.STEP_BACK] ?: true,
         )
     }.distinctUntilChanged()
@@ -170,6 +176,8 @@ class SettingsRepository(context: Context) {
         it[Keys.CALM_TONE] = tone == com.sangar.gal.phrases.Tone.CALM
     }
 
+    suspend fun setAskHowLong(on: Boolean) = store.edit { it[Keys.ASK_HOW_LONG] = on }
+
     suspend fun setLiveliness(value: Liveliness) = store.edit { it[Keys.LIVELINESS] = value.name }
 
     suspend fun setDailyGoalMinutes(minutes: Int) = store.edit { it[Keys.DAILY_GOAL] = Garden.clampGoal(minutes) }
@@ -180,6 +188,7 @@ class SettingsRepository(context: Context) {
         it[Keys.PLANT_FLOWERS] = plant.flowers
         it[Keys.PLANT_LOST] = plant.lost
         plant.lastDay?.let { day -> it[Keys.PLANT_LAST_DAY] = day.toString() }
+        plant.bloomedOn?.let { day -> it[Keys.PLANT_BLOOMED] = day.toString() }
     }
 
     suspend fun setStepBack(on: Boolean) = store.edit { it[Keys.STEP_BACK] = on }

@@ -53,4 +53,12 @@ class GardenTest {
         assertEquals(today.minusDays(1), p.lastDay)
         assertEquals(p, Garden.catchUp(p, days, 180, today))
     }
+
+    @Test
+    fun theSeventhGoodDayRecordsWhenTheFlowerShows() {
+        val start = Plant(growth = 6, lastDay = today.minusDays(2))
+        val p = Garden.catchUp(start, listOf(day(1, 60)), 180, today)
+        assertEquals(1, p.flowers)
+        assertEquals(today, p.bloomedOn)
+    }
 }

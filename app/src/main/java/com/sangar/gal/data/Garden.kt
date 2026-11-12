@@ -20,6 +20,8 @@ data class Plant(
     val lost: Int = 0,
     /** The last day already counted. */
     val lastDay: LocalDate? = null,
+    /** The day the newest flower was there to see (the morning after its seventh good day). */
+    val bloomedOn: LocalDate? = null,
 )
 
 enum class PlantStage { SEED, SPROUT, LEAVES, BUD }
@@ -58,7 +60,11 @@ object Garden {
         var p = plant
         days.filter { it.tracked && it.date.isAfter(last) && it.date.isBefore(today) }
             .sortedBy { it.date }
-            .forEach { p = step(p, it.totalScreenMinutes <= goalMinutes) }
+            .forEach {
+                val before = p.flowers
+                p = step(p, it.totalScreenMinutes <= goalMinutes)
+                if (p.flowers > before) p = p.copy(bloomedOn = it.date.plusDays(1))
+            }
         return p.copy(lastDay = yesterday)
     }
 

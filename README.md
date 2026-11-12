@@ -50,6 +50,15 @@ The original `GetALife` and `AI Assistant` folders are untouched; this project r
 - **Her day:** at most every 30 minutes she does something that fits the hour, where she stands: skips rope
   (5 to 11 in the morning), reads a book (8 to 11 in the evening) or yawns, says goodnight and sleeps in a
   nightcap (from 11 at night). Each ends with a short line in your tone (`sidekick/ActivityLines.kt`).
+- **More of her day:** a long stretch in the daytime; every third social app of the day she sweeps across
+  the screen with a broom; a paper plane for useful apps; carry her and she shakes her head and gives you a
+  look. Small emotes float up from her head (a heart, a question mark, a note).
+- **Outfits:** a scarf in winter, sunglasses in summer, a party hat on the day her plant flowers
+  (`sidekick/Outfits.kt`).
+- **How long this time?** Open a social app and she asks, with 5, 10 and 20 minute buttons. She tells you when
+  the time is up, and nods if you leave early. Once per app every 30 minutes; a switch in Settings.
+- **Home is calm:** health, today, her plant with the week in one line, and the roast switch. Tone, timing
+  and everything else are in Settings.
 - **GAL's plant:** on home. Every day at or under your daily goal (3 h by default, you choose) it grows a step;
   7 good days make a flower, which joins your garden score, and a new seed is planted. A day over the goal
   wilts it and takes a step back; 3 in a row and it dies (`data/Garden.kt`).
@@ -171,6 +180,11 @@ For a release build, run `./gradlew createReleaseKeystore` once (it writes `keys
 application ID (`com.sangar.gal`) and key, so it installs next to GetALife and Pocket Sidekick. It does not
 replace them, and it does not import their history.
 
+## Brand and store
+
+`docs/BRAND.md` is the one-page brand guide (name, colours, motion, voice). `docs/STORE_LISTING.md` holds the
+Google Play text, the data safety answers and the list of screenshots to take.
+
 ## Versions
 
 Every APK sent to testers gets a new version in `app/build.gradle.kts`: `versionCode` goes up by one (Android
@@ -187,6 +201,7 @@ people see in App info. The commit it was built from gets a matching git tag, fo
 | 0.6.0 | 6 | Roasts come from GAL in a speech bubble (the card is only the fallback when she is hidden); football over your apps; "How lively is she?"; GAL's plant and the garden score with a daily goal; ground shadow; she is called GAL everywhere. |
 | 0.6.1 | 7 | A roast no longer cuts a football game short (it waits for the final whistle); the first-run demo waits for the game too; bubbles and the hide X no longer fade in from invisible. |
 | 0.7.0 | 8 | A day in her life: skipping rope in the morning, a book in the evening, a nightcap and bed late at night, each with a line in your tone. Feel: a crouch before every hop, a smooth turn, eyes on the ball, a tick you can feel when the ball lands. |
+| 0.8.0 | 9 | The rest of the plan: stretching, sweeping with a broom, a paper plane, a look when you carry her, emotes, a scarf, sunglasses and a party hat, "How long this time?" for social apps, GAL's week on home, a calmer home (tone and timing moved to Settings), bubbles read out by screen readers, a brand guide and the store listing. |
 
 ## Debug builds
 

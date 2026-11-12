@@ -20,7 +20,10 @@ import kotlin.math.sqrt
  * [BlobPainter], which is what keeps the two looking identical.
  */
 /** Something she holds or wears for an activity. */
-enum class Prop { NONE, BOOK, ROPE }
+enum class Prop { NONE, BOOK, ROPE, BROOM }
+
+/** Something she wears: a scarf in winter, sunglasses in summer, a party hat the day her plant flowers. */
+enum class Outfit { NONE, SCARF, SUNGLASSES, PARTY_HAT }
 
 class BlobPose {
     /** What she is holding right now, and a 0..1 loop for it (one turn of the skipping rope). */
@@ -29,6 +32,8 @@ class BlobPose {
 
     /** A nightcap, for when she has gone to bed. */
     var nightcap = false
+
+    var outfit = Outfit.NONE
 
     /** 1 = eyes open, 0 = shut. Multiplied into the eye height. */
     var blink = 1f
@@ -90,6 +95,7 @@ class BlobPose {
         prop = Prop.NONE
         propPhase = 0f
         nightcap = false
+        outfit = Outfit.NONE
         blink = 1f
         wideEyes = 0f
         yawn = 0f
@@ -197,6 +203,8 @@ class BlobPainter {
         color = 0xFF8A5A2B.toInt()
         strokeCap = Paint.Cap.ROUND
     }
+    private val strawPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFE9C46A.toInt() }
+    private val scarfPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFFE5484D.toInt() }
     private val capPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = 0xFF7C9CF5.toInt() }
 
     private val rect = RectF()
@@ -311,10 +319,17 @@ class BlobPainter {
             drawMoodMouth(canvas, mx, my, hr, pose.mood)
         }
         drawTrunk(canvas, hx + hr * 0.55f, hy + hr * 0.30f, u, pose)
+        if (pose.outfit == Outfit.SUNGLASSES && !pose.eyesShut) drawSunglasses(canvas, hx, hy, hr)
         if (pose.prop == Prop.BOOK) drawBook(canvas, hx + hr * 0.95f, hy + hr * 0.95f, hr)
-        if (pose.nightcap) drawNightcap(canvas, hx, hy, hr) else drawBow(canvas, hx - hr * 0.35f, hy - hr * 0.88f, hr)
+        when {
+            pose.nightcap -> drawNightcap(canvas, hx, hy, hr)
+            pose.outfit == Outfit.PARTY_HAT -> drawPartyHat(canvas, hx, hy, hr)
+            else -> drawBow(canvas, hx - hr * 0.35f, hy - hr * 0.88f, hr)
+        }
         canvas.restore()
 
+        if (pose.outfit == Outfit.SCARF) drawScarf(canvas, hx, hy, hr)
+        if (pose.prop == Prop.BROOM) drawBroom(canvas, hx + hr * 1.55f, hy + hr * 0.55f, ground, hr, pose.propPhase)
         if (pose.mood == Mood.HORRIFIED) drawSweatDrop(canvas, hx + hr * 0.75f, hy - hr * 0.9f, hr)
         if (pose.anger > 0.3f) drawSteam(canvas, hx, hy - hr * 1.05f, hr, pose)
         if (pose.proud > 0.3f) drawSparkles(canvas, bodyX, bodyY, bodyRx, bodyRy, pose)
@@ -539,6 +554,66 @@ class BlobPainter {
         path.moveTo(bodyX + bodyRx * 2.0f, bodyY - bh * 0.08f)
         path.quadTo(bodyX + bodyRx * 0.2f, controlY, bodyX - bodyRx * 1.15f, bodyY)
         canvas.drawPath(path, ropePaint)
+    }
+
+    /** A broom held in her trunk, bristles on the ground, swishing forward and back with [phase]. */
+    private fun drawBroom(canvas: Canvas, x: Float, y: Float, ground: Float, hr: Float, phase: Float) {
+        val swish = sin(phase * 2f * PI.toFloat()) * 14f
+        canvas.save()
+        canvas.rotate(18f + swish, x, y)
+        ropePaint.strokeWidth = hr * 0.09f
+        canvas.drawLine(x, y - hr * 0.5f, x, ground - hr * 0.35f, ropePaint)
+        path.reset()
+        path.moveTo(x - hr * 0.16f, ground - hr * 0.38f)
+        path.lineTo(x + hr * 0.16f, ground - hr * 0.38f)
+        path.lineTo(x + hr * 0.34f, ground)
+        path.lineTo(x - hr * 0.34f, ground)
+        path.close()
+        canvas.drawPath(path, strawPaint)
+        canvas.drawPath(path, rimPaint)
+        canvas.restore()
+    }
+
+    /** A winter scarf: a band where her head meets her body, with one end hanging. */
+    private fun drawScarf(canvas: Canvas, hx: Float, hy: Float, hr: Float) {
+        canvas.save()
+        canvas.rotate(28f, hx - hr * 0.45f, hy + hr * 0.75f)
+        rect.set(hx - hr * 1.15f, hy + hr * 0.62f, hx + hr * 0.25f, hy + hr * 0.92f)
+        canvas.drawRoundRect(rect, hr * 0.14f, hr * 0.14f, scarfPaint)
+        canvas.drawRoundRect(rect, hr * 0.14f, hr * 0.14f, rimPaint)
+        rect.set(hx - hr * 0.95f, hy + hr * 0.82f, hx - hr * 0.65f, hy + hr * 1.45f)
+        canvas.drawRoundRect(rect, hr * 0.1f, hr * 0.1f, scarfPaint)
+        canvas.drawRoundRect(rect, hr * 0.1f, hr * 0.1f, rimPaint)
+        canvas.restore()
+    }
+
+    /** Summer sunglasses over both eyes. */
+    private fun drawSunglasses(canvas: Canvas, hx: Float, hy: Float, hr: Float) {
+        val ey = hy - hr * 0.08f
+        for (i in 0..1) {
+            val ex = hx + hr * EYE_DX[i]
+            rect.set(ex - hr * 0.25f, ey - hr * 0.2f, ex + hr * 0.25f, ey + hr * 0.22f)
+            canvas.drawRoundRect(rect, hr * 0.1f, hr * 0.1f, pupilPaint)
+        }
+        canvas.drawLine(hx + hr * (EYE_DX[0] + 0.25f), ey - hr * 0.08f, hx + hr * (EYE_DX[1] - 0.25f), ey - hr * 0.08f, inkStrokePaint)
+        canvas.drawLine(hx + hr * (EYE_DX[0] - 0.25f), ey - hr * 0.1f, hx - hr * 0.85f, ey - hr * 0.22f, inkStrokePaint)
+    }
+
+    /** A party hat for the day her plant flowers. */
+    private fun drawPartyHat(canvas: Canvas, hx: Float, hy: Float, hr: Float) {
+        canvas.save()
+        canvas.rotate(-14f, hx - hr * 0.2f, hy - hr * 0.85f)
+        path.reset()
+        path.moveTo(hx - hr * 0.62f, hy - hr * 0.78f)
+        path.lineTo(hx + hr * 0.22f, hy - hr * 0.78f)
+        path.lineTo(hx - hr * 0.2f, hy - hr * 1.75f)
+        path.close()
+        canvas.drawPath(path, sparklePaint)
+        canvas.drawPath(path, rimPaint)
+        canvas.drawLine(hx - hr * 0.48f, hy - hr * 1.1f, hx + hr * 0.07f, hy - hr * 1.1f, lashPaint)
+        canvas.drawCircle(hx - hr * 0.2f, hy - hr * 1.78f, hr * 0.13f, bowPaint)
+        canvas.drawCircle(hx - hr * 0.2f, hy - hr * 1.78f, hr * 0.13f, rimPaint)
+        canvas.restore()
     }
 
     /** A little open book held in front of her, below her eyes. */

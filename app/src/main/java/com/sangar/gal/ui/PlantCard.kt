@@ -48,6 +48,8 @@ fun PlantCard(
     day: LocalDate,
     usage: UsageRepository,
     onGoal: (Int) -> Unit,
+    /** GAL's one-line summary of the week so far, when there is enough to say. */
+    weekLine: String? = null,
 ) {
     val tick by rememberTicker(30_000L)
     val todayMinutes = remember(sessions, live, day, tick) { usage.todayScreenMillis(sessions, live, day) / 60_000L }
@@ -97,6 +99,9 @@ fun PlantCard(
                 enabled = goalMinutes < Garden.MAX_GOAL_MINUTES,
                 modifier = Modifier.semantics { contentDescription = "Raise the daily goal" },
             ) { Text("+") }
+        }
+        weekLine?.let {
+            Text(it, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
         }
         if (plant.lost > 0) {
             Text(

@@ -137,6 +137,20 @@ class SidekickOverlay(
     private var football: Football? = null
     private var pendingRoast: Speech? = null
     private var lastActivityAt = 0L
+    private val plane = PaperPlane(context, windowManager)
+
+    /** Social apps opened today, so every third one gets the broom. */
+    private var socialDay = java.time.LocalDate.MIN
+    private var socialOpens = 0
+
+    /** "How long this time?": the app, the promise and when it runs out. */
+    private var askHowLong = true
+    private var reactingTo: String? = null
+    private var intentionApp: String? = null
+    private var intentionMinutes = 0
+    private var intentionUntil = 0L
+    private val askedAt = HashMap<String, Long>()
+    private var plant = com.sangar.gal.data.Plant()
     private var liveliness = com.sangar.gal.data.Liveliness.NORMAL
 
     /** Scenes played today and when the last one was, for the limits in [com.sangar.gal.data.Liveliness]. */
@@ -210,6 +224,9 @@ class SidekickOverlay(
                 wanders = latest.sidekickWanders
                 tone = latest.tone
                 liveliness = latest.liveliness
+                askHowLong = latest.askHowLong
+                plant = latest.plant
+                view?.outfit = Outfits.pick(java.time.LocalDate.now(), plant)
                 stepBackEnabled = latest.stepBack
                 updateStepBack()
                 applyAnger()
@@ -237,6 +254,7 @@ class SidekickOverlay(
                     continue
                 }
                 val pkg = withContext(Dispatchers.Default) { ForegroundApp.current(context) }
+                checkIntention(pkg)
                 onForegroundApp(pkg)
                 applyAnger()
             }
@@ -291,6 +309,7 @@ class SidekickOverlay(
         SidekickStatus.busy = false
         football?.cancel()
         football = null
+        plane.cancel()
         bubble.dismiss()
         dismissTarget.hide()
         hidePanel.dismiss()
@@ -339,7 +358,10 @@ class SidekickOverlay(
                 roll < 0.45f -> paceFromEdge()
                 roll < 0.57f -> crossToOtherSide()
                 roll < 0.72f -> v.hop()
-                roll < 0.90f -> v.lookAround()
+                roll < 0.90f -> {
+                    v.lookAround()
+                    if (Random.nextFloat() < 0.4f) v.emote("?")
+                }
                 // Too cross to sleep.
                 v.anger < 0.3f -> nap()
                 else -> v.hop()
@@ -482,7 +504,19 @@ class SidekickOverlay(
         }
         lastReactionAt = now
         NagLog.d(C, "reacting to $pkg as $kind")
-        if (kind == AppKind.SOCIAL) sayNo() else cheer()
+        reactingTo = pkg
+        if (kind == AppKind.SOCIAL) {
+            val today = java.time.LocalDate.now()
+            if (today != socialDay) {
+                socialDay = today
+                socialOpens = 0
+            }
+            socialOpens++
+            // Every third visit of the day she comes with the broom; otherwise the usual "Nooo".
+            if (socialOpens % 3 == 0 && !reducedMotion) sweep() else sayNo()
+        } else {
+            cheer()
+        }
     }
 
     /**
@@ -512,7 +546,7 @@ class SidekickOverlay(
             val me = view ?: return@walkTo
             me.mood = Mood.DISAPPOINTED
             me.walkFacing = 0
-            remark(ActivityLines.sayNo(tone))
+            if (!askHowLongNow()) remark(ActivityLines.sayNo(tone))
             reactionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
                 duration = NO_MS
                 addUpdateListener {
@@ -571,7 +605,14 @@ class SidekickOverlay(
             start()
         }
         v.hop()
-        remark(ActivityLines.cheer(tone))
+        v.emote("♥")
+        // Half the time the reward is a paper plane.
+        if (Random.nextBoolean() && !reducedMotion) {
+            remark(ActivityLines.plane(tone))
+            main.postDelayed({ if (reacting) plane.fly(elephantRect(), overlayBounds()) }, 500L)
+        } else {
+            remark(ActivityLines.cheer(tone))
+        }
         main.postDelayed({ if (reacting) view?.hop() }, 700L)
         main.postDelayed({ if (reacting) view?.hop() }, 1_400L)
     }
@@ -622,6 +663,7 @@ class SidekickOverlay(
         if (System.currentTimeMillis() - lastActivityAt < ACTIVITY_GAP_MS) return false
         when (java.time.LocalTime.now().hour) {
             in 5..10 -> skipRope()
+            in 11..19 -> stretchUp()
             in 20..22 -> readBook()
             23, in 0..4 -> goToBed()
             else -> return false
@@ -659,12 +701,162 @@ class SidekickOverlay(
                     v.prop = Prop.NONE
                     v.jump = 0f
                     v.trunkBoost = 0f
+                    v.emote("♪")
                     remark(ActivityLines.skipping(tone))
                     main.postDelayed({ if (reacting && reactionAnimator == null && football == null) endReaction() }, 2_500L)
                 }
             })
             start()
         }
+    }
+
+    /** Daytime: a long stretch up on her toes, trunk to the sky, a wobble, and her line. */
+    private fun stretchUp() {
+        val v = view ?: return
+        startReaction()
+        v.napping = false
+        v.mood = Mood.NONE
+        var said = false
+        reactionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = STRETCH_MS
+            interpolator = android.view.animation.LinearInterpolator()
+            addUpdateListener {
+                val t = it.animatedValue as Float
+                // Up over the first fifth, hold, down over the last fifth.
+                val up = when {
+                    t < 0.2f -> t / 0.2f
+                    t > 0.8f -> (1f - t) / 0.2f
+                    else -> 1f
+                }
+                v.stretch = up
+                v.trunkBoost = 150f * up
+                v.headTilt = if (t in 0.3f..0.7f) 5f * sin((t - 0.3f) / 0.4f * 2f * PI.toFloat() * 2f) else 0f
+                if (!said && t > 0.35f) {
+                    said = true
+                    remark(ActivityLines.stretching(tone))
+                }
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                private var cancelled = false
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    reactionAnimator = null
+                    if (!cancelled) endReaction()
+                }
+            })
+            start()
+        }
+    }
+
+    /** The third social app of the day: she sweeps her way across the screen with a broom, and says so. */
+    private fun sweep() {
+        val v = view ?: return
+        val p = params ?: return
+        stopWalking()
+        startReaction()
+        v.napping = false
+        v.anger = 0f
+        v.mood = Mood.DISAPPOINTED
+        v.prop = Prop.BROOM
+        v.trunkBoost = 55f
+        remark(ActivityLines.sweeping(tone))
+        reactionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 620L
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = android.view.animation.LinearInterpolator()
+            addUpdateListener { v.propPhase = it.animatedValue as Float }
+            start()
+        }
+        val bounds = overlayBounds()
+        val right = maxOf(bounds.left, bounds.right - v.width)
+        val onLeft = p.x + v.width / 2 < bounds.centerX()
+        walkTo(if (onLeft) right else bounds.left, p.y, STROLL_DP_PER_S * 1.6f, facing = if (onLeft) 1 else -1) {
+            endReaction()
+        }
+    }
+
+    /** Put down after being carried: a shake of the head and a look. */
+    private fun dropped() {
+        val v = view ?: return
+        if (reacting || cardMood != Mood.NONE || hidePanel.isShowing) return
+        startReaction()
+        v.mood = Mood.DISAPPOINTED
+        if (Random.nextFloat() < 0.35f) remark(ActivityLines.dropped(tone))
+        reactionAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 700L
+            addUpdateListener { v.headTilt = 8f * sin((it.animatedValue as Float) * 2f * PI.toFloat() * 3f) }
+            addListener(object : AnimatorListenerAdapter() {
+                private var cancelled = false
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    reactionAnimator = null
+                    if (cancelled) return
+                    main.postDelayed({ if (reacting && reactionAnimator == null && football == null) endReaction() }, 900L)
+                }
+            })
+            start()
+        }
+    }
+
+    // ---- "How long this time?" ---------------------------------------------------
+
+    /**
+     * Asks how long you mean to stay in the social app you just opened, with three answers to tap. At most once
+     * per app every [ASK_GAP_MS]. Returns false when she should just say "Nooo" as before.
+     */
+    private fun askHowLongNow(): Boolean {
+        val app = reactingTo ?: return false
+        val now = System.currentTimeMillis()
+        if (!askHowLong || intentionApp != null || now - (askedAt[app] ?: 0L) < ASK_GAP_MS) return false
+        askedAt[app] = now
+        return say(
+            Speech(
+                text = ActivityLines.howLong(tone),
+                stayMillis = 9_000L,
+                choices = listOf(5, 10, 20).map { minutes ->
+                    "$minutes min" to {
+                        intentionApp = app
+                        intentionMinutes = minutes
+                        intentionUntil = System.currentTimeMillis() + minutes * 60_000L
+                        main.postDelayed({ remark(ActivityLines.counting(tone, minutes)) }, 250L)
+                        Unit
+                    }
+                },
+            ),
+        )
+    }
+
+    /** Holds you to what you said: a call when the time is up, a nod if you left before it. */
+    private fun checkIntention(foreground: String?) {
+        val app = intentionApp ?: return
+        if (foreground == null) return
+        val now = System.currentTimeMillis()
+        if (foreground != app) {
+            // Gone from the app. Our own screen and a moment on the launcher count as leaving too.
+            intentionApp = null
+            if (now < intentionUntil && !reacting && cardMood == Mood.NONE) {
+                remark(ActivityLines.leftEarly(tone))
+                view?.emote("♥")
+            }
+            return
+        }
+        if (now < intentionUntil) return
+        intentionApp = null
+        say(
+            Speech(
+                text = ActivityLines.timeUp(tone, intentionMinutes),
+                label = "GAL · $intentionMinutes min, as agreed",
+                face = com.sangar.gal.overlay.Mascot.DISAPPOINTED,
+                onOk = {},
+                stayMillis = Speech.ROAST_MILLIS,
+            ),
+        )
     }
 
     /** Evening: she reads for a while, eyes down, nodding along, and says her line a few seconds in. */
@@ -784,6 +976,7 @@ class SidekickOverlay(
                 me.proud = 1f
                 me.trunkBoost = 110f
                 me.hop()
+                me.emote("♪")
                 remark(ActivityLines.football(tone))
                 main.postDelayed({ if (reacting) view?.hop() }, 600L)
                 main.postDelayed({ if (reacting && football == null) endReaction() }, 3_200L)
@@ -823,6 +1016,7 @@ class SidekickOverlay(
             v.proud = 0f
             v.prop = Prop.NONE
             v.jump = 0f
+            v.stretch = 0f
             v.lookAt(0f, 0f)
             v.walkFacing = 0
             if (cardMood == Mood.NONE) v.mood = Mood.NONE
@@ -867,6 +1061,7 @@ class SidekickOverlay(
     // ---- Drag to the X to hide her -----------------------------------------------
 
     override fun onDragStarted() {
+        view?.emote("!")
         paceGen++
         endReaction()
         stopWalking()
@@ -882,7 +1077,11 @@ class SidekickOverlay(
     override fun onDragEnded(rawX: Float, rawY: Float, cancelled: Boolean): Boolean {
         val over = !cancelled && dismissTarget.track(rawX, rawY)
         dismissTarget.hide()
-        if (!over) return false
+        if (!over) {
+            // Let her settle at the edge first, then she tells you what she thinks of being carried.
+            main.postDelayed({ dropped() }, 350L)
+            return false
+        }
         val v = view ?: return false
         v.visibility = android.view.View.INVISIBLE
         hidePanel.show { choice ->
@@ -972,6 +1171,7 @@ class SidekickOverlay(
         main.removeCallbacks(wakeRunnable)
         v.napping = false
         v.hop()
+        if (Random.nextFloat() < 0.4f) v.emote("♥")
         scheduleWander(Random.nextLong(REST_MIN_MS, REST_MAX_MS))
     }
 
@@ -996,6 +1196,8 @@ class SidekickOverlay(
         const val ACTIVITY_GAP_MS = 30 * 60_000L
         const val SKIPS = 8
         const val READ_MS = 9_000L
+        const val STRETCH_MS = 5_000L
+        const val ASK_GAP_MS = 30 * 60_000L
         const val BED_NAP_MS = 5 * 60_000L
         const val STEP_BACK_ALPHA = 0.3f
         const val REACT_COOLDOWN_MS = 20_000L

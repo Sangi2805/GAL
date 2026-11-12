@@ -152,6 +152,50 @@ class SidekickView(context: Context) : View(context) {
             invalidate()
         }
 
+    /** What she is wearing today. */
+    var outfit = Outfit.NONE
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /** 0..1 a tall stretch: up on her toes, long and thin. */
+    var stretch = 0f
+        set(value) {
+            field = value
+            invalidate()
+        }
+
+    /** A small symbol that floats up from her head and fades: a heart, a question mark, a note. */
+    fun emote(symbol: String) {
+        emoteSymbol = symbol
+        emoteAnimator?.cancel()
+        emoteAnimator = ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 1_300L
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                emoteT = it.animatedValue as Float
+                invalidate()
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: Animator) {
+                    emoteSymbol = null
+                    invalidate()
+                }
+            })
+            start()
+        }
+    }
+
+    private var emoteSymbol: String? = null
+    private var emoteT = 0f
+    private var emoteAnimator: ValueAnimator? = null
+    private val emotePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFFFF5C8A.toInt()
+        textAlign = android.graphics.Paint.Align.CENTER
+        isFakeBoldText = true
+    }
+
     /** A nightcap for a bedtime nap. It comes off when she wakes. */
     var nightcap = false
         set(value) {
@@ -346,6 +390,7 @@ class SidekickView(context: Context) : View(context) {
         // schedules the next blink). With alive = false those are no-ops, and the callbacks are removed last.
         hopAnimator?.cancel()
         pokeAnimator?.cancel()
+        emoteAnimator?.cancel()
         breatheAnimator.cancel()
         phaseAnimator.cancel()
         chatterAnimator.cancel()
@@ -785,6 +830,8 @@ class SidekickView(context: Context) : View(context) {
         scaleY -= 0.10f * poke
         scaleX += 0.07f * crouch
         scaleY -= 0.11f * crouch
+        scaleX -= 0.06f * stretch
+        scaleY += 0.10f * stretch
 
         pose.blink = blink
         pose.wideEyes = wideEyes
@@ -808,6 +855,7 @@ class SidekickView(context: Context) : View(context) {
         pose.prop = prop
         pose.propPhase = propPhase
         pose.nightcap = nightcap && napping
+        pose.outfit = outfit
         pose.eyesShut = napping
         pose.walking = walking
         pose.walkPhase = walkPhase
@@ -840,6 +888,15 @@ class SidekickView(context: Context) : View(context) {
         canvas.scale(turn, 1f, cx, cy)
         painter.draw(canvas, cx, cy, base * scaleX, base * scaleY, base, pose)
         canvas.restore()
+
+        // The emote, above her head, rising and fading.
+        emoteSymbol?.let { symbol ->
+            emotePaint.textSize = base * 0.24f
+            emotePaint.alpha = (255 * (1f - emoteT * emoteT)).toInt().coerceIn(0, 255)
+            val ex = cx + base * 0.22f * shownFacing
+            val ey = hgt / 2f - base * (0.30f + 0.16f * emoteT)
+            canvas.drawText(symbol, ex, ey, emotePaint)
+        }
     }
 
     private fun facingTowardsScreenMiddle(): Int {

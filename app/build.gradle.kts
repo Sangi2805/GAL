@@ -30,8 +30,8 @@ android {
         applicationId = "com.sangar.gal"
         minSdk = 29
         targetSdk = 36
-        versionCode = 8
-        versionName = "0.7.0"
+        versionCode = 9
+        versionName = "0.8.0"
     }
 
     signingConfigs {

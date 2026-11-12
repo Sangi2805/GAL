@@ -71,6 +71,18 @@ object Insights {
         return out
     }
 
+    /**
+     * GAL's week in one line for the home screen: how many of the last seven tracked days stayed under the
+     * goal, and the best one. Null until there are at least two days to talk about.
+     */
+    fun weekSummary(days: List<DailyUsage>, goalMinutes: Int, today: LocalDate, locale: Locale = Locale.getDefault()): String? {
+        val week = days.filter { it.tracked && it.date >= today.minusDays(7) && it.date < today }
+        if (week.size < 2) return null
+        val good = week.count { it.totalScreenMinutes <= goalMinutes }
+        val best = week.minByOrNull { it.totalScreenMinutes }!!
+        return "This week: $good of ${week.size} days under your goal. Best: ${dayName(best.date.dayOfWeek, locale)}."
+    }
+
     private fun dayName(day: DayOfWeek, locale: Locale) = day.getDisplayName(TextStyle.FULL, locale)
 
     private fun formatMinutes(minutes: Long): String = when {
