@@ -28,6 +28,8 @@ class DailyUsageWorker(context: Context, params: WorkerParameters) : CoroutineWo
             val aggregator = DailyUsageAggregator(container.database, appUsage = UsageStatsAppUsage(applicationContext))
             aggregator.backfill(today)
             aggregator.prune(today)
+            // The per-hour table behind the home screen's insights. A failure here must not fail the daily rows.
+            runCatching { container.hourly.sync() }.onFailure { Log.e(TAG, "hourly sync failed", it) }
             Result.success()
         } catch (e: Exception) {
             Log.e(TAG, "daily aggregation failed", e)

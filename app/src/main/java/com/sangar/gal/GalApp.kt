@@ -43,6 +43,8 @@ class AppContainer(val app: Application) {
 
     val usage: UsageRepository by lazy { UsageRepository(database) }
 
+    val hourly: com.sangar.gal.data.HourlyUsageSync by lazy { com.sangar.gal.data.HourlyUsageSync(app, database) }
+
     val phrases: EnginePhraseSource by lazy {
         EnginePhraseSource(app, DataStoreRecentIdStore(settings), usage)
     }

@@ -164,7 +164,7 @@ class ScreenTimeTracker(
         val interactive = context.getSystemService<PowerManager>()?.isInteractive ?: false
         if (interactive && !isKeyguardLocked()) tracker.onUserPresent(now, wallClock(), countAsUnlock = false)
         NagLog.i(C, "tracker started pid=${Process.myPid()} interactive=$interactive keyguardLocked=${isKeyguardLocked()} ${describe(now)}")
-        onStatus(if (tracker.isCounting) "Current session: ${tracker.activeMillis(now) / 60_000L} min." else STATUS_WAITING)
+        onStatus(if (tracker.isCounting) "On your phone for ${tracker.activeMillis(now) / 60_000L} min." else STATUS_WAITING)
         reschedule(now)
 
         settingsJob = service.lifecycleScope.launch {
@@ -217,7 +217,7 @@ class ScreenTimeTracker(
         val minute = activeMillis / 60_000L
         if (minute != lastNotifiedMinute && nagController?.problem == null) {
             lastNotifiedMinute = minute
-            onStatus(if (settings.enabled) "Current session: $minute min." else "Roasts off. Current session: $minute min.")
+            onStatus("On your phone for $minute min.")
         }
         // The session's wall-clock start is its key: unlike the elapsed start, it is the same after the service
         // is killed and the session restored, so the saved card count still belongs to it.

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">GAL</string>
+    <string name="app_name">GetALife</string>
     <string name="overlay_fine">Fine</string>
     <string name="overlay_snooze">Snooze 10 min</string>
 

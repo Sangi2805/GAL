@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import com.sangar.gal.Permissions
 import com.sangar.gal.container
 import com.sangar.gal.data.Settings
+import com.sangar.gal.guard.AppGuard
 import com.sangar.gal.sidekick.SidekickOverlay
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -40,6 +41,7 @@ class GalService : LifecycleService() {
 
     private var tracker: ScreenTimeTracker? = null
     private var sidekick: SidekickOverlay? = null
+    private var guard: AppGuard? = null
     private var roastStatus: String = ScreenTimeTracker.STATUS_WAITING
     private var inForeground = false
 
@@ -131,6 +133,15 @@ class GalService : LifecycleService() {
         } else {
             tracker?.stop()
             tracker = null
+        }
+
+        // The redesigned GAL: the reminder and the full-screen pause for the apps you chose.
+        if (settings.guardActive) {
+            if (guard == null) guard = AppGuard(this)
+            guard?.start()
+        } else {
+            guard?.stop()
+            guard = null
         }
 
         if (runVoice) {
@@ -225,6 +236,8 @@ class GalService : LifecycleService() {
     private fun stopEverything() {
         tracker?.stop()
         tracker = null
+        guard?.stop()
+        guard = null
         sidekick?.release()
         sidekick = null
         ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE)
@@ -242,6 +255,8 @@ class GalService : LifecycleService() {
         val sidekickWasUp = sidekick != null
         tracker?.stop()
         tracker = null
+        guard?.stop()
+        guard = null
         sidekick?.release()
         sidekick = null
         // Stopped by the system (not by a switch) while Sidekick was up: offer the way back.

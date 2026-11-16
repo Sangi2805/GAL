@@ -10,8 +10,11 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [ScreenSession::class, NagEvent::class, DailyUsage::class, AppDailyUsage::class, TrackingInterval::class],
-    version = 3,
+    entities = [
+        ScreenSession::class, NagEvent::class, DailyUsage::class, AppDailyUsage::class, TrackingInterval::class,
+        AppHourUsage::class,
+    ],
+    version = 4,
     exportSchema = true,
     autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
@@ -22,6 +25,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun dailyUsage(): DailyUsageDao
     abstract fun appDailyUsage(): AppDailyUsageDao
     abstract fun trackingIntervals(): TrackingIntervalDao
+    abstract fun appHourUsage(): AppHourUsageDao
 
     companion object {
         /**
@@ -40,9 +44,20 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        /** Adds app_hour_usage, the per-hour table behind the home screen's insights. Nothing else changes. */
+        val MIGRATION_3_4 = object : Migration(3, 4) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `app_hour_usage` (`date` TEXT NOT NULL, `hour` INTEGER NOT NULL, " +
+                        "`package_name` TEXT NOT NULL, `foreground_millis` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`date`, `hour`, `package_name`))",
+                )
+            }
+        }
+
         fun build(context: Context): AppDatabase =
             Room.databaseBuilder(context.applicationContext, AppDatabase::class.java, NAME)
-                .addMigrations(MIGRATION_2_3)
+                .addMigrations(MIGRATION_2_3, MIGRATION_3_4)
                 .build()
 
         const val NAME = "getalife.db"

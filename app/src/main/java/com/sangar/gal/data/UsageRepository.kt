@@ -95,5 +95,20 @@ class UsageRepository(
         TrendCalculator.signals(snapshot, rows, day, todayMinutes, start)
     }
 
+    /** The last [days] days of "which app, which hour, how long", today included: what [Behaviour] reads. */
+    suspend fun hourRows(days: Long): List<HourUse> = withContext(Dispatchers.IO) {
+        val day = today()
+        db.appHourUsage().between(day.minusDays(days - 1), day).map { HourUse(it.date, it.hour, it.packageName, it.foregroundMillis) }
+    }
+
+    /** Screen-on time between two instants, from stored sessions. Used for "this time yesterday". */
+    suspend fun screenMillisBetween(fromEpochMillis: Long, toEpochMillis: Long): Long = withContext(Dispatchers.IO) {
+        db.screenSessions().overlapping(fromEpochMillis, toEpochMillis)
+            .sumOf { DailyUsageAggregator.screenOnWithin(it, fromEpochMillis, toEpochMillis) }
+    }
+
+    /** Start of [day] in the phone's time zone. */
+    fun startOfDay(day: LocalDate): Long = startOf(day)
+
     suspend fun wipeAll() = withContext(Dispatchers.IO) { db.clearAllTables() }
 }

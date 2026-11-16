@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="brand_background">#DFF7EA</color>
-    <color name="splash_background">#DFF7EA</color>
+    <color name="brand_background">#120E16</color>
+    <color name="splash_background">#120E16</color>
     <color name="mascot_mint">#5CE79B</color>
     <color name="mascot_mint_dark">#1FA463</color>
     <color name="mascot_rim">#14663C</color>

@@ -73,8 +73,8 @@
         </activity>
 
         <!--
-          One foreground service for both features, type specialUse: it measures screen time and keeps the
-          floating Sidekick on screen. Sticky, and may start from the background (boot, updates).
+          One foreground service, type specialUse: it measures screen time and shows the reminder and the
+          full-screen pause for the apps the user chose. Sticky, and may start from the background (boot, updates).
         -->
         <service
             android:name=".service.GalService"
@@ -82,7 +82,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Measures continuous screen-on time so the app can show an optional, dismissible reminder card, and keeps a small floating character on screen. It never blocks or restricts other apps." />
+                android:value="Measures screen time on the device, and for apps the user has chosen shows a short reminder and, once the user's own daily time is used up, a brief full-screen pause the user can leave at any time. Nothing leaves the device." />
         </service>
 
         <receiver

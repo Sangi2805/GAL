@@ -43,6 +43,18 @@ data class AppDailyUsage(
     @ColumnInfo(name = "foreground_millis") val foregroundMillis: Long,
 )
 
+/**
+ * Time one app spent in front during one hour of one day. Written from the phone's own usage events, which
+ * Android only keeps for a few days, so GAL saves them here to see patterns over weeks.
+ */
+@Entity(tableName = "app_hour_usage", primaryKeys = ["date", "hour", "package_name"])
+data class AppHourUsage(
+    val date: LocalDate,
+    val hour: Int,
+    @ColumnInfo(name = "package_name") val packageName: String,
+    @ColumnInfo(name = "foreground_millis") val foregroundMillis: Long,
+)
+
 class DateConverters {
     @TypeConverter
     fun fromDate(date: LocalDate?): String? = date?.toString()
@@ -100,5 +112,23 @@ interface AppDailyUsageDao {
     suspend fun topForDate(date: LocalDate, limit: Int): List<AppDailyUsage>
 
     @Query("DELETE FROM app_daily_usage WHERE date < :before")
+    suspend fun deleteBefore(before: LocalDate): Int
+}
+
+@Dao
+interface AppHourUsageDao {
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(rows: List<AppHourUsage>)
+
+    @Query("SELECT * FROM app_hour_usage WHERE date >= :from AND date <= :to")
+    suspend fun between(from: LocalDate, to: LocalDate): List<AppHourUsage>
+
+    @Query("SELECT MAX(date) FROM app_hour_usage")
+    suspend fun latestDate(): LocalDate?
+
+    @Query("DELETE FROM app_hour_usage WHERE date = :date")
+    suspend fun deleteDate(date: LocalDate): Int
+
+    @Query("DELETE FROM app_hour_usage WHERE date < :before")
     suspend fun deleteBefore(before: LocalDate): Int
 }

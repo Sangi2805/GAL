@@ -66,7 +66,7 @@ class MigrationTo3Test {
     }
 
     private fun open(): AppDatabase = Room.databaseBuilder(context, AppDatabase::class.java, name)
-        .addMigrations(AppDatabase.MIGRATION_2_3)
+        .addMigrations(AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
         .allowMainThreadQueries()
         .build()
         .also { db = it }
@@ -87,5 +87,12 @@ class MigrationTo3Test {
 
         assertEquals(1, db.screenSessions().overlapping(0, Long.MAX_VALUE).size)
         assertTrue("the new table is there and empty", db.trackingIntervals().overlapping(0, Long.MAX_VALUE).isEmpty())
+
+        // Version 4 adds the per-hour table. Room checks its shape on open, so reading and writing it here
+        // proves the migration built exactly the table the entity describes.
+        val day = LocalDate.of(2026, 9, 10)
+        assertTrue(db.appHourUsage().between(day, day).isEmpty())
+        db.appHourUsage().upsertAll(listOf(AppHourUsage(day, 21, "com.example.video", 600_000L)))
+        assertEquals(600_000L, db.appHourUsage().between(day, day).single().foregroundMillis)
     }
 }

@@ -67,11 +67,18 @@ data class Settings(
     val askHowLong: Boolean = true,
     /** Wall-clock millis until which the elephant is hidden (dropped on the X). 0 when she is not hidden. */
     val elephantHiddenUntil: Long = 0L,
+    /** The apps you asked GAL to watch. Their time adds up against one daily limit. */
+    val monitoredApps: Set<String> = emptySet(),
+    /** Minutes a day for all the chosen apps together, before the full-screen pause. */
+    val dailyLimitMinutes: Int = com.sangar.gal.guard.GuardRules.DEFAULT_LIMIT_MINUTES,
 ) {
     /** Measuring runs once setup is finished with the roasts switch on, whether cards are on or off. */
     val roastsActive: Boolean get() = onboardingComplete && roastsEnabled
 
     val voiceActive: Boolean get() = onboardingComplete && voiceEnabled
+
+    /** The redesigned GAL is doing its job: set up, with at least one app to watch. */
+    val guardActive: Boolean get() = roastsActive && monitoredApps.isNotEmpty()
 
     val tone: com.sangar.gal.phrases.Tone get() = com.sangar.gal.phrases.Tone.of(phrasePack, calmTone)
 
@@ -112,6 +119,8 @@ class SettingsRepository(context: Context) {
         val PLANT_BLOOMED = stringPreferencesKey("plant_bloomed_on")
         val ASK_HOW_LONG = booleanPreferencesKey("ask_how_long")
         val STEP_BACK = booleanPreferencesKey("step_back")
+        val MONITORED_APPS = stringSetPreferencesKey("monitored_apps")
+        val DAILY_LIMIT = intPreferencesKey("daily_limit_minutes")
     }
 
     private val preferences: Flow<Preferences> = store.data.catch { e ->
@@ -122,8 +131,10 @@ class SettingsRepository(context: Context) {
     val settings: Flow<Settings> = preferences.map { p ->
         Settings(
             roastsEnabled = p[Keys.ROASTS_ENABLED] ?: false,
-            voiceEnabled = p[Keys.VOICE_ENABLED] ?: false,
-            enabled = p[Keys.ENABLED] ?: false,
+            // The redesign retired the floating elephant and the session roast cards: she now only appears on
+            // the full-screen pause. Whatever an older install stored for these two switches reads as off.
+            voiceEnabled = false,
+            enabled = false,
             thresholdMinutes = Threshold.clamp(p[Keys.THRESHOLD_MINUTES] ?: Threshold.DEFAULT_MINUTES),
             exclusions = p[Keys.EXCLUSIONS] ?: emptySet(),
             exclusionsSeeded = p[Keys.EXCLUSIONS_SEEDED] ?: false,
@@ -149,6 +160,10 @@ class SettingsRepository(context: Context) {
             ),
             askHowLong = p[Keys.ASK_HOW_LONG] ?: true,
             stepBack = p[Keys.STEP_BACK] ?: true,
+            monitoredApps = p[Keys.MONITORED_APPS] ?: emptySet(),
+            dailyLimitMinutes = com.sangar.gal.guard.GuardRules.clampLimit(
+                p[Keys.DAILY_LIMIT] ?: com.sangar.gal.guard.GuardRules.DEFAULT_LIMIT_MINUTES,
+            ),
         )
     }.distinctUntilChanged()
 
@@ -174,6 +189,18 @@ class SettingsRepository(context: Context) {
     suspend fun setTone(tone: com.sangar.gal.phrases.Tone) = store.edit {
         it[Keys.PHRASE_PACK] = tone.pack.key
         it[Keys.CALM_TONE] = tone == com.sangar.gal.phrases.Tone.CALM
+    }
+
+    /**
+     * The setup screen's one save: which apps, how long a day, and (via [setTone]) how she talks. Also marks
+     * setup as done and measuring as on, so the service starts.
+     */
+    suspend fun saveGuard(apps: Set<String>, limitMinutes: Int) = store.edit {
+        it[Keys.MONITORED_APPS] = apps
+        it[Keys.DAILY_LIMIT] = com.sangar.gal.guard.GuardRules.clampLimit(limitMinutes)
+        it[Keys.ROASTS_ENABLED] = true
+        it[Keys.ONBOARDING_COMPLETE] = true
+        it[Keys.HAS_SEEN_LANDING_PAGE] = true
     }
 
     suspend fun setAskHowLong(on: Boolean) = store.edit { it[Keys.ASK_HOW_LONG] = on }
