@@ -106,7 +106,7 @@ fun HomeScreen(onEdit: () -> Unit, onFixPermissions: () -> Unit) {
         GalServiceStarter.syncFromForeground(context.applicationContext, settings)
     }
 
-    val noticed by produceState<Noticed?>(initialValue = null, day, resumes, permissions.status.usageAccess) {
+    val noticed by produceState<Noticed?>(initialValue = null, day, resumes, permissions.status.usageAccess, settings.monitoredApps) {
         value = withContext(Dispatchers.IO) {
             runCatching { container.hourly.sync() }
             val rows = usage.hourRows(Behaviour.WINDOW_DAYS)
