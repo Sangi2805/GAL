@@ -218,9 +218,6 @@ Google Play text, the data safety answers and the list of screenshots to take.
 
 ## Versions
 
-- **0.9.0** The redesign above: four screens, chosen apps with one daily limit, the reminder and the
-  full-screen pause, insights on home. Database version 4.
-
 Every APK sent to testers gets a new version in `app/build.gradle.kts`: `versionCode` goes up by one (Android
 refuses to install an APK over one with a higher or equal code from the same key), and `versionName` is what
 people see in App info. The commit it was built from gets a matching git tag, for example `v0.2.0`.
@@ -236,6 +233,7 @@ people see in App info. The commit it was built from gets a matching git tag, fo
 | 0.6.1 | 7 | A roast no longer cuts a football game short (it waits for the final whistle); the first-run demo waits for the game too; bubbles and the hide X no longer fade in from invisible. |
 | 0.7.0 | 8 | A day in her life: skipping rope in the morning, a book in the evening, a nightcap and bed late at night, each with a line in your tone. Feel: a crouch before every hop, a smooth turn, eyes on the ball, a tick you can feel when the ball lands. |
 | 0.8.0 | 9 | The rest of the plan: stretching, sweeping with a broom, a paper plane, a look when you carry her, emotes, a scarf, sunglasses and a party hat, "How long this time?" for social apps, GAL's week on home, a calmer home (tone and timing moved to Settings), bubbles read out by screen readers, a brand guide and the store listing. |
+| 0.9.0 | 10 | The redesign: four screens, chosen apps with one daily limit, the reminder and the 10 second full-screen pause, insights on home, plum and pink look. The floating elephant, roast cards and plant are retired. Database version 4. |
 
 ## Debug builds
 
