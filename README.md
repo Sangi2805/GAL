@@ -1,20 +1,51 @@
 # GAL (GetALife)
 
-GetALife's screen-time roast cards plus a floating character: a chubby, full-body pink cartoon elephant
-(called Sidekick in the code; the app itself never names her). She delivers the roast cards, wearing
-GetALife's four faces (smug, bored, disappointed, horrified), walks around your screen in between, and reacts
-to what you open. The old monkey mascot and the green blob are gone.
-
-The app has one job: keeping you off your phone. Voice commands were dropped (speech recognition did not work
-reliably on real phones), so GAL no longer asks for the microphone at all.
-
-The original `GetALife` and `AI Assistant` folders are untouched; this project reuses their code.
+**Scroll less. Live more.** You pick the apps that eat your time and one daily limit for all of them. When
+the time is up, GAL covers the screen for 10 seconds with a short roast while her pink elephant gets on with
+something better (skipping, football, a book), and does it again every 5 more minutes.
 
 **No network access.** GAL declares no `INTERNET` permission, and the build fails if any dependency adds
 `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE` or `QUERY_ALL_PACKAGES` to the merged manifest
 (`verify<Variant>NoInternet` in `app/build.gradle.kts`).
 
-## What it does
+## The 0.9.0 redesign
+
+Testers said the floating elephant took too much screen, there was too much to read, too many settings, and
+that nudges were too easy to flick away. So the app was rebuilt around one rule: a toddler could use it.
+
+Four screens, almost no text:
+
+1. **Intro** (`ui/IntroScreen.kt`): the elephant, the name, one line, one button.
+2. **Permissions** (`ui/PermissionsScreen.kt`): three cards titled with the phone's own setting names (Usage
+   access, Display over other apps, Notifications). The next one to do is outlined; done ones turn green.
+3. **Setup** (`ui/PickScreen.kt`): which apps, one time-a-day slider for all of them together, and the roast
+   style (Calm, Honest, Brutal) with one example. This is also the only settings screen.
+4. **Home** (`ui/HomeScreen.kt`): today's screen time against the same time yesterday, the week, up to three
+   things GAL noticed, and today's limit.
+
+Two full-screen moments, drawn over the app in front (`guard/`):
+
+- **The reminder**: the first time each chosen app is opened in a day, for about three seconds:
+  "YouTube is on your list. 30 min today. Keep your promise?"
+- **The pause**: once the day's time is used up, 10 seconds with a countdown ring, the elephant doing one of
+  six things, and one short line in the chosen style. It comes back after every 5 more minutes in the chosen
+  apps. Leaving for the home screen ends it, but then it was not served and starts again from the top when a
+  chosen app is opened. It never locks the phone.
+
+`guard/GuardRules.kt` holds every rule as pure functions, `guard/AppGuard.kt` watches which app is in front
+(once a second, only while the phone is unlocked), and `guard/GuardScreens.kt` draws the two screens.
+
+**What GAL noticed** comes from `data/Behaviour.kt`, a pure engine over four weeks of "which app, which hour,
+how long" (`app_hour_usage`, database version 4, filled from the phone's own usage events by
+`data/HourlyUsageSync.kt`). It names a peak ("YouTube peaks on Sunday mornings"), a week-on-week change, the
+busiest hour, late nights, the heaviest weekday and the top app's share, and only when there is enough use
+and enough history behind each one.
+
+Retired in 0.9.0, though the code is still in the repo: the floating elephant and everything she did on top
+of other apps, the session roast cards, the plant, the old home, stats and settings screens. The sections
+below describe that older design and are kept for reference.
+
+## Before 0.9.0: what it did
 
 - **One simple setup screen.** First-time users see no feature names and no switches: one elephant, one
   list of what GAL needs, one **Allow** button that walks through every missing permission in turn (usage
@@ -186,6 +217,9 @@ replace them, and it does not import their history.
 Google Play text, the data safety answers and the list of screenshots to take.
 
 ## Versions
+
+- **0.9.0** The redesign above: four screens, chosen apps with one daily limit, the reminder and the
+  full-screen pause, insights on home. Database version 4.
 
 Every APK sent to testers gets a new version in `app/build.gradle.kts`: `versionCode` goes up by one (Android
 refuses to install an APK over one with a higher or equal code from the same key), and `versionName` is what
